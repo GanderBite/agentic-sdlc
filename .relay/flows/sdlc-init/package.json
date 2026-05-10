@@ -1,0 +1,47 @@
+{
+  "name": "sdlc-init",
+  "version": "0.1.0",
+  "description": "Bootstrap a project: produce ARCHITECTURE.md, TECH_STACK.md, PRD.md, INTEL.md, and the starter skill set.",
+  "type": "module",
+  "main": "./dist/flow.js",
+  "files": [
+    "dist",
+    "prompts",
+    "schemas",
+    "templates",
+    "examples",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "relay test ."
+  },
+  "peerDependencies": {
+    "@ganderbite/relay-core": "^0.5.0"
+  },
+  "devDependencies": {
+    "@ganderbite/relay-core": "^0.5.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "relay": {
+    "flowName": "sdlc-init",
+    "displayName": "sdlc-init",
+    "tags": [
+      "sdlc",
+      "bootstrap",
+      "init"
+    ],
+    "estimatedCostUsd": {
+      "min": 0.5,
+      "max": 3.0
+    },
+    "estimatedDurationMin": {
+      "min": 15,
+      "max": 60
+    },
+    "audience": [
+      "dev"
+    ]
+  }
+}

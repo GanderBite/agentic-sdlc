@@ -1,0 +1,123 @@
+{
+  "skills": [
+    {
+      "name": "brain-storming",
+      "version": "1.0.0",
+      "domain": "process",
+      "subdomain": "brainstorming",
+      "description": "Directed-question protocol for filling feature-brief gaps; ≤3 rounds, ≤4 questions/round.",
+      "consumes": [
+        ".planning/features/FEATURE-*.md",
+        "docs/INTEL.md",
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md"
+      ],
+      "produces": ["enriched_brief.md"],
+      "size_tokens": 2605
+    },
+    {
+      "name": "codebase-mapping",
+      "version": "1.0.0",
+      "domain": "process",
+      "subdomain": "intel",
+      "description": "How to derive docs/INTEL.md and .planning/intel/ files; fresh and diff runs.",
+      "consumes": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "Cargo.toml",
+        "pyproject.toml",
+        "go.mod"
+      ],
+      "produces": [
+        "docs/INTEL.md",
+        ".planning/intel/modules.json",
+        ".planning/intel/build-graph.json",
+        ".planning/intel/conventions.md",
+        ".planning/intel/hot-files.md",
+        ".planning/intel/test-layout.md",
+        ".planning/intel/schema.md",
+        ".planning/intel/.snapshot"
+      ],
+      "size_tokens": 2785
+    },
+    {
+      "name": "sprint-planning",
+      "version": "1.0.0",
+      "domain": "process",
+      "subdomain": "planning",
+      "description": "Task/Wave/Sprint schemas, derivation recipe, wave invariants, smoke wave, estimation formula.",
+      "consumes": [
+        ".planning/features/FEATURE-*.md",
+        ".planning/intel/modules.json",
+        ".planning/intel/build-graph.json",
+        ".planning/intel/hot-files.md",
+        ".planning/estimation_priors.json",
+        ".claude/skills/INDEX.json"
+      ],
+      "produces": [
+        ".planning/sprints/sprint-*/tasks.json",
+        ".planning/sprints/sprint-*/waves.json",
+        ".planning/sprints/sprint-*.json",
+        "coverage_report"
+      ],
+      "size_tokens": 2762
+    },
+    {
+      "name": "code-reviewing",
+      "version": "1.0.0",
+      "domain": "process",
+      "subdomain": "review",
+      "description": "Two-phase review: mechanical verification + cross-cutting structured findings (5-tier severity).",
+      "consumes": [
+        ".planning/sprints/sprint-*/waves.json",
+        ".planning/estimation_priors.json",
+        "docs/ARCHITECTURE.md"
+      ],
+      "produces": ["review-{wave_id}.json", "findings-{wave_id}.json"],
+      "size_tokens": 2725
+    },
+    {
+      "name": "skill-authoring",
+      "version": "1.0.0",
+      "domain": "process",
+      "subdomain": "authoring",
+      "description": "How to write skills the linter accepts and pipeline agents can consume; structure, rules, anti-patterns.",
+      "consumes": [".claude/skills/INDEX.json"],
+      "produces": [
+        ".claude/skills/<name>/SKILL.md",
+        ".claude/skills/<name>/references/*.md"
+      ],
+      "size_tokens": 2613
+    },
+    {
+      "name": "version-control",
+      "version": "1.0.0",
+      "domain": "process",
+      "subdomain": "vcs",
+      "description": "Branch naming, conventional commits, PR composition, idempotency, rebase policy, forbidden actions.",
+      "consumes": [
+        ".planning/sprints/sprint-*.json",
+        ".planning/state/<sprint_id>.json",
+        ".planning/intel/modules.json"
+      ],
+      "produces": ["git commits", "GitHub PRs"],
+      "size_tokens": 3130
+    },
+    {
+      "name": "verification-gates",
+      "version": "1.0.0",
+      "domain": "process",
+      "subdomain": "gates",
+      "description": "Gate schema, execution semantics, flake-retry policy, provenance from build-graph.json.",
+      "consumes": [
+        ".planning/intel/build-graph.json",
+        ".planning/estimation_priors.json"
+      ],
+      "produces": [
+        "task.verification block entries",
+        "review-{wave_id}.json gates[] rows"
+      ],
+      "size_tokens": 2789
+    }
+  ]
+}

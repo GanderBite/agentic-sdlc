@@ -1,0 +1,47 @@
+{
+  "name": "sprint-implementation",
+  "version": "0.1.0",
+  "description": "Execute a sprint: branch, run waves with parallel builders + reviewer, commit per wave, retro, open PR.",
+  "type": "module",
+  "main": "./dist/flow.js",
+  "files": [
+    "dist",
+    "prompts",
+    "schemas",
+    "templates",
+    "examples",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "relay test ."
+  },
+  "peerDependencies": {
+    "@ganderbite/relay-core": "^0.5.0"
+  },
+  "devDependencies": {
+    "@ganderbite/relay-core": "^0.5.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "relay": {
+    "flowName": "sprint-implementation",
+    "displayName": "sprint-implementation",
+    "tags": [
+      "sdlc",
+      "execution",
+      "wave-loop"
+    ],
+    "estimatedCostUsd": {
+      "min": 1.0,
+      "max": 30.0
+    },
+    "estimatedDurationMin": {
+      "min": 20,
+      "max": 240
+    },
+    "audience": [
+      "dev"
+    ]
+  }
+}
