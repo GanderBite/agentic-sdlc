@@ -1,0 +1,46 @@
+{
+  "name": "discovery",
+  "version": "0.1.0",
+  "description": "Discovery: enrich a raw application idea via biz/tech questions and decompose it into per-feature specs that downstream `planning` runs consume one-by-one.",
+  "type": "module",
+  "main": "./dist/flow.js",
+  "files": [
+    "dist",
+    "prompts",
+    "schemas",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && rm -rf dist/prompts && cp -R prompts dist/prompts",
+    "test": "relay test ."
+  },
+  "peerDependencies": {
+    "@ganderbite/relay-core": "^0.7.2"
+  },
+  "devDependencies": {
+    "@ganderbite/relay-core": "^0.7.2",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "relay": {
+    "flowName": "discovery",
+    "displayName": "discovery",
+    "tags": [
+      "sdlc",
+      "discovery",
+      "features"
+    ],
+    "estimatedCostUsd": {
+      "min": 0.3,
+      "max": 2
+    },
+    "estimatedDurationMin": {
+      "min": 5,
+      "max": 30
+    },
+    "audience": [
+      "dev",
+      "product"
+    ]
+  }
+}

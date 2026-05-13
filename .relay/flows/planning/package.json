@@ -1,0 +1,47 @@
+{
+  "name": "planning",
+  "version": "0.1.0",
+  "description": "Plan a feature: refresh intel, brainstorm, optionally extend architecture, compose tasks/waves/sprints, verify coverage.",
+  "type": "module",
+  "main": "./dist/flow.js",
+  "files": [
+    "dist",
+    "prompts",
+    "schemas",
+    "templates",
+    "examples",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && rm -rf dist/prompts && cp -R prompts dist/prompts",
+    "test": "relay test ."
+  },
+  "peerDependencies": {
+    "@ganderbite/relay-core": "^0.7.2"
+  },
+  "devDependencies": {
+    "@ganderbite/relay-core": "^0.7.2",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "relay": {
+    "flowName": "planning",
+    "displayName": "planning",
+    "tags": [
+      "sdlc",
+      "planning",
+      "sprint"
+    ],
+    "estimatedCostUsd": {
+      "min": 0.3,
+      "max": 1.5
+    },
+    "estimatedDurationMin": {
+      "min": 5,
+      "max": 25
+    },
+    "audience": [
+      "dev"
+    ]
+  }
+}

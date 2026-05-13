@@ -1,0 +1,12 @@
+- [Project: MedBrige skill suite](project_medbrige.md) — 12 domain skills planned per docs/TECH_STACK.md, parallel skill-author invocations populate INDEX.json
+- [Linter: skill-linter.mjs domain dedup](feedback_linter_subdomain.md) — skill_domain_duplicate keys on `domain/subdomain`; always set `subdomain` for non-process skills
+- [Reference: skill-linter.mjs heuristic](reference_token_count.md) — token count is `Math.ceil(text.length / 4)`, not a real tokenizer
+- [Pattern: framework-validation skills](pattern_framework_validation.md) — entity vs DTO split, request vs response separation, packages/shared pattern
+- [Hazard: INDEX.json concurrent writes](feedback_index_json_concurrency.md) — re-read INDEX.json immediately before Edit; expect mutation between Read and Edit during parallel runs
+- [Project: MedBrige stack snapshot](project_medbrige_stack.md) — pnpm monorepo, TS 5.7, Hono+Drizzle+Postgres API, Vite+React UI, packages/shared, Biome, tsx dev runner
+- [Feedback: test snippet URLs trip §19.3](feedback_test_snippet_urls.md) — never write `http://localhost` in SKILL.md test snippets; use `abs(p)` helper with `'app://test'` scheme
+- [Pattern: React 19 SPA skill scoping](pattern_react_spa.md) — Vite SPA means no RSC; defer routing/data/styling to peer skills; sanctioned ErrorBoundary class only.
+- [Pattern: file-based router skill scoping](pattern_router_skill.md) — router skill owns the loader↔query `ensureQueryData`/`useSuspenseQuery` contract; defer cache semantics to the data-layer skill.
+- [Pattern: data-fetching skill scoping](pattern_data_fetching_skill.md) — Tanstack Query skill owns cache/keys/mutations only; defer Suspense to react, routing to router, DTOs to zod; provide both `hc` and fetch wrapper.
+- [Feedback: $schema URLs trip §19.3](feedback_schema_url_trap.md) — config examples with `$schema` URLs flag the linter; replace with `<schema-url>` placeholder.
+- [Pattern: CLI-scaffolded source skills (shadcn)](pattern_cli_scaffolded_skills.md) — tools that copy source into the repo need edit-vs-wrap rules + diff-then-merge recipe + peer-dep guidance.

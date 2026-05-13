@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Test + coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Vite cache
+.vite/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.sample
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+
+# Relay run artifacts (per-run scratch state, regenerated on every run)
+.relay/runs/
+
+# Sprint runtime state (live in-flight state, not source of truth)
+.planning/state/
+
+# Process IDs / locks
+*.pid
+*.pid.lock
+*.seed
