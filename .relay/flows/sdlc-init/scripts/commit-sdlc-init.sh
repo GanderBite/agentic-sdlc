@@ -30,11 +30,15 @@ fi
 
 current=$(git rev-parse --abbrev-ref HEAD)
 if [ "$current" != "$branch" ]; then
-  if git show-ref --verify --quiet "refs/heads/$branch"; then
-    git checkout "$branch"
-  else
-    git checkout -b "$branch"
-  fi
+  # Use -B (force-create-or-reset) instead of plain checkout: we always run
+  # this step with the worktree's working tree dirty (every prior step wrote
+  # files), so a plain `git checkout sdlc/init` errors with "untracked files
+  # would be overwritten". -B repoints the branch ref to the current HEAD
+  # without touching the working tree, then `git commit` below lands on the
+  # right branch. Safe even when the relay worktree already auto-created a
+  # branch named after the runId — that branch is left dangling and gets
+  # reaped when the worktree is torn down.
+  git checkout -B "$branch"
 fi
 
 if git diff --quiet && git diff --cached --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
