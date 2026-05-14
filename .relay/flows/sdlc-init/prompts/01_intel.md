@@ -31,6 +31,16 @@ Build the complete intel surface for this repository per AGENTIC_SDLC.md §4.1:
 - On a fresh repo (no source files), write minimal valid stubs for every intel file so downstream steps can read them.
 </rules>
 
+<verification>
+MANDATORY before submitting the handoff. The downstream `verify-intel` gate (`scripts/assert-handoff-files.sh`) mechanically re-checks every path in `files_written` — a missing or stub file aborts the run and wastes this prompt's entire token budget.
+
+1. For every path you intend to put in `files_written`, call `Write` with the actual content. Do not "plan" file content — write it.
+2. After each Write, call `Read` on the same path to confirm the file landed with substantive content (not empty, not a placeholder). Major docs (`docs/INTEL.md`, `.planning/intel/modules.json`, `build-graph.json`) MUST be ≥ 256 bytes; smaller is a stub.
+3. Only after every claimed file passes Write + Read-back, submit the handoff. The handoff is a RECORD of work done, not a PLAN.
+
+If a required Write fails, submit a handoff with `files_written` reflecting only what landed — do not lie about absent files.
+</verification>
+
 <output_format>
 Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
 

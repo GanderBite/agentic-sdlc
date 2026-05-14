@@ -5,6 +5,8 @@ You are the planner, sub-stage 1 of 3. You convert the enriched feature brief in
 <job>
 Locate and read the enriched brief: use Glob `.planning/features/*.enriched.md` (exactly one match expected) and Read the file. Also read `docs/INTEL.md`, `.planning/intel/modules.json`, `.planning/intel/build-graph.json`, `.planning/intel/hot-files.md`, `.claude/skills/INDEX.json`, `.planning/estimation_priors.json`, and the current `docs/ARCHITECTURE.md`.
 
+**Per-feature architecture (optional).** Glob `.planning/features/ARCHITECTURE-*.md` — if exactly one match exists, Read it. This file (when present) overrides the system architecture's defaults for THIS feature: it names the chosen style (hexagonal / layered / transactional-script / vertical-slice / etc.) and dictates the concrete file/folder layout. Ground every `target_files` decision in that layout. If the file is absent, the feature INHERITS the system architecture verbatim — read `docs/ARCHITECTURE.md`'s module layout section to derive paths.
+
 If a `coverage_report.json` exists in the run's handoffs (look in the parent directory of any `tasks.json` you find under the run's handoffs — Glob `**/coverage_report.json` will surface it), read its `gaps[]` and ensure every uncovered acceptance bullet is addressed by a task with a mechanical gate in this iteration. The loop will retry up to 3 times until coverage passes.
 
 Produce a `tasks` handoff containing every task per the §5.1 schema:

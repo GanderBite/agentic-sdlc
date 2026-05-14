@@ -53,7 +53,6 @@ export default defineFlow({
   steps: {
     preflight: step.script({
       run: ".relay/flows/sprint-implementation/scripts/preflight.sh",
-      cwd: ".",
       env: {
         SPRINT_ID: { from: "input.sprintId", required: true },
       },
@@ -62,7 +61,6 @@ export default defineFlow({
 
     branch: step.script({
       run: ".relay/flows/sprint-implementation/scripts/sprint-branch.sh",
-      cwd: ".",
       dependsOn: ["preflight"],
       env: {
         SPRINT_ID: { from: "input.sprintId", required: true },
@@ -72,7 +70,6 @@ export default defineFlow({
 
     "load-state": step.script({
       run: ".relay/flows/sprint-implementation/scripts/load-state.sh",
-      cwd: ".",
       dependsOn: ["branch"],
       env: {
         SPRINT_ID: { from: "input.sprintId", required: true },
@@ -106,7 +103,6 @@ export default defineFlow({
         // post-mortem). Pairs with `mark-tasks-done` below.
         "mark-tasks-in-progress": step.script({
           run: ".relay/flows/sprint-implementation/scripts/mark-tasks-in-progress.sh",
-          cwd: ".",
           env: {
             SPRINT_ID: { from: "input.sprintId", required: true },
           },
@@ -150,7 +146,6 @@ export default defineFlow({
               'if [ -n "$body" ]; then git commit -m "$subject" -m "$body"; else git commit -m "$subject"; fi',
             ].join("; "),
           ],
-          cwd: ".",
           dependsOn: ["wave"],
           onFail: "abort",
         }),
@@ -162,7 +157,6 @@ export default defineFlow({
         // they remove all state-write responsibility from the LLM.
         "mark-tasks-done": step.script({
           run: ".relay/flows/sprint-implementation/scripts/mark-tasks-done.sh",
-          cwd: ".",
           dependsOn: ["wave-commit"],
           env: {
             SPRINT_ID: { from: "input.sprintId", required: true },
@@ -185,7 +179,6 @@ export default defineFlow({
 
     report: step.script({
       run: ".relay/flows/sprint-implementation/scripts/build-report.sh",
-      cwd: ".",
       dependsOn: ["retro"],
       env: {
         SPRINT_ID: { from: "input.sprintId", required: true },
@@ -195,7 +188,6 @@ export default defineFlow({
 
     pr: step.script({
       run: ".relay/flows/sprint-implementation/scripts/open-pr.sh",
-      cwd: ".",
       dependsOn: ["report"],
       env: {
         SPRINT_ID: { from: "input.sprintId", required: true },

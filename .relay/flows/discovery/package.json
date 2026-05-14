@@ -15,10 +15,10 @@
     "test": "relay test ."
   },
   "peerDependencies": {
-    "@ganderbite/relay-core": "^0.7.2"
+    "@ganderbite/relay-core": "^0.7.3"
   },
   "devDependencies": {
-    "@ganderbite/relay-core": "^0.7.2",
+    "@ganderbite/relay-core": "^0.7.3",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
   },
