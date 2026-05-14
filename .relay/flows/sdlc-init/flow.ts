@@ -53,9 +53,20 @@ export default defineFlow({
       output: { handoff: 'intel', schema: IntelSchema },
     }),
 
+    'verify-intel': step.script({
+      run: '.relay/flows/sdlc-init/scripts/assert-handoff-files.sh',
+      dependsOn: ['intel'],
+      env: {
+        HANDOFF_NAME: 'intel',
+        PATHS_JQ: '.files_written // []',
+        MIN_BYTES: '64',
+      },
+      onFail: 'abort',
+    }),
+
     'brief-questions': step.prompt({
       promptFile: 'prompts/02a_brainstorm_questions.md',
-      dependsOn: ['intel'],
+      dependsOn: ['verify-intel'],
       contextFrom: ['intel'],
       tools: ['Read'],
       model: 'opus',
@@ -76,17 +87,39 @@ export default defineFlow({
       output: { handoff: 'brief', schema: BriefSchema },
     }),
 
+    'verify-brainstorm': step.script({
+      run: '.relay/flows/sdlc-init/scripts/assert-handoff-files.sh',
+      dependsOn: ['brainstorm'],
+      env: {
+        HANDOFF_NAME: 'brief',
+        PATHS_JQ: '[.brief_path]',
+        MIN_BYTES: '1024',
+      },
+      onFail: 'abort',
+    }),
+
     architecture: step.prompt({
       promptFile: 'prompts/03_architecture.md',
-      dependsOn: ['brainstorm'],
+      dependsOn: ['verify-brainstorm'],
       contextFrom: ['brief', 'intel'],
       tools: ['Read', 'Write'],
       model: 'opus',
       output: { handoff: 'architecture', schema: ArchitectureSchema },
     }),
 
-    'approve-arch': step.ask({
+    'verify-architecture': step.script({
+      run: '.relay/flows/sdlc-init/scripts/assert-handoff-files.sh',
       dependsOn: ['architecture'],
+      env: {
+        HANDOFF_NAME: 'architecture',
+        PATHS_JQ: '[.architecture_path]',
+        MIN_BYTES: '2048',
+      },
+      onFail: 'abort',
+    }),
+
+    'approve-arch': step.ask({
+      dependsOn: ['verify-architecture'],
       questions: [
         {
           id: 'approved',
@@ -107,8 +140,19 @@ export default defineFlow({
       output: { handoff: 'tech_stack', schema: TechStackSchema },
     }),
 
-    'approve-stack': step.ask({
+    'verify-tech-stack': step.script({
+      run: '.relay/flows/sdlc-init/scripts/assert-handoff-files.sh',
       dependsOn: ['tech-stack'],
+      env: {
+        HANDOFF_NAME: 'tech_stack',
+        PATHS_JQ: '[.tech_stack_path]',
+        MIN_BYTES: '1024',
+      },
+      onFail: 'abort',
+    }),
+
+    'approve-stack': step.ask({
+      dependsOn: ['verify-tech-stack'],
       questions: [
         {
           id: 'approved',
@@ -132,7 +176,6 @@ export default defineFlow({
 
     'skill-lint': step.script({
       run: 'node .relay/flows/sdlc-init/scripts/skill-linter.mjs',
-      cwd: '.',
       dependsOn: ['skills'],
       onFail: 'abort',
     }),
@@ -146,8 +189,19 @@ export default defineFlow({
       output: { handoff: 'prd', schema: PrdSchema },
     }),
 
-    'approve-prd': step.ask({
+    'verify-prd': step.script({
+      run: '.relay/flows/sdlc-init/scripts/assert-handoff-files.sh',
       dependsOn: ['prd'],
+      env: {
+        HANDOFF_NAME: 'prd',
+        PATHS_JQ: '[.prd_path]',
+        MIN_BYTES: '1024',
+      },
+      onFail: 'abort',
+    }),
+
+    'approve-prd': step.ask({
+      dependsOn: ['verify-prd'],
       questions: [
         {
           id: 'approved',
@@ -161,7 +215,6 @@ export default defineFlow({
 
     commit: step.script({
       run: '.relay/flows/sdlc-init/scripts/commit-sdlc-init.sh',
-      cwd: '.',
       dependsOn: ['approve-prd'],
     }),
   },

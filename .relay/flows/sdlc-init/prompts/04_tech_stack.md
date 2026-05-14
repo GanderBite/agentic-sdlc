@@ -35,6 +35,16 @@ The architecture is in `<context name="architecture">`. The brief is in `<contex
 - Reuse the existing process skills already in `.claude/skills/INDEX.json` — do not propose duplicates of `version-control`, `verification-gates`, etc.
 </rules>
 
+<verification>
+MANDATORY before submitting the handoff. The downstream `verify-tech-stack` gate mechanically re-checks `tech_stack_path` — a missing or stub file aborts the run.
+
+1. Call `Write docs/TECH_STACK.md` with the full stack document (all 10 sections). Do not "plan" — write it.
+2. Call `Read docs/TECH_STACK.md` to confirm it landed. MUST be ≥ 1024 bytes.
+3. Only after Write + Read-back pass, submit the handoff.
+
+The handoff is a RECORD of work done, not a PLAN.
+</verification>
+
 <output_format>
 Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
 
