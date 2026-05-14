@@ -52,7 +52,7 @@ export default defineFlow({
   start: "preflight",
   steps: {
     preflight: step.script({
-      run: "scripts/preflight.sh",
+      run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/preflight.sh\""],
       env: {
         SPRINT_ID: { from: "input.sprintId", required: true },
       },
@@ -60,7 +60,7 @@ export default defineFlow({
     }),
 
     branch: step.script({
-      run: "scripts/sprint-branch.sh",
+      run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/sprint-branch.sh\""],
       dependsOn: ["preflight"],
       env: {
         SPRINT_ID: { from: "input.sprintId", required: true },
@@ -69,7 +69,7 @@ export default defineFlow({
     }),
 
     "load-state": step.script({
-      run: "scripts/load-state.sh",
+      run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/load-state.sh\""],
       dependsOn: ["branch"],
       env: {
         SPRINT_ID: { from: "input.sprintId", required: true },
@@ -102,7 +102,7 @@ export default defineFlow({
         // previously hallucinated state writes — see the run 45ae1f
         // post-mortem). Pairs with `mark-tasks-done` below.
         "mark-tasks-in-progress": step.script({
-          run: "scripts/mark-tasks-in-progress.sh",
+          run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/mark-tasks-in-progress.sh\""],
           env: {
             SPRINT_ID: { from: "input.sprintId", required: true },
           },
@@ -156,7 +156,7 @@ export default defineFlow({
         // itself "done". Pairs with `mark-tasks-in-progress` — together
         // they remove all state-write responsibility from the LLM.
         "mark-tasks-done": step.script({
-          run: "scripts/mark-tasks-done.sh",
+          run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/mark-tasks-done.sh\""],
           dependsOn: ["wave-commit"],
           env: {
             SPRINT_ID: { from: "input.sprintId", required: true },
@@ -178,7 +178,7 @@ export default defineFlow({
     }),
 
     report: step.script({
-      run: "scripts/build-report.sh",
+      run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/build-report.sh\""],
       dependsOn: ["retro"],
       env: {
         SPRINT_ID: { from: "input.sprintId", required: true },
@@ -187,7 +187,7 @@ export default defineFlow({
     }),
 
     pr: step.script({
-      run: "scripts/open-pr.sh",
+      run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/open-pr.sh\""],
       dependsOn: ["report"],
       env: {
         SPRINT_ID: { from: "input.sprintId", required: true },
