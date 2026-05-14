@@ -83,7 +83,7 @@ fi
 log "5/5 sprint plan validates"
 sprint_file=".planning/sprints/${SPRINT_ID}.json"
 [ -f "$sprint_file" ] || { log "missing sprint plan: $sprint_file"; exit 4; }
-if ! node "$(dirname "$0")/validate-plan.mjs" "$sprint_file" >&2; then
+if ! node "$(git rev-parse --show-toplevel 2>/dev/null || pwd)/scripts/validate-plan.mjs" "$sprint_file" >&2; then
   exit 4
 fi
 

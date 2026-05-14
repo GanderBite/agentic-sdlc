@@ -48,7 +48,7 @@ export default defineFlow({
   start: 'intel-refresh',
   steps: {
     'intel-refresh': step.script({
-      run: '.relay/flows/planning/scripts/intel-refresh.sh',
+      run: 'scripts/intel-refresh.sh',
       onExit: { '0': 'continue', '1': 'continue', default: 'abort' },
     }),
 
@@ -130,7 +130,7 @@ export default defineFlow({
     }),
 
     'write-sprints': step.script({
-      run: '.relay/flows/planning/scripts/write-sprint-files.sh',
+      run: 'scripts/write-sprint-files.sh',
       dependsOn: ['compose-plan'],
       env: {
         HANDOFFS_PREFIX: 'compose-plan',

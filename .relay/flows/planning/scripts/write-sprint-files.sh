@@ -77,7 +77,7 @@ for i in $(seq 0 $((sprint_count - 1))); do
   printf '%s\n' "$waves" >"$out_waves"
 
   # Validate the materialised plan files.
-  if ! node "$(dirname "$0")/validate-plan.mjs" "$out_sprint" "$out_tasks" "$out_waves" >&2; then
+  if ! node "$(git rev-parse --show-toplevel 2>/dev/null || pwd)/scripts/validate-plan.mjs" "$out_sprint" "$out_tasks" "$out_waves" >&2; then
     log "validate-plan rejected $sprint_id"
     exit 2
   fi

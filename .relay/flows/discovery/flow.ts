@@ -56,7 +56,7 @@ export default defineFlow({
     }),
 
     'write-feature-specs': step.script({
-      run: '.relay/flows/discovery/scripts/write-feature-specs.sh',
+      run: 'scripts/write-feature-specs.sh',
       dependsOn: ['decompose'],
       onFail: 'abort',
     }),
