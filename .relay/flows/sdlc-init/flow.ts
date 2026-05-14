@@ -54,12 +54,18 @@ export default defineFlow({
     }),
 
     'verify-intel': step.script({
+      // MIN_BYTES is intentionally low: intel emits 8 files, several of
+      // which are legitimately tiny (`.snapshot` is a 41-byte git SHA;
+      // modules.json / build-graph.json on a fresh repo can be a
+      // 2-character `{}` etc.). The gate's real job here is "every
+      // claimed file exists and is non-empty" — strict size checks
+      // belong on the docs (brief / ARCHITECTURE / TECH_STACK / PRD).
       run: 'scripts/assert-handoff-files.sh',
       dependsOn: ['intel'],
       env: {
         HANDOFF_NAME: 'intel',
         PATHS_JQ: '.files_written // []',
-        MIN_BYTES: '64',
+        MIN_BYTES: '1',
       },
       onFail: 'abort',
     }),
