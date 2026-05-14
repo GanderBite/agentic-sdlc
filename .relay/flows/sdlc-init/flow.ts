@@ -54,7 +54,7 @@ export default defineFlow({
     }),
 
     'verify-intel': step.script({
-      run: '.relay/flows/sdlc-init/scripts/assert-handoff-files.sh',
+      run: 'scripts/assert-handoff-files.sh',
       dependsOn: ['intel'],
       env: {
         HANDOFF_NAME: 'intel',
@@ -88,7 +88,7 @@ export default defineFlow({
     }),
 
     'verify-brainstorm': step.script({
-      run: '.relay/flows/sdlc-init/scripts/assert-handoff-files.sh',
+      run: 'scripts/assert-handoff-files.sh',
       dependsOn: ['brainstorm'],
       env: {
         HANDOFF_NAME: 'brief',
@@ -108,7 +108,7 @@ export default defineFlow({
     }),
 
     'verify-architecture': step.script({
-      run: '.relay/flows/sdlc-init/scripts/assert-handoff-files.sh',
+      run: 'scripts/assert-handoff-files.sh',
       dependsOn: ['architecture'],
       env: {
         HANDOFF_NAME: 'architecture',
@@ -141,7 +141,7 @@ export default defineFlow({
     }),
 
     'verify-tech-stack': step.script({
-      run: '.relay/flows/sdlc-init/scripts/assert-handoff-files.sh',
+      run: 'scripts/assert-handoff-files.sh',
       dependsOn: ['tech-stack'],
       env: {
         HANDOFF_NAME: 'tech_stack',
@@ -175,7 +175,7 @@ export default defineFlow({
     }),
 
     'skill-lint': step.script({
-      run: 'node .relay/flows/sdlc-init/scripts/skill-linter.mjs',
+      run: 'node scripts/skill-linter.mjs',
       dependsOn: ['skills'],
       onFail: 'abort',
     }),
@@ -190,7 +190,7 @@ export default defineFlow({
     }),
 
     'verify-prd': step.script({
-      run: '.relay/flows/sdlc-init/scripts/assert-handoff-files.sh',
+      run: 'scripts/assert-handoff-files.sh',
       dependsOn: ['prd'],
       env: {
         HANDOFF_NAME: 'prd',
@@ -214,7 +214,7 @@ export default defineFlow({
     }),
 
     commit: step.script({
-      run: '.relay/flows/sdlc-init/scripts/commit-sdlc-init.sh',
+      run: 'scripts/commit-sdlc-init.sh',
       dependsOn: ['approve-prd'],
     }),
   },
