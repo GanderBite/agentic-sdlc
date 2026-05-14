@@ -56,7 +56,7 @@ export default defineFlow({
     }),
 
     'write-feature-specs': step.script({
-      run: 'scripts/write-feature-specs.sh',
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/write-feature-specs.sh"'],
       dependsOn: ['decompose'],
       onFail: 'abort',
     }),
