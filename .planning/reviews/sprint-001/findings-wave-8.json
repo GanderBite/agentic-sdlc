@@ -1,0 +1,55 @@
+{
+  "wave_id": "wave-8",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "line": 91,
+      "summary": "`await c.req.json()` rejects malformed bodies before Zod, bypassing the planned ValidationError wrap (ARCHITECTURE §5.2)",
+      "suggested_fix": "Wrap `c.req.json()` in try/catch and throw `new ValidationError('Malformed JSON body')` on parse failure so the error envelope code is `VALIDATION`, not `INTERNAL`.",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-002",
+      "severity": "medium",
+      "category": "duplication",
+      "file": "apps/api/src/modules/auth/service.test.ts",
+      "line": 35,
+      "summary": "vi.mock specifier '../../shared/env.ts' does not match the production import '../../shared/env.js'; mock is dead weight",
+      "suggested_fix": "Change `vi.mock('../../shared/env.ts', …)` to `vi.mock('../../shared/env.js', …)` (and the same for './tokens.ts' / '../../db/client.ts') to align with the `.js` extension convention the rest of the codebase uses.",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-003",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/modules/auth/service.test.ts",
+      "line": 60,
+      "summary": "Tokens module mock specifier './tokens.ts' diverges from service.ts import './tokens.ts' style elsewhere; consistency suggests aligning all vi.mock specifiers to the chosen extension",
+      "suggested_fix": "Pick one extension convention for vi.mock specifiers across the suite (recommend `.js` per workspace convention) and apply uniformly to the three vi.mock calls.",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-004",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "line": 142,
+      "summary": "Comment claims 'GET /auth.me — authn-required (no CSRF — GET is exempt by csrf middleware)' but task spec says me requires CSRF+authn; resolve the doc/spec drift",
+      "suggested_fix": "Either document the GET-exempt behavior in the task spec / feature brief, or change `auth.me` to POST so CSRF middleware actually runs. Current behavior is consistent with csrf.ts STATE_CHANGING_METHODS but contradicts the wave-8 task description.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-005",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/service.test.ts",
+      "line": 37,
+      "summary": "`loadEnv` is mocked but service.ts only imports the eager `env` singleton; the loadEnv part of the mock is unused",
+      "suggested_fix": "Drop the `loadEnv` key from the `vi.mock('../../shared/env.js', …)` factory unless a future test path needs it; keeps the mock surface minimal.",
+      "auto_fixable": true
+    }
+  ]
+}

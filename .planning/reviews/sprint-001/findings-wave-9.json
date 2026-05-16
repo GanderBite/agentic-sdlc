@@ -1,0 +1,45 @@
+{
+  "wave_id": "wave-9",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "blocking",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/service.ts",
+      "line": 29,
+      "summary": "Cross-wave: 16 TS5097 errors from .ts-extension imports gate the @medbridge/api typecheck; tsc -b exits 1.",
+      "suggested_fix": "Follow-up wave: convert .ts to .js in db/client.ts(5,6), db/schema.ts(1), modules/auth/repo.ts(4,5), modules/auth/service.ts(29,34,35), service.test.ts(71,73), seed/main.ts(1,2,3,4). main.ts itself is clean.",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-002",
+      "severity": "low",
+      "category": "duplication",
+      "file": "apps/api/src/main.ts",
+      "line": 19,
+      "summary": "loadEnv(process.env) at boot is redundant with eager singleton in shared/env.ts line 26; both validate on import.",
+      "suggested_fix": "Either remove the eager `export const env = loadEnv()` from shared/env.ts (preferred, makes DI testable per agent memory project_env_eager_load) OR drop the explicit loadEnv() call in main.ts. Today both run.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-003",
+      "severity": "low",
+      "category": "architecture",
+      "file": "apps/api/src/main.ts",
+      "line": 42,
+      "summary": "buildApp accepts env via parameter but ignores it (_env); the app reads env transitively through module-level singletons.",
+      "suggested_fix": "Either thread env into createAuthService / db client constructors for full DI (matches buildApp(env) factory pattern) or drop the unused parameter and document that env is a process-level singleton.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-004",
+      "severity": "high",
+      "category": "security",
+      "file": "apps/api/src/main.ts",
+      "line": 48,
+      "summary": "cors({ origin: '*', credentials: true }) is silently rejected by browsers; breaks cookie-based auth per ARCHITECTURE §5.4.",
+      "suggested_fix": "Narrow CORS origin to the SPA host via env (CORS_ORIGIN) — browsers ignore Access-Control-Allow-Credentials when Allow-Origin is '*'. Cookie auth (session/refresh/csrf) silently fails in browsers.",
+      "auto_fixable": false
+    }
+  ]
+}
