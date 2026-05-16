@@ -1,2 +1,4 @@
 - [Sprint-001 lockfile drift pattern](project_sprint001_lockfile.md) — repeated risk of partial pnpm install per-wave invalidating wave-1's frozen-install gate.
 - [Vitest v2/v3 projects-key trap](feedback_vitest_projects.md) — `test.projects` is v3-only; v2 uses `workspace`. Flag whenever a wave scaffolds vitest configs alongside `vitest@^2`.
+- [Sprint-001 env eager-load risk](project_env_eager_load.md) — apps/api/src/shared/env.ts exports a singleton built at import time; breaks buildApp JWT_SECRET fail-fast DI in wave-7.
+- [validate-review.mjs invocation quirk](reference_validate_review_invocation.md) — argv[0] is the REVIEW path; passing findings file alone always fails.
