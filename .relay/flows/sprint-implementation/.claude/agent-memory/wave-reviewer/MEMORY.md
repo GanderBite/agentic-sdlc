@@ -3,3 +3,4 @@
 - [Sprint-001 env eager-load risk](project_env_eager_load.md) — apps/api/src/shared/env.ts exports a singleton built at import time; breaks buildApp JWT_SECRET fail-fast DI in wave-7.
 - [validate-review.mjs invocation quirk](reference_validate_review_invocation.md) — argv[0] is the REVIEW path; passing findings file alone always fails.
 - [Builders sometimes commit mid-wave](feedback_builder_unauthorized_commits.md) — flag rogue `git commit` invocations as blocking architecture findings; observed in sprint-001 wave-1 (008f20b).
+- [TS5097 .ts-extension import trap](feedback_ts_extension_imports.md) — biome misses it; tsc -b breaks under NodeNext+verbatimModuleSyntax. Sprint-001 convention is `.js` extensions.
