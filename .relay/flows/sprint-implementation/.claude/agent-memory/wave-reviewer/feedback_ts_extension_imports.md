@@ -12,6 +12,6 @@ Builders in this project (sprint-001) have written `from './foo.ts'` instead of 
 **How to apply:**
 - When auditing any wave that adds a new `.ts` file under `apps/api/src/`, grep its relative imports for `\\.ts['"]$` and flag as `blocking` (build broken).
 - If the wave's `verification.build` is empty or non-existent, this issue won't be caught by Phase 1 gates — Phase 2 audit must catch it.
-- See sprint-001 wave-4 F-001 (apps/api/src/db/client.ts lines 5-6) for the canonical instance, and wave-5 F-001 (apps/api/src/db/schema.ts line 1) for the third recurrence — confirms this is a chronic builder mistake, not a one-off.
+- See sprint-001 wave-4 F-001 (apps/api/src/db/client.ts lines 5-6), wave-5 F-001 (apps/api/src/db/schema.ts line 1), and wave-6 F-001/F-002 (apps/api/src/modules/auth/repo.ts + apps/api/src/seed/main.ts — 6 new TS5097 errors) — four consecutive waves, every new src/ file. Builders never fix this without a typecheck gate. Strong recommendation: add `"build": ["pnpm --filter @medbridge/api typecheck"]` to all api-touching tasks.
 
 Cross-ref: [[project-sprint001-env-eager-load]] (another class of issue not caught by lint-only gates).
