@@ -1,0 +1,196 @@
+{
+  "verdict": "pass",
+  "bullets_total": 14,
+  "bullets_covered": 14,
+  "coverage": [
+    {
+      "bullet": "`pnpm install --frozen-lockfile` succeeds at the repo root and `pnpm -r typecheck` exits 0 across apps/api and packages/contracts.",
+      "task_ids": [
+        "task-workspace-root",
+        "task-contracts-pkg",
+        "task-app-main",
+        "task-smoke"
+      ],
+      "gates": [
+        "pnpm install --frozen-lockfile",
+        "pnpm --filter @medbridge/contracts exec tsc -b",
+        "pnpm --filter @medbridge/api exec tsc -b",
+        "pnpm -r build"
+      ]
+    },
+    {
+      "bullet": "`docker compose up postgres api-migrate api` results in `api` reporting healthy on `/api/health`, with `api-migrate` exiting 0 before `api` starts.",
+      "task_ids": [
+        "task-docker-compose"
+      ],
+      "gates": [
+        "docker compose config --quiet",
+        "rg --quiet \"api-migrate:\" docker-compose.yml",
+        "rg --quiet \"service_completed_successfully\" docker-compose.yml",
+        "rg --quiet \"/api/health\" docker-compose.yml"
+      ]
+    },
+    {
+      "bullet": "POST /api/auth.login with valid seeded credentials returns HTTP 200, sets HttpOnly+Secure `session` and `refresh_token` cookies plus a non-HttpOnly `csrf_token` cookie, and returns `{ user: { id, email, role } }`; invalid credentials return HTTP 401 with `{ error: { code: \"UNAUTHORIZED\" } }` and no cookies.",
+      "task_ids": [
+        "task-test-integration-flows"
+      ],
+      "gates": [
+        "pnpm --filter @medbridge/api exec vitest run test/integration/auth.login.test.ts test/integration/auth.refresh.test.ts test/integration/auth.me.test.ts test/integration/auth.logout.test.ts test/integration/auth.csrf.test.ts",
+        "rg --quiet \"HttpOnly\" apps/api/test/integration/auth.login.test.ts",
+        "rg --quiet \"csrf_token\" apps/api/test/integration/auth.login.test.ts",
+        "rg --quiet \"401\" apps/api/test/integration/auth.login.test.ts"
+      ]
+    },
+    {
+      "bullet": "POST /api/auth.refresh rotates the refresh token (old hash revoked, new hash stored); a replayed refresh cookie returns HTTP 401.",
+      "task_ids": [
+        "task-test-integration-flows",
+        "task-auth-repo"
+      ],
+      "gates": [
+        "pnpm --filter @medbridge/api exec vitest run test/integration/auth.login.test.ts test/integration/auth.refresh.test.ts test/integration/auth.me.test.ts test/integration/auth.logout.test.ts test/integration/auth.csrf.test.ts",
+        "rg --quiet \"revoked_at\" apps/api/test/integration/auth.refresh.test.ts",
+        "rg --quiet \"UPDATE refresh_token SET revoked_at = now\\(\\) WHERE hash\" apps/api/src/modules/auth/repo.ts"
+      ]
+    },
+    {
+      "bullet": "GET /api/auth.me returns the current user on a valid session cookie and HTTP 401 otherwise; POST /api/auth.logout clears both cookies and revokes the active refresh-token row.",
+      "task_ids": [
+        "task-test-integration-flows"
+      ],
+      "gates": [
+        "pnpm --filter @medbridge/api exec vitest run test/integration/auth.login.test.ts test/integration/auth.refresh.test.ts test/integration/auth.me.test.ts test/integration/auth.logout.test.ts test/integration/auth.csrf.test.ts"
+      ]
+    },
+    {
+      "bullet": "Any state-changing route invoked without a matching `X-CSRF-Token` header to the `csrf_token` cookie returns HTTP 403 with `{ error: { code: \"FORBIDDEN\" } }`.",
+      "task_ids": [
+        "task-test-integration-flows",
+        "task-middleware"
+      ],
+      "gates": [
+        "pnpm --filter @medbridge/api exec vitest run test/integration/auth.login.test.ts test/integration/auth.refresh.test.ts test/integration/auth.me.test.ts test/integration/auth.logout.test.ts test/integration/auth.csrf.test.ts",
+        "rg --quiet \"FORBIDDEN\" apps/api/test/integration/auth.csrf.test.ts",
+        "rg --quiet \"X-CSRF-Token\" apps/api/src/middleware/csrf.ts",
+        "rg --quiet \"ForbiddenError\" apps/api/src/middleware/csrf.ts"
+      ]
+    },
+    {
+      "bullet": "An integration test attempting login with an unknown email still incurs an argon2id verify (constant-time path) — asserted by measuring that unknown-email and wrong-password code paths both branch through the hashing call.",
+      "task_ids": [
+        "task-test-integration-security",
+        "task-test-unit-auth-service"
+      ],
+      "gates": [
+        "pnpm --filter @medbridge/api exec vitest run test/integration/auth.constant-time.test.ts test/integration/auth.log-scrub.test.ts test/integration/auth.boot-jwt-secret.test.ts test/integration/auth.concurrent-refresh.test.ts test/integration/auth.token-family.test.ts test/integration/seed.idempotent.test.ts",
+        "rg --quiet \"toHaveBeenCalledTimes\\(1\\)\" apps/api/test/integration/auth.constant-time.test.ts",
+        "pnpm --filter @medbridge/api exec vitest run src/modules/auth/service.test.ts",
+        "rg --quiet \"unknown email|unknown-email\" apps/api/src/modules/auth/service.test.ts",
+        "rg --quiet \"wrong password\" apps/api/src/modules/auth/service.test.ts"
+      ]
+    },
+    {
+      "bullet": "A log-capture integration test asserts no API log line emitted during auth flows contains a password, JWT, refresh token, or CSRF token value.",
+      "task_ids": [
+        "task-test-integration-security",
+        "task-shared-logger"
+      ],
+      "gates": [
+        "pnpm --filter @medbridge/api exec vitest run test/integration/auth.constant-time.test.ts test/integration/auth.log-scrub.test.ts test/integration/auth.boot-jwt-secret.test.ts test/integration/auth.concurrent-refresh.test.ts test/integration/auth.token-family.test.ts test/integration/seed.idempotent.test.ts",
+        "rg --quiet \"notContainsAny|password|refreshToken|csrf\" apps/api/test/integration/auth.log-scrub.test.ts",
+        "rg --quiet \"redact\" apps/api/src/shared/logger.ts",
+        "rg --quiet \"REDACTED\" apps/api/src/shared/logger.ts"
+      ]
+    },
+    {
+      "bullet": "The initial migration creates a minimal `user(id uuid pk, email citext unique, role text, created_at timestamptz, deleted_at timestamptz null)` table inside `apps/api/src/modules/auth/schema.ts`; downstream `accounts` will adopt and extend this table when that feature lands (no rename / no second user table).",
+      "task_ids": [
+        "task-auth-schema"
+      ],
+      "gates": [
+        "rg --quiet -i \"CREATE TABLE.*\\buser\\b\" apps/api/src/db/migrations/0000_initial.sql",
+        "rg --quiet \"deleted_at\" apps/api/src/modules/auth/schema.ts",
+        "rg --quiet \"citext\" apps/api/src/modules/auth/schema.ts",
+        "rg --quiet \"CREATE EXTENSION IF NOT EXISTS pgcrypto\" apps/api/src/db/migrations/0000_initial.sql",
+        "rg --quiet \"CREATE EXTENSION IF NOT EXISTS citext\" apps/api/src/db/migrations/0000_initial.sql"
+      ]
+    },
+    {
+      "bullet": "JWT signing uses HS256 with a `JWT_SECRET` environment variable; `apps/api` boot fails fast with a clear error if `JWT_SECRET` is missing or shorter than 32 bytes (asserted by a startup test that loads the bootstrap module with an undersized secret and expects a thrown error).",
+      "task_ids": [
+        "task-shared-env",
+        "task-auth-tokens",
+        "task-test-integration-security"
+      ],
+      "gates": [
+        "rg --quiet \"JWT_SECRET\" apps/api/src/shared/env.ts",
+        "rg --quiet \"\\.min\\(32\" apps/api/src/shared/env.ts",
+        "rg --quiet \"HS256\" apps/api/src/modules/auth/tokens.ts",
+        "pnpm --filter @medbridge/api exec vitest run test/integration/auth.constant-time.test.ts test/integration/auth.log-scrub.test.ts test/integration/auth.boot-jwt-secret.test.ts test/integration/auth.concurrent-refresh.test.ts test/integration/auth.token-family.test.ts test/integration/seed.idempotent.test.ts",
+        "rg --quiet \"JWT_SECRET\" apps/api/test/integration/auth.boot-jwt-secret.test.ts"
+      ]
+    },
+    {
+      "bullet": "Refresh rotation is implemented as a single atomic SQL statement `UPDATE refresh_token SET revoked_at = now() WHERE hash = $1 AND revoked_at IS NULL RETURNING *`; an integration test fires two concurrent refresh requests against the same cookie and asserts exactly one returns 200 with a new token pair and the other returns 401.",
+      "task_ids": [
+        "task-auth-repo",
+        "task-test-integration-security"
+      ],
+      "gates": [
+        "rg --quiet \"UPDATE refresh_token SET revoked_at = now\\(\\) WHERE hash\" apps/api/src/modules/auth/repo.ts",
+        "rg --quiet \"RETURNING\" apps/api/src/modules/auth/repo.ts",
+        "pnpm --filter @medbridge/api exec vitest run test/integration/auth.constant-time.test.ts test/integration/auth.log-scrub.test.ts test/integration/auth.boot-jwt-secret.test.ts test/integration/auth.concurrent-refresh.test.ts test/integration/auth.token-family.test.ts test/integration/seed.idempotent.test.ts",
+        "rg --quiet \"Promise\\.all\" apps/api/test/integration/auth.concurrent-refresh.test.ts"
+      ]
+    },
+    {
+      "bullet": "On replayed-refresh detection (the atomic UPDATE returns zero rows for a token whose hash is otherwise present in the table), the service revokes every active `refresh_token` row for the affected user (token-family revocation) and emits a single `level=warn` log line containing `userId` and `requestId`; asserted by an integration test that presents a previously-rotated refresh cookie and verifies (a) the response is 401, (b) all that user's refresh rows have non-null `revoked_at`, and (c) the captured log contains exactly one `warn` line with those two fields.",
+      "task_ids": [
+        "task-auth-service",
+        "task-auth-repo",
+        "task-test-integration-security"
+      ],
+      "gates": [
+        "rg --quiet \"revokeAllActiveForUser\" apps/api/src/modules/auth/service.ts",
+        "rg --quiet \"refresh\\.replay_detected\" apps/api/src/modules/auth/service.ts",
+        "rg --quiet \"revokeAllActiveForUser\" apps/api/src/modules/auth/repo.ts",
+        "pnpm --filter @medbridge/api exec vitest run test/integration/auth.constant-time.test.ts test/integration/auth.log-scrub.test.ts test/integration/auth.boot-jwt-secret.test.ts test/integration/auth.concurrent-refresh.test.ts test/integration/auth.token-family.test.ts test/integration/seed.idempotent.test.ts",
+        "rg --quiet \"warn\" apps/api/test/integration/auth.token-family.test.ts"
+      ]
+    },
+    {
+      "bullet": "The seed runs inline at the end of the `api-migrate` one-shot container (`drizzle-kit migrate && node dist/seed/main.js`); the seed is idempotent (re-running on a populated DB inserts zero rows and exits 0), asserted by an integration test that runs the seed twice against the same container.",
+      "task_ids": [
+        "task-docker-compose",
+        "task-seed",
+        "task-test-integration-security"
+      ],
+      "gates": [
+        "rg --quiet \"drizzle-kit migrate\" docker-compose.yml",
+        "rg --quiet \"node dist/seed/main\\.js\" docker-compose.yml",
+        "rg --quiet \"ON CONFLICT|onConflictDoNothing\" apps/api/src/seed/main.ts",
+        "pnpm --filter @medbridge/api exec vitest run test/integration/auth.constant-time.test.ts test/integration/auth.log-scrub.test.ts test/integration/auth.boot-jwt-secret.test.ts test/integration/auth.concurrent-refresh.test.ts test/integration/auth.token-family.test.ts test/integration/seed.idempotent.test.ts",
+        "rg --quiet \"idempotent|twice\" apps/api/test/integration/seed.idempotent.test.ts"
+      ]
+    },
+    {
+      "bullet": "The argon2id `verify` function is injected into the auth service via constructor / factory dependency so a Vitest spy can replace it; the unknown-email and wrong-password integration tests each assert the spy was called exactly **once** per login attempt (closes the constant-time-verify-assertion clarification).",
+      "task_ids": [
+        "task-auth-passwords",
+        "task-auth-service",
+        "task-test-integration-security",
+        "task-test-unit-auth-service"
+      ],
+      "gates": [
+        "rg --quiet \"PasswordHasher\" apps/api/src/modules/auth/passwords.ts",
+        "rg --quiet \"hasher.verify\" apps/api/src/modules/auth/service.ts",
+        "pnpm --filter @medbridge/api exec vitest run test/integration/auth.constant-time.test.ts test/integration/auth.log-scrub.test.ts test/integration/auth.boot-jwt-secret.test.ts test/integration/auth.concurrent-refresh.test.ts test/integration/auth.token-family.test.ts test/integration/seed.idempotent.test.ts",
+        "rg --quiet \"toHaveBeenCalledTimes\\(1\\)\" apps/api/test/integration/auth.constant-time.test.ts",
+        "pnpm --filter @medbridge/api exec vitest run src/modules/auth/service.test.ts",
+        "rg --quiet \"toHaveBeenCalledTimes\\(1\\)\" apps/api/src/modules/auth/service.test.ts"
+      ]
+    }
+  ],
+  "gaps": []
+}
