@@ -6,8 +6,15 @@
       "domain": "process",
       "subdomain": "brainstorming",
       "description": "Directed-question protocol for filling feature-brief gaps; ≤3 rounds, ≤4 questions/round.",
-      "consumes": [".planning/features/FEATURE-*.md", "docs/INTEL.md", "docs/ARCHITECTURE.md", "docs/PRD.md"],
-      "produces": ["enriched_brief.md"],
+      "consumes": [
+        ".planning/features/FEATURE-*.md",
+        "docs/INTEL.md",
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md"
+      ],
+      "produces": [
+        "enriched_brief.md"
+      ],
       "size_tokens": 2605
     },
     {
@@ -16,8 +23,23 @@
       "domain": "process",
       "subdomain": "intel",
       "description": "How to derive docs/INTEL.md and .planning/intel/ files; fresh and diff runs.",
-      "consumes": ["package.json", "pnpm-workspace.yaml", "Cargo.toml", "pyproject.toml", "go.mod"],
-      "produces": ["docs/INTEL.md", ".planning/intel/modules.json", ".planning/intel/build-graph.json", ".planning/intel/conventions.md", ".planning/intel/hot-files.md", ".planning/intel/test-layout.md", ".planning/intel/schema.md", ".planning/intel/.snapshot"],
+      "consumes": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "Cargo.toml",
+        "pyproject.toml",
+        "go.mod"
+      ],
+      "produces": [
+        "docs/INTEL.md",
+        ".planning/intel/modules.json",
+        ".planning/intel/build-graph.json",
+        ".planning/intel/conventions.md",
+        ".planning/intel/hot-files.md",
+        ".planning/intel/test-layout.md",
+        ".planning/intel/schema.md",
+        ".planning/intel/.snapshot"
+      ],
       "size_tokens": 2785
     },
     {
@@ -26,8 +48,20 @@
       "domain": "process",
       "subdomain": "planning",
       "description": "Task/Wave/Sprint schemas, derivation recipe, wave invariants, smoke wave, estimation formula.",
-      "consumes": [".planning/features/FEATURE-*.md", ".planning/intel/modules.json", ".planning/intel/build-graph.json", ".planning/intel/hot-files.md", ".planning/estimation_priors.json", ".claude/skills/INDEX.json"],
-      "produces": [".planning/sprints/sprint-*/tasks.json", ".planning/sprints/sprint-*/waves.json", ".planning/sprints/sprint-*.json", "coverage_report"],
+      "consumes": [
+        ".planning/features/FEATURE-*.md",
+        ".planning/intel/modules.json",
+        ".planning/intel/build-graph.json",
+        ".planning/intel/hot-files.md",
+        ".planning/estimation_priors.json",
+        ".claude/skills/INDEX.json"
+      ],
+      "produces": [
+        ".planning/sprints/sprint-*/tasks.json",
+        ".planning/sprints/sprint-*/waves.json",
+        ".planning/sprints/sprint-*.json",
+        "coverage_report"
+      ],
       "size_tokens": 2762
     },
     {
@@ -36,8 +70,15 @@
       "domain": "process",
       "subdomain": "review",
       "description": "Two-phase review: mechanical verification + cross-cutting structured findings (5-tier severity).",
-      "consumes": [".planning/sprints/sprint-*/waves.json", ".planning/estimation_priors.json", "docs/ARCHITECTURE.md"],
-      "produces": ["review-{wave_id}.json", "findings-{wave_id}.json"],
+      "consumes": [
+        ".planning/sprints/sprint-*/waves.json",
+        ".planning/estimation_priors.json",
+        "docs/ARCHITECTURE.md"
+      ],
+      "produces": [
+        "review-{wave_id}.json",
+        "findings-{wave_id}.json"
+      ],
       "size_tokens": 2725
     },
     {
@@ -46,8 +87,13 @@
       "domain": "process",
       "subdomain": "authoring",
       "description": "How to write skills the linter accepts and pipeline agents can consume; structure, rules, anti-patterns.",
-      "consumes": [".claude/skills/INDEX.json"],
-      "produces": [".claude/skills/<name>/SKILL.md", ".claude/skills/<name>/references/*.md"],
+      "consumes": [
+        ".claude/skills/INDEX.json"
+      ],
+      "produces": [
+        ".claude/skills/<name>/SKILL.md",
+        ".claude/skills/<name>/references/*.md"
+      ],
       "size_tokens": 2613
     },
     {
@@ -56,8 +102,15 @@
       "domain": "process",
       "subdomain": "vcs",
       "description": "Branch naming, conventional commits, PR composition, idempotency, rebase policy, forbidden actions.",
-      "consumes": [".planning/sprints/sprint-*.json", ".planning/state/<sprint_id>.json", ".planning/intel/modules.json"],
-      "produces": ["git commits", "GitHub PRs"],
+      "consumes": [
+        ".planning/sprints/sprint-*.json",
+        ".planning/state/<sprint_id>.json",
+        ".planning/intel/modules.json"
+      ],
+      "produces": [
+        "git commits",
+        "GitHub PRs"
+      ],
       "size_tokens": 3130
     },
     {
@@ -66,9 +119,373 @@
       "domain": "process",
       "subdomain": "gates",
       "description": "Gate schema, execution semantics, flake-retry policy, provenance from build-graph.json.",
-      "consumes": [".planning/intel/build-graph.json", ".planning/estimation_priors.json"],
-      "produces": ["task.verification block entries", "review-{wave_id}.json gates[] rows"],
+      "consumes": [
+        ".planning/intel/build-graph.json",
+        ".planning/estimation_priors.json"
+      ],
+      "produces": [
+        "task.verification block entries",
+        "review-{wave_id}.json gates[] rows"
+      ],
       "size_tokens": 2789
+    },
+    {
+      "name": "typescript",
+      "version": "1.0.0",
+      "domain": "language",
+      "subdomain": "typescript",
+      "description": "TypeScript 5.7 strict-mode patterns: branded types, discriminated unions, satisfies, exhaustiveness, type-only imports.",
+      "consumes": [
+        "tsconfig.json",
+        "tsconfig.base.json",
+        "package.json",
+        "apps/*/tsconfig.json",
+        "packages/*/tsconfig.json"
+      ],
+      "produces": [
+        "*.ts",
+        "*.tsx",
+        "*.d.ts"
+      ],
+      "size_tokens": 2200
+    },
+    {
+      "name": "zod",
+      "version": "1.0.0",
+      "domain": "api",
+      "subdomain": "validation",
+      "description": "Zod v4 schemas in packages/contracts: safeParse boundaries, z.infer, branded IDs, discriminated unions, UI/API sharing.",
+      "consumes": [
+        "packages/contracts/src/**/*.ts",
+        "apps/api/src/modules/*/routes.ts",
+        "apps/ui/src/**/*.tsx"
+      ],
+      "produces": [
+        "packages/contracts/src/**/*.ts"
+      ],
+      "size_tokens": 2550
+    },
+    {
+      "name": "react",
+      "version": "1.0.0",
+      "domain": "framework",
+      "subdomain": "react",
+      "description": "React 19 idioms for apps/ui: hooks rules, suspense/error boundaries, RHF+Zod forms, TanStack Router/Query.",
+      "consumes": [
+        "apps/ui/src/**/*.tsx",
+        "apps/ui/src/**/*.ts",
+        "packages/contracts/src/**/*.ts"
+      ],
+      "produces": [
+        "apps/ui/src/**/*.tsx",
+        "apps/ui/src/components/**",
+        "apps/ui/src/routes/**",
+        "apps/ui/src/api/queries/**"
+      ],
+      "size_tokens": 3128
+    },
+    {
+      "name": "hono",
+      "version": "1.0.0",
+      "domain": "api",
+      "subdomain": "hono",
+      "description": "Hono 4 on Node via @hono/node-server: composition, middleware order, Zod, multipart, AppError, JWT+CSRF, bootstrap.",
+      "consumes": [
+        "apps/api/src/app.ts",
+        "apps/api/src/server.ts",
+        "apps/api/src/routes/**/*.ts",
+        "apps/api/src/middleware/**/*.ts",
+        "packages/contracts/src/**/*.ts"
+      ],
+      "produces": [
+        "apps/api/src/app.ts",
+        "apps/api/src/server.ts",
+        "apps/api/src/routes/**/*.ts",
+        "apps/api/src/middleware/**/*.ts"
+      ],
+      "size_tokens": 2673
+    },
+    {
+      "name": "drizzle",
+      "version": "1.0.0",
+      "domain": "data",
+      "subdomain": "orm",
+      "description": "Drizzle ORM 0.38 + Kit 0.30 with pg driver: schema, relations, transactions, migrations, soft-delete.",
+      "consumes": [
+        "apps/api/src/modules/*/schema.ts",
+        "apps/api/src/db/schema.ts",
+        "apps/api/drizzle.config.ts"
+      ],
+      "produces": [
+        "apps/api/src/modules/*/schema.ts",
+        "apps/api/src/modules/*/repo.ts",
+        "apps/api/src/db/migrations/*.sql",
+        "apps/api/src/db/migrations/meta/_journal.json"
+      ],
+      "size_tokens": 2954
+    },
+    {
+      "name": "pnpm",
+      "version": "1.0.0",
+      "domain": "infra",
+      "subdomain": "package-manager",
+      "description": "pnpm 10.x workspaces: workspace:* protocol, -r/--filter, --frozen-lockfile, dep placement, .npmrc.",
+      "consumes": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "pnpm-lock.yaml",
+        ".npmrc"
+      ],
+      "produces": [
+        "package.json",
+        "pnpm-lock.yaml"
+      ],
+      "size_tokens": 2467
+    },
+    {
+      "name": "tanstack-router",
+      "version": "1.0.0",
+      "domain": "framework",
+      "subdomain": "routing",
+      "description": "TanStack Router 1.95 for apps/ui: file-based routes, typed params/search (Zod), loaders, beforeLoad guards, lazy, layouts.",
+      "consumes": [
+        "apps/ui/src/routes/**/*.tsx",
+        "apps/ui/src/main.tsx",
+        "apps/ui/src/router.ts",
+        "apps/ui/src/routeTree.gen.ts",
+        "packages/contracts/src/**/*.ts"
+      ],
+      "produces": [
+        "apps/ui/src/routes/**/*.tsx",
+        "apps/ui/src/main.tsx",
+        "apps/ui/src/router.ts"
+      ],
+      "size_tokens": 3052
+    },
+    {
+      "name": "biome",
+      "version": "1.0.0",
+      "domain": "infra",
+      "subdomain": "linter-formatter",
+      "description": "Biome 1.9 as MedBridge's single linter+formatter: biome.json shape, rules, CLI, ignores, overrides, pre-commit + CI wiring.",
+      "consumes": [
+        "biome.json",
+        "package.json",
+        "apps/*/src/**/*.{ts,tsx}",
+        "packages/*/src/**/*.{ts,tsx}",
+        ".vscode/settings.json"
+      ],
+      "produces": [
+        "biome.json",
+        "apps/*/package.json",
+        "packages/*/package.json",
+        ".github/workflows/ci.yml"
+      ],
+      "size_tokens": 3380
+    },
+    {
+      "name": "vite",
+      "version": "1.0.0",
+      "domain": "framework",
+      "subdomain": "vite",
+      "description": "Vite 7 for apps/ui: defineConfig, plugin order (@vitejs/plugin-react + @tailwindcss/vite), dev proxy /api, VITE_ env, dist/ + nginx.",
+      "consumes": [
+        "apps/ui/vite.config.ts",
+        "apps/ui/index.html",
+        "apps/ui/.env*",
+        "apps/ui/src/vite-env.d.ts"
+      ],
+      "produces": [
+        "apps/ui/vite.config.ts",
+        "apps/ui/dist/**",
+        "apps/ui/src/vite-env.d.ts"
+      ],
+      "size_tokens": 2574
+    },
+    {
+      "name": "shadcn",
+      "version": "1.0.0",
+      "domain": "framework",
+      "subdomain": "shadcn",
+      "description": "Shadcn UI CLI + Radix-based components in apps/ui/src/components/ui/: components.json, theming, dark mode, RHF Form, cn().",
+      "consumes": [
+        "apps/ui/components.json",
+        "apps/ui/src/components/ui/**/*.tsx",
+        "apps/ui/src/lib/utils.ts",
+        "apps/ui/src/index.css",
+        "apps/ui/package.json",
+        "packages/contracts/src/**/*.ts"
+      ],
+      "produces": [
+        "apps/ui/components.json",
+        "apps/ui/src/components/ui/**/*.tsx",
+        "apps/ui/src/components/**/*.tsx",
+        "apps/ui/src/lib/utils.ts",
+        "apps/ui/src/index.css"
+      ],
+      "size_tokens": 3663
+    },
+    {
+      "name": "tanstack-query",
+      "version": "1.0.0",
+      "domain": "framework",
+      "subdomain": "data-fetching",
+      "description": "TanStack Query 5.62 in apps/ui: query-key factories, suspense/loader pairing, mutations, optimistic updates, retry policy.",
+      "consumes": [
+        "apps/ui/src/api/**/*.ts",
+        "apps/ui/src/routes/**/*.tsx",
+        "apps/ui/src/main.tsx",
+        "packages/contracts/src/**/*.ts"
+      ],
+      "produces": [
+        "apps/ui/src/api/queries/**/*.ts",
+        "apps/ui/src/api/mutations/**/*.ts",
+        "apps/ui/src/main.tsx"
+      ],
+      "size_tokens": 3236
+    },
+    {
+      "name": "tailwind",
+      "version": "1.0.0",
+      "domain": "framework",
+      "subdomain": "styling",
+      "description": "Tailwind 4 via @tailwindcss/vite: CSS-first @theme tokens, @utility/@apply, cn() helper, .dark class, AAA contrast.",
+      "consumes": [
+        "apps/ui/vite.config.ts",
+        "apps/ui/src/styles/index.css",
+        "apps/ui/src/lib/utils.ts",
+        "apps/ui/src/**/*.tsx",
+        "apps/ui/src/**/*.css"
+      ],
+      "produces": [
+        "apps/ui/src/styles/index.css",
+        "apps/ui/src/lib/utils.ts",
+        "apps/ui/src/**/*.tsx",
+        "apps/ui/src/**/*.css"
+      ],
+      "size_tokens": 2967
+    },
+    {
+      "name": "testcontainers",
+      "version": "1.0.0",
+      "domain": "testing",
+      "subdomain": "integration-db",
+      "description": "@testcontainers/postgresql per-file Postgres 17 containers: start/stop, drizzle migrate, truncate, reuse, CI tuning.",
+      "consumes": [
+        "apps/api/test/integration/*.test.ts",
+        "apps/api/src/db/migrations/**",
+        "apps/api/src/db/schema.ts"
+      ],
+      "produces": [
+        "apps/api/test/integration/*.test.ts"
+      ],
+      "size_tokens": 2485
+    },
+    {
+      "name": "vitest",
+      "version": "1.0.0",
+      "domain": "testing",
+      "subdomain": "runner",
+      "description": "Vitest 2.1 runner mechanics: vitest.config.ts shape, vi.mock/spyOn/fakeTimers, projects, coverage v8, CLI.",
+      "consumes": [
+        "apps/api/vitest.config.ts",
+        "apps/ui/vitest.config.ts",
+        "packages/contracts/vitest.config.ts",
+        "apps/*/src/**/*.test.ts",
+        "packages/*/src/**/*.test.ts",
+        "apps/api/test/integration/**/*.test.ts"
+      ],
+      "produces": [
+        "apps/*/vitest.config.ts",
+        "packages/*/vitest.config.ts",
+        "apps/*/src/**/*.test.ts",
+        "packages/*/src/**/*.test.ts",
+        "apps/api/test/integration/**/*.test.ts"
+      ],
+      "size_tokens": 3279
+    },
+    {
+      "name": "security-testing",
+      "version": "1.0.0",
+      "domain": "testing",
+      "subdomain": "security",
+      "description": "Adversarial smoke strategy: authn/CSRF/RBAC/share/upload/argon2 negatives asserted against AppError taxonomy.",
+      "consumes": [
+        "apps/api/src/modules/**/__tests__/*.security.test.ts",
+        "apps/api/src/modules/**/__tests__/*.rbac.test.ts",
+        "apps/api/src/test/security/**/*.ts",
+        "docs/ARCHITECTURE.md"
+      ],
+      "produces": [
+        "apps/api/src/modules/**/__tests__/*.security.test.ts",
+        "apps/api/src/modules/**/__tests__/*.rbac.test.ts",
+        "apps/api/src/test/security/**/*.ts"
+      ],
+      "size_tokens": 2670
+    },
+    {
+      "name": "unit-testing",
+      "version": "1.0.0",
+      "domain": "testing",
+      "subdomain": "unit",
+      "description": "Strategy for pure service-layer unit tests: repo.ts mock boundary, fake timers, table-driven branches, AAA, naming.",
+      "consumes": [
+        "apps/api/src/modules/*/service.ts",
+        "apps/api/src/modules/*/repo.ts",
+        "apps/api/src/test/factories.ts",
+        "packages/contracts/src/**/*.ts"
+      ],
+      "produces": [
+        "apps/api/src/modules/*/*.test.ts",
+        "apps/api/src/test/factories.ts"
+      ],
+      "size_tokens": 3213
+    },
+    {
+      "name": "api-integration-testing",
+      "version": "1.0.0",
+      "domain": "testing",
+      "subdomain": "integration",
+      "description": "Real-Postgres integration tests per <resource>.<verb> RPC: truncate-and-seed, CSRF+JWT helper, AppError assertions.",
+      "consumes": [
+        "apps/api/src/modules/*/routes.ts",
+        "apps/api/src/app.ts",
+        "apps/api/src/middleware/**/*.ts",
+        "apps/api/src/db/migrations/**",
+        "docs/ARCHITECTURE.md"
+      ],
+      "produces": [
+        "apps/api/test/integration/*.test.ts",
+        "apps/api/test/support/fixtures.ts",
+        "apps/api/test/support/request.ts",
+        "apps/api/test/support/assertions.ts",
+        "apps/api/test/support/passwords.ts"
+      ],
+      "size_tokens": 3613
+    },
+    {
+      "name": "docker-compose",
+      "version": "1.0.0",
+      "domain": "infra",
+      "subdomain": "containers",
+      "description": "Docker Compose v2 single-host stack: services (ui/api/postgres/migrate/seed), depends_on conditions, healthchecks, volumes, .env.",
+      "consumes": [
+        "docker-compose.yml",
+        ".env",
+        ".env.example",
+        "apps/api/Dockerfile",
+        "apps/ui/Dockerfile",
+        ".dockerignore"
+      ],
+      "produces": [
+        "docker-compose.yml",
+        ".env.example",
+        "apps/api/Dockerfile",
+        "apps/ui/Dockerfile",
+        "apps/ui/nginx.conf",
+        ".dockerignore"
+      ],
+      "size_tokens": 4024
     }
   ]
 }
