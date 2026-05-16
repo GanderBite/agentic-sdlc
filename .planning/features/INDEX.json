@@ -1,0 +1,121 @@
+{
+  "generated_at": "2026-05-16T15:20:00Z",
+  "total": 11,
+  "features": [
+    {
+      "slug": "api-scaffold-auth",
+      "title": "API scaffold + authenticated login & session management",
+      "order": 0,
+      "depends_on": [],
+      "estimated_task_count": 22,
+      "spec_path": ".planning/features/FEATURE-api-scaffold-auth.md"
+    },
+    {
+      "slug": "ui-scaffold-login",
+      "title": "UI scaffold + Login page + protected-route shell",
+      "order": 1,
+      "depends_on": [
+        "api-scaffold-auth"
+      ],
+      "estimated_task_count": 12,
+      "spec_path": ".planning/features/FEATURE-ui-scaffold-login.md"
+    },
+    {
+      "slug": "patient-medical-record",
+      "title": "Patient medical record: medications, conditions, allergies CRUD",
+      "order": 2,
+      "depends_on": [
+        "api-scaffold-auth",
+        "ui-scaffold-login"
+      ],
+      "estimated_task_count": 14,
+      "spec_path": ".planning/features/FEATURE-patient-medical-record.md"
+    },
+    {
+      "slug": "medical-documents",
+      "title": "Medical document upload, listing, soft-delete, and download",
+      "order": 3,
+      "depends_on": [
+        "api-scaffold-auth",
+        "ui-scaffold-login"
+      ],
+      "estimated_task_count": 16,
+      "spec_path": ".planning/features/FEATURE-medical-documents.md"
+    },
+    {
+      "slug": "doctor-profile-specializations",
+      "title": "Doctor profile + seeded specializations management",
+      "order": 4,
+      "depends_on": [
+        "api-scaffold-auth",
+        "ui-scaffold-login"
+      ],
+      "estimated_task_count": 11,
+      "spec_path": ".planning/features/FEATURE-doctor-profile-specializations.md"
+    },
+    {
+      "slug": "doctor-slot-management",
+      "title": "Doctor 30-minute slot creation, listing, and soft-delete",
+      "order": 5,
+      "depends_on": [
+        "doctor-profile-specializations"
+      ],
+      "estimated_task_count": 12,
+      "spec_path": ".planning/features/FEATURE-doctor-slot-management.md"
+    },
+    {
+      "slug": "appointment-booking",
+      "title": "Patient appointment booking flow with per-appointment document share",
+      "order": 6,
+      "depends_on": [
+        "patient-medical-record",
+        "medical-documents",
+        "doctor-profile-specializations",
+        "doctor-slot-management"
+      ],
+      "estimated_task_count": 20,
+      "spec_path": ".planning/features/FEATURE-appointment-booking.md"
+    },
+    {
+      "slug": "doctor-appointment-summary",
+      "title": "Doctor appointment view + structured diagnosis/notes/prescription summary",
+      "order": 7,
+      "depends_on": [
+        "appointment-booking"
+      ],
+      "estimated_task_count": 18,
+      "spec_path": ".planning/features/FEATURE-doctor-appointment-summary.md"
+    },
+    {
+      "slug": "role-aware-dashboards",
+      "title": "Role-aware /dashboard route for patient and doctor",
+      "order": 8,
+      "depends_on": [
+        "doctor-appointment-summary",
+        "doctor-slot-management"
+      ],
+      "estimated_task_count": 11,
+      "spec_path": ".planning/features/FEATURE-role-aware-dashboards.md"
+    },
+    {
+      "slug": "seed-and-deployment-smoke",
+      "title": "Full-scale seed, docker-compose hardening, and end-to-end smoke",
+      "order": 9,
+      "depends_on": [
+        "role-aware-dashboards"
+      ],
+      "estimated_task_count": 12,
+      "spec_path": ".planning/features/FEATURE-seed-and-deployment-smoke.md"
+    },
+    {
+      "slug": "a11y-aaa-checklist",
+      "title": "WCAG 2.2 AAA accessibility review and committed checklist",
+      "order": 10,
+      "depends_on": [
+        "seed-and-deployment-smoke"
+      ],
+      "estimated_task_count": 9,
+      "spec_path": ".planning/features/FEATURE-a11y-aaa-checklist.md"
+    }
+  ]
+}
