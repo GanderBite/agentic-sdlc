@@ -1,0 +1,62 @@
+{
+  "wave_id": "wave-smoke",
+  "verdict": "fail",
+  "summary": "Smoke wave fails: tests pass (59/59) but typecheck and build are blocked by 18 TS errors in apps/api and biome root-scope lint catches 55 relay-tooling diagnostics.",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "blocking",
+      "category": "build",
+      "title": "TS5097 — 14 relative imports use forbidden .ts extension",
+      "evidence": "apps/api: src/db/client.ts:5,6; src/db/schema.ts:1; src/modules/auth/repo.ts:4,5; service.ts:29,34,35; service.test.ts:71,73; src/seed/main.ts:1-4. tsc -b error TS5097 with allowImportingTsExtensions disabled.",
+      "recommendation": "Strip the .ts suffix from every relative import across the listed files (sprint-001 convention is .js extensions per NodeNext + verbatimModuleSyntax). Add a biome rule or pre-commit grep to prevent regression."
+    },
+    {
+      "id": "F-002",
+      "severity": "blocking",
+      "category": "typecheck",
+      "title": "TS7022/TS7024 — refreshToken table leaks implicit any via circular reference",
+      "evidence": "apps/api/src/modules/auth/schema.ts:25 (TS7022 'refreshToken' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer); line 34 (TS7024 relations callback missing explicit return type).",
+      "recommendation": "Annotate the `refreshToken` table export with an explicit Drizzle PgTableWithColumns type and give the `relations` callback an explicit return type to break the inferred-any cycle."
+    },
+    {
+      "id": "F-003",
+      "severity": "high",
+      "category": "lint",
+      "title": "Biome smoke gate scoped to repo root pulls in 55 framework-owned diagnostics",
+      "evidence": "pnpm biome check . -> Found 55 errors; all paths under .relay/, .planning/, .claude/. pnpm biome check apps/ packages/ -> 0 errors across 49 files. Lint failure is config-scope, not code quality.",
+      "recommendation": "Either (a) add .relay/, .planning/, .claude/ to biome.json files.ignore, or (b) update build-graph.json smoke gate from `pnpm biome check .` to `pnpm biome check apps/ packages/`. Option (a) is preferred so other tools see a clean check at root."
+    },
+    {
+      "id": "F-004",
+      "severity": "medium",
+      "category": "typecheck",
+      "title": "TS7053 — Drizzle query result narrowing missing in repo.ts",
+      "evidence": "apps/api/src/modules/auth/repo.ts:84 — Element implicitly has 'any' type because expression of type '0' can't be used to index type 'any[] | QueryResult<never>'.",
+      "recommendation": "Narrow the result type before indexing: either assert the awaited query returns Array<RefreshTokenRow> (Drizzle .returning() infers the row type) or destructure with `const [row] = await ...; if (!row) ...`."
+    },
+    {
+      "id": "F-005",
+      "severity": "medium",
+      "category": "architecture",
+      "title": "Smoke gate `pnpm biome check .` was authored without ignore list — process miss",
+      "evidence": "build-graph.json smoke uses an unscoped biome command in a repo whose .relay/.planning/.claude dirs are framework-owned and not Biome-formatted. This is a planner-side gate-design oversight, not a code defect.",
+      "recommendation": "Update build-graph.json so the smoke lint gate either scopes to apps/ and packages/, or ensure biome.json has framework dirs ignored. Document in planning skills to avoid recurrence."
+    },
+    {
+      "id": "F-006",
+      "severity": "info",
+      "category": "test",
+      "title": "Behavior verified — tests pass cleanly despite typecheck failure",
+      "evidence": "pnpm -r test: 12 files, 59/59 passed in 10.13s, including testcontainers integration suite for auth.login/logout/refresh/csrf and seed idempotency.",
+      "recommendation": "No action — surfaced as info to make the gating distinction explicit for the follow-up wave: this is a TypeScript hygiene problem, not a behavior bug. Tests pass because vitest with the configured loader resolves the .ts paths at runtime; only tsc -b emit rejects them."
+    }
+  ],
+  "counts": {
+    "blocking": 2,
+    "high": 1,
+    "medium": 2,
+    "low": 0,
+    "info": 1
+  }
+}
