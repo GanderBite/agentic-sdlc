@@ -1,2 +1,1 @@
-// Module schemas will be re-exported here by downstream tasks.
-export {};
+export * from '../modules/auth/schema.ts';
