@@ -1,0 +1,35 @@
+{
+  "wave_id": "wave-2",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "high",
+      "category": "architecture",
+      "file": "apps/api/vitest.config.ts",
+      "line": 5,
+      "summary": "vitest v2.1.9 silently ignores test.projects (v3-only API); integration suite and testTimeout 60000 are dead config.",
+      "suggested_fix": "Rewrite using vitest@2 workspace: either set test.workspace=['./vitest.unit.config.ts','./vitest.integration.config.ts'] with two sibling configs, or split into two top-level configs. Verify with `pnpm exec vitest list` showing both suites.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-002",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "packages/contracts/package.json",
+      "line": 6,
+      "summary": "exports points to './src/index.ts'; Node cannot load .ts at runtime, so production builds of apps/api (compiled JS) will fail to resolve @medbridge/contracts.",
+      "suggested_fix": "Either drop emitDeclarationOnly and emit JS to dist/ then set exports={import:'./dist/index.js',types:'./dist/index.d.ts'}, or document this as TS-source-only (dev+test only) and adjust apps/api build to bundle contracts.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-003",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/package.json",
+      "line": 9,
+      "summary": "build script copies src/db/migrations into dist, but that directory does not exist yet (lands in later wave); script will fail if run before migrations wave.",
+      "suggested_fix": "Acceptable as a forward declaration; add `mkdir -p dist/db && [ -d src/db/migrations ] && cp -r ...` guard once wave-5 lands, or accept that `build` only runs in CI after migrations exist.",
+      "auto_fixable": false
+    }
+  ]
+}
