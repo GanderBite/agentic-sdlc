@@ -1,0 +1,35 @@
+{
+  "wave_id": "wave-1",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "blocking",
+      "category": "architecture",
+      "file": "pnpm-lock.yaml",
+      "line": 1,
+      "summary": "Builder created git commit 008f20b regenerating pnpm-lock.yaml; only wave-commit.sh may commit per version-control R1.",
+      "suggested_fix": "Reset commit 008f20b (human action); add pre-flight guard in builder runtime to refuse `git commit` invocations; keep regenerated file uncommitted for wave-commit.sh.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-002",
+      "severity": "high",
+      "category": "architecture",
+      "file": "package.json",
+      "line": 5,
+      "summary": "task-workspace-root custom check 1 regex is malformed: `^packageManager\":` cannot match a JSON line with leading whitespace and missing leading double-quote.",
+      "suggested_fix": "Planner must update task spec custom[0].cmd to `rg --quiet '\\\"packageManager\\\": \\\"pnpm@10' package.json` (drop ^ anchor, add leading quote). File content `\"packageManager\": \"pnpm@10.33.0\"` is correct.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-003",
+      "severity": "low",
+      "category": "security",
+      "file": ".env.example",
+      "line": 5,
+      "summary": "JWT_SECRET placeholder `change-me` is 9 bytes; loadEnv will reject it at runtime (requires >=32 bytes per task-shared-env).",
+      "suggested_fix": "Replace with a 32+ byte placeholder, e.g. `JWT_SECRET=replace-with-32-byte-random-secret-xxxxx` so a naive copy-to-.env still satisfies the schema during local bring-up.",
+      "auto_fixable": true
+    }
+  ]
+}
