@@ -45,10 +45,22 @@ export default defineFlow({
         'Path to a FEATURE-<slug>.md spec under .planning/features/ produced by the discovery flow.',
       ),
   }),
-  start: 'intel-refresh',
+  start: 'branch',
   steps: {
+    // First step — switch to `sdlc/plan-<feature-slug>` on a clean worktree
+    // so every downstream write lands on a pushable, persistent branch.
+    // The slug is derived from input.featureSpec by branch.sh.
+    branch: step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/branch.sh"'],
+      env: {
+        FEATURE_SPEC: { from: 'input.featureSpec', required: true },
+      },
+      onFail: 'abort',
+    }),
+
     'intel-refresh': step.script({
       run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/intel-refresh.sh"'],
+      dependsOn: ['branch'],
       onExit: { '0': 'continue', '1': 'continue', default: 'abort' },
     }),
 
@@ -136,6 +148,15 @@ export default defineFlow({
         HANDOFFS_PREFIX: 'compose-plan',
       },
       onFail: 'abort',
+    }),
+
+    // Final step: land outputs on `sdlc/plan-<sprintId>`, push, open a PR.
+    // The flow runs in a relay worktree that is reaped on completion, so
+    // anything not committed and pushed is lost. Push and PR creation are
+    // best-effort and won't abort the run.
+    commit: step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/commit-and-pr.sh"'],
+      dependsOn: ['write-sprints'],
     }),
   },
 });

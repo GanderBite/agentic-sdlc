@@ -26,10 +26,19 @@ export default defineFlow({
         'Force a full rebuild instead of a diff-only refresh (e.g. when .planning/intel/.snapshot is missing or corrupt).',
       ),
   }),
-  start: 'diff',
+  start: 'branch',
   steps: {
+    // First step — switch to `sdlc/intel-refresh` on a clean worktree, with
+    // current HEAD as the parent so the diff base is correct. Every
+    // downstream write lands on a pushable, persistent branch.
+    branch: step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/branch.sh"'],
+      onFail: 'abort',
+    }),
+
     diff: step.prompt({
       promptFile: 'prompts/01_diff.md',
+      dependsOn: ['branch'],
       tools: ['Read', 'Glob', 'Grep', 'Bash'],
       output: { handoff: 'diff_report', schema: DiffReportSchema },
     }),
@@ -40,6 +49,16 @@ export default defineFlow({
       contextFrom: ['diff_report'],
       tools: ['Read', 'Write', 'Edit', 'Bash'],
       output: { handoff: 'patched', schema: PatchedSchema },
+    }),
+
+    // Final step: land the refreshed INTEL.md + .planning/intel/* on
+    // `sdlc/intel-refresh`, push, open a PR. The flow runs in a relay
+    // worktree that is reaped on completion, so anything not committed
+    // and pushed is lost. A clean diff = no commit = exit 0; the script
+    // handles that idempotently.
+    commit: step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/commit-and-pr.sh"'],
+      dependsOn: ['patch'],
     }),
   },
 });

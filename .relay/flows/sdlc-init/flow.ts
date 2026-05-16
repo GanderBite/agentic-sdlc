@@ -45,10 +45,19 @@ export default defineFlow({
         'Path to the user-supplied initial brief (e.g. "START.md"). The brainstorm prompts read this directly via {{input.startMd}}; leave unset to bootstrap from zero.',
       ),
   }),
-  start: 'intel',
+  start: 'branch',
   steps: {
+    // First step — switch to `sdlc/init` on a clean worktree (or `git init`
+    // the repo entirely if this is a brand-new starter directory). Every
+    // downstream write lands on a pushable, persistent branch.
+    branch: step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/branch.sh"'],
+      onFail: 'abort',
+    }),
+
     intel: step.prompt({
       promptFile: 'prompts/01_intel.md',
+      dependsOn: ['branch'],
       tools: ['Read', 'Glob', 'Grep', 'Bash', 'Write'],
       output: { handoff: 'intel', schema: IntelSchema },
     }),

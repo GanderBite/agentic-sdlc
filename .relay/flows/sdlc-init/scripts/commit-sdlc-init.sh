@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 # commit-sdlc-init.sh — single bootstrap commit on the `sdlc/init` branch.
 #
-# Inputs:  none.
-# Outputs: one git commit and (best-effort) a push to the remote.
-# Exit:    0 on success.
-#
-# Per §12, sdlc-init lands on `sdlc/init` as a single PR. This script is
-# idempotent: if the branch already exists at the same content, it exits 0
-# without re-committing. Push is best-effort — networks fail; the PR can be
-# pushed manually.
+# Inputs:  none — branch.sh has already parked us on sdlc/init.
+# Outputs: one git commit, best-effort push, best-effort PR.
+# Exit:    0 on success or no-op.
 
 SCRIPT_NAME="commit-sdlc-init"
 # shellcheck source=_lib.sh
@@ -19,26 +14,9 @@ cd "$(project_root)"
 require_cmd git
 
 branch="sdlc/init"
-
-# If we're not in a repo, init one. The sdlc-init flow may run on a freshly
-# cloned starter repo, so this is rare — but a useful safety net.
-if ! git rev-parse --git-dir >/dev/null 2>&1; then
-  log "no git repository — initializing"
-  git init -q
-  git checkout -b "$branch" 2>/dev/null || git checkout "$branch"
-fi
-
-current=$(git rev-parse --abbrev-ref HEAD)
+current=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
 if [ "$current" != "$branch" ]; then
-  # Use -B (force-create-or-reset) instead of plain checkout: we always run
-  # this step with the worktree's working tree dirty (every prior step wrote
-  # files), so a plain `git checkout sdlc/init` errors with "untracked files
-  # would be overwritten". -B repoints the branch ref to the current HEAD
-  # without touching the working tree, then `git commit` below lands on the
-  # right branch. Safe even when the relay worktree already auto-created a
-  # branch named after the runId — that branch is left dangling and gets
-  # reaped when the worktree is torn down.
-  git checkout -B "$branch"
+  die 1 "expected to be on $branch but on $current — did branch.sh run?"
 fi
 
 if git diff --quiet && git diff --cached --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
@@ -67,13 +45,51 @@ EOF
 )"
 
 # Best-effort push if a remote is configured.
+has_remote=0
 if git remote get-url origin >/dev/null 2>&1; then
-  log "pushing $branch to origin"
-  if ! git push -u origin "$branch" 2>&1 | tail -n 20; then
+  has_remote=1
+  log "pushing $branch to origin (force-with-lease)"
+  if ! git push --force-with-lease -u origin "$branch" 2>&1 | tail -n 20; then
     log "push failed — leaving branch local; user can push manually"
   fi
 else
   log "no origin remote — leaving branch local"
+fi
+
+# Best-effort PR creation/update. Mirrors the other flows' commit-and-pr.sh
+# scripts so every flow leaves the user with a reviewable PR rather than
+# just a pushed branch.
+if [ "$has_remote" = "1" ] && command -v gh >/dev/null 2>&1; then
+  body_file=$(mktemp)
+  trap 'rm -f "$body_file"' EXIT
+  {
+    printf '## Summary\n\nBootstrap SDLC artifacts produced by `relay run sdlc-init`.\n\n'
+    printf '## Outputs\n\n'
+    printf -- '- `docs/ARCHITECTURE.md` — high-level architecture\n'
+    printf -- '- `docs/TECH_STACK.md` — chosen stack\n'
+    printf -- '- `docs/PRD.md` — product requirements\n'
+    printf -- '- `docs/APPLICATION_BRIEF.md` — enriched brief\n'
+    printf -- '- `docs/INTEL.md` + `.planning/intel/*` — codebase intel snapshot\n'
+    printf -- '- `.claude/skills/*` — starter skill set per the chosen stack\n\n'
+    printf '## Next\n\nRun `relay run discovery` to decompose the application into features.\n\n'
+    printf '🤖 Opened by relay run sdlc-init\n'
+  } >"$body_file"
+
+  existing=$(gh pr view "$branch" --json url --jq '.url' 2>/dev/null || true)
+  if [ -z "$existing" ]; then
+    log "creating PR for $branch"
+    set +e
+    gh pr create \
+      --base main \
+      --head "$branch" \
+      --title "sdlc/init: bootstrap project artifacts" \
+      --body-file "$body_file" 2>&1 | tail -n 5
+    set -e
+  else
+    log "updating existing PR: $existing"
+    gh pr edit "$existing" --body-file "$body_file" >/dev/null 2>&1 || \
+      log "gh pr edit failed — leaving PR as-is"
+  fi
 fi
 
 exit 0

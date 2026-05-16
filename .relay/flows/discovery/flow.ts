@@ -32,10 +32,19 @@ export default defineFlow({
       .default('docs/APPLICATION.md')
       .describe('Path to the raw application idea markdown.'),
   }),
-  start: 'clarify-questions',
+  start: 'branch',
   steps: {
+    // First step — switch to `sdlc/discovery` on a clean worktree so every
+    // downstream write lands on a pushable, persistent branch (the relay
+    // worktree's auto-branch is reaped on completion).
+    branch: step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/branch.sh"'],
+      onFail: 'abort',
+    }),
+
     'clarify-questions': step.prompt({
       promptFile: 'prompts/01_clarify_questions.md',
+      dependsOn: ['branch'],
       tools: ['Read', 'Glob'],
       model: 'opus',
       output: { handoff: 'clarify_questions', schema: ClarifyQuestionsSchema },
@@ -59,6 +68,17 @@ export default defineFlow({
       run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/write-feature-specs.sh"'],
       dependsOn: ['decompose'],
       onFail: 'abort',
+    }),
+
+    // Final step: land outputs on `sdlc/discovery`, push, open a PR.
+    // The flow runs in a relay worktree that is reaped on completion, so
+    // anything not committed and pushed is lost. Push and PR creation are
+    // best-effort: a missing remote or unauthenticated gh logs a warning
+    // but doesn't fail the run — the commit itself is the load-bearing
+    // bit, the rest is convenience.
+    commit: step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/commit-and-pr.sh"'],
+      dependsOn: ['write-feature-specs'],
     }),
   },
 });
