@@ -1,0 +1,72 @@
+{
+  "wave_id": "wave-2",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "high",
+      "category": "architecture",
+      "file": "pnpm-lock.yaml",
+      "line": 1,
+      "summary": "Lockfile regenerated for contracts only; missing all 16 apps/api deps; breaks wave-1 frozen-install gate.",
+      "suggested_fix": "Run `pnpm install` at repo root (not filtered) so apps/api specifiers land in pnpm-lock.yaml. Verify `pnpm install --frozen-lockfile` exits 0 before staging.",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-002",
+      "severity": "high",
+      "category": "architecture",
+      "file": "apps/api/vitest.config.ts",
+      "line": 5,
+      "summary": "`test.projects` is a Vitest v3 API; lockfile resolves vitest@2.1.9 where this key is ignored — integration suite won't run as configured.",
+      "suggested_fix": "Either bump apps/api devDeps to `vitest@^3` (also packages/contracts for consistency), or move to v2's `test.workspace` model: top-level `workspace: './vitest.workspace.ts'` referencing two project configs.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-003",
+      "severity": "low",
+      "category": "style",
+      "file": "packages/contracts/package.json",
+      "line": 6,
+      "summary": "`exports` points at './src/index.ts' while build emits only .d.ts (emitDeclarationOnly). Workspace-internal consumers OK; external Node consumers cannot resolve.",
+      "suggested_fix": "If contracts is workspace-only (per ARCHITECTURE §6.2 it is), leave as-is and document; otherwise use conditional exports `{ \"types\": \"./dist/index.d.ts\", \"import\": \"./src/index.ts\" }` and emit JS.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-004",
+      "severity": "low",
+      "category": "style",
+      "file": "packages/contracts/package.json",
+      "line": 8,
+      "summary": "`typecheck` script uses `tsc --noEmit` while project is `composite: true` and downstream tasks use `tsc -b` — mixed invocation modes risk stale tsbuildinfo.",
+      "suggested_fix": "Replace scripts.typecheck with `tsc -b` (consistent with contracts/tsconfig.json composite and downstream task-contracts-auth verification).",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-005",
+      "severity": "info",
+      "category": "architecture",
+      "file": "packages/contracts/tsconfig.tsbuildinfo",
+      "line": 1,
+      "summary": "tsc -b produced packages/contracts/{tsconfig.tsbuildinfo,dist/*}; tsbuildinfo not in target_files and not covered by root .gitignore.",
+      "suggested_fix": "Add `*.tsbuildinfo` to root .gitignore (next wave's update list); dist/ is already ignored. No code change required this wave.",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-006",
+      "severity": "info",
+      "category": "architecture",
+      "file": "pnpm-lock.yaml",
+      "line": 1,
+      "summary": "pnpm-lock.yaml is outside target_files for both wave-2 tasks; explicitly waived by wave instructions as expected install side-effect.",
+      "suggested_fix": "No action; informational scope-drift entry for audit completeness. The substantive issue is captured by F-001.",
+      "auto_fixable": false
+    }
+  ],
+  "summary": {
+    "blocking": 0,
+    "high": 2,
+    "medium": 0,
+    "low": 2,
+    "info": 2
+  }
+}

@@ -1,0 +1,2 @@
+- [Sprint-001 lockfile drift pattern](project_sprint001_lockfile.md) — repeated risk of partial pnpm install per-wave invalidating wave-1's frozen-install gate.
+- [Vitest v2/v3 projects-key trap](feedback_vitest_projects.md) — `test.projects` is v3-only; v2 uses `workspace`. Flag whenever a wave scaffolds vitest configs alongside `vitest@^2`.
