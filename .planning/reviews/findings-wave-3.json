@@ -1,0 +1,102 @@
+{
+  "wave_id": "wave-3",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "high",
+      "category": "architecture",
+      "file": "apps/api/src/shared/env.ts",
+      "line": 26,
+      "summary": "Top-level `export const env = loadEnv()` runs at module import; any test importing logger/env throws before `.env.test` or buildApp(env-override) can apply.",
+      "suggested_fix": "Remove the eager `export const env = loadEnv()`. Export only the schema, type, and `loadEnv` factory. Have main.ts call `loadEnv(process.env)` on first line and pass the result into buildApp/logger.create(env) so the JWT_SECRET fail-fast test (wave-7 auth.boot-jwt-secret.test.ts) can invoke `buildApp({ ...env, JWT_SECRET: 'too-short' })` per enriched bullet 10.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-002",
+      "severity": "high",
+      "category": "architecture",
+      "file": "apps/api/src/shared/logger.ts",
+      "line": 3,
+      "summary": "logger.ts imports the eager `env` singleton; transitively forces every test/build to satisfy env schema at import time, defeating the loadEnv DI seam.",
+      "suggested_fix": "Replace the module-level singleton logger with a `createLogger(env: Env)` factory (or accept LOG_LEVEL as a parameter). main.ts wires it once after `loadEnv()`; tests can pass a captured-destination logger per task-test-support/logCapture.ts.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-003",
+      "severity": "medium",
+      "category": "duplication",
+      "file": "apps/api/src/shared/ids.ts",
+      "line": 19,
+      "summary": "UserId brand re-declared here while packages/contracts/src/auth.ts already exports a Zod-branded UserId; two incompatible nominal brands risk silent assignability mismatches.",
+      "suggested_fix": "Either import { UserId } from '@medbridge/contracts' and re-export, or delete the contracts brand and let apps/api own it. The shared barrel `ids.ts` should not duplicate a contract type that crosses the api↔ui boundary.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-004",
+      "severity": "medium",
+      "category": "security",
+      "file": "apps/api/src/shared/logger.ts",
+      "line": 5,
+      "summary": "Redact paths miss several ARCHITECTURE §5.3 sensitives: password_hash, csrf_token cookie name, set-cookie response headers, request.body.refresh_token, authorization header.",
+      "suggested_fix": "Extend REDACT_PATHS with: 'res.headers[\\'set-cookie\\']', 'req.headers.authorization', '*.password_hash', '*.passwordHash', 'req.body.csrf_token', '*.sessionJwt'. Wildcards under nested objects need explicit paths in pino — verify with logCapture test in wave-6.",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-005",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/passwords.ts",
+      "line": 10,
+      "summary": "PasswordHasher.verify signature `(hash, plain)` reverses the conventional `(plain, hash)` order used by most hashing libs; callers (auth.service in wave-5) likely to invert args.",
+      "suggested_fix": "Either flip to `verify(plain: string, hash: string)` to match argon2.verify's documented call site, or add a TSDoc `@param` block on the interface to lock the contract. Wave-5 spy-based unit test will catch inversion only if argument order is consistent with the spy.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-006",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/shared/errors.ts",
+      "line": 42,
+      "summary": "Each subclass uses both `override readonly code = 'X' as const` field initialiser and `super('X', ...)` arg — duplicates the literal in two places; risk of drift on edit.",
+      "suggested_fix": "Drop the field-initialiser override (the base constructor already sets `this.code`). Keep only `super('VALIDATION', message, 422, details)` and let the readonly base field carry the value.",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-007",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/shared/ids.ts",
+      "line": 26,
+      "summary": "Same identifier `UserId` declared as both type alias and value (`export const UserId = (s) => ...`); legal in TS but trips IDE/refactor tooling and confuses readers.",
+      "suggested_fix": "Rename the smart constructor to `userId(s)` or `asUserId(s)` (camelCase), or drop the value form entirely and use `s as UserId` casts at call sites.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-008",
+      "severity": "info",
+      "category": "architecture",
+      "file": "packages/contracts/src/auth.ts",
+      "line": 7,
+      "summary": "Contracts package now uses Zod runtime brand `UserId = z.string().uuid().brand<'UserId'>()`; apps/api/src/shared/ids.ts brand `UserId` is type-only — UI consumers will see a different nominal type than api consumers.",
+      "suggested_fix": "Pick a single source of truth for the UserId brand. Cross-references F-003. No action required this wave; surfaces a coordination point for wave-4 service/repo work.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-009",
+      "severity": "info",
+      "category": "architecture",
+      "file": "packages/contracts/src/auth.ts",
+      "line": 39,
+      "summary": "errorEnvelope schema lives in packages/contracts but the AppError class hierarchy lives in apps/api/src/shared/errors.ts; the two ErrorCode enums are duplicated string-literal lists with no compile-time link.",
+      "suggested_fix": "Have apps/api/src/shared/errors.ts import { AuthErrorCode } from '@medbridge/contracts' and use the inferred type for its ErrorCode union, so drift between the two lists is a compile error rather than a runtime mismatch.",
+      "auto_fixable": false
+    }
+  ],
+  "summary": {
+    "blocking": 0,
+    "high": 2,
+    "medium": 3,
+    "low": 2,
+    "info": 2
+  }
+}
