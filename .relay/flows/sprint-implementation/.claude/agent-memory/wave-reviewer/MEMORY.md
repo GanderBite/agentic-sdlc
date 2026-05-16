@@ -7,3 +7,4 @@
 - [Compose env-required-var gate brittleness](feedback_compose_env_gate.md) — `docker compose config --quiet` with `${X:?...}` and no `.env` fails reviewer-side though artifact is valid.
 - [Review verdict enum mismatch](feedback_review_verdict_enums.md) — top-level review verdict uses `failed` (§22 enum), task-level uses `fail` (§10.1 enum). Validator enforces.
 - [Log-scrub test only exercises helper](feedback_log_scrub_test_pattern.md) — flag `high`/security when capture destination is never injected into the production pino logger.
+- [Smoke lint scope trap](feedback_smoke_lint_scope.md) — `pnpm biome check .` hits framework-owned `.relay/.planning/.claude` trees; scope to `apps/ packages/` before flagging code-quality.
