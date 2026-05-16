@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ganderbite/relay-core/main/schemas/intel/build-graph.schema.json",
+  "snapshot_sha": "4ea7d103c254263c4eef97562c0d4b87f62edf17",
+  "fresh_repo": true,
+  "note": "Fresh repo — no package.json on disk, so no commands have been DERIVED. The intel-keeper refuses to invent commands. The tech-stack step will pick concrete tools; intel-refresh will then populate this file from real scripts.",
+  "tools": {
+    "package_manager": null,
+    "test_runner": null,
+    "linter": null,
+    "type_checker": null,
+    "builder": null,
+    "migration_tool": null
+  },
+  "global": {
+    "install": null,
+    "test": null,
+    "lint": null,
+    "typecheck": null,
+    "build": null,
+    "format": null
+  },
+  "per_module": {},
+  "smoke": [],
+  "planner_guidance": "Until this file is repopulated, task.verification for any sprint task must remain manual (human review) or rely on commands the planner explicitly declares and documents in the task itself."
+}
