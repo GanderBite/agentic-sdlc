@@ -1,0 +1,65 @@
+{
+  "wave_id": "wave-5",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/src/db/schema.ts",
+      "line": 1,
+      "summary": "Barrel re-export uses '.ts' extension; will fail tsc under NodeNext+verbatimModuleSyntax+no allowImportingTsExtensions (TS5097).",
+      "suggested_fix": "Change `export * from '../modules/auth/schema.ts'` to `export * from '../modules/auth/schema.js'`. Biome misses this; smoke wave's tsc -b will surface it.",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-002",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/schema.ts",
+      "line": 12,
+      "summary": "ARCHITECTURE.md §2.2 assigns `user` to the `accounts` module; here it lives in `auth`. Task description acknowledges the deliberate deviation.",
+      "suggested_fix": "When the `accounts` module is planned, move the `user` table definition (and migration ownership) there rather than adding a second user table. Document the cross-module FK from refresh_token in conventions.md.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-003",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/src/middleware/authn.ts",
+      "line": 5,
+      "summary": "Middleware imports the eager-loaded `env` singleton; couples JWT_SECRET at module-import time and blocks DI in buildApp tests.",
+      "suggested_fix": "Inject the secret via a factory: export `createAuthn(secret: string)` returning a MiddlewareHandler, or read `c.get('jwtSecret')` populated by buildApp. Wave-7 buildApp will need this seam for fail-fast secret validation.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-004",
+      "severity": "low",
+      "category": "security",
+      "file": "apps/api/src/middleware/authz.ts",
+      "line": 29,
+      "summary": "Accesses `user.role` via `as string` cast after `c.get('user')` returns unknown; non-object claim payload would throw TypeError instead of ForbiddenError.",
+      "suggested_fix": "Guard with `typeof user === 'object' && typeof (user as {role?: unknown}).role === 'string'` and throw UnauthorizedError when the shape is wrong. Or introduce a typed Hono Variables binding for `user` to remove the cast.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-005",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/db/migrations/meta/_journal.json",
+      "line": 8,
+      "summary": "Journal `when` is hardcoded (1747353600000 = 2025-05-16); snapshot `id` is `0000_initial` rather than a UUID. Drizzle Kit generates UUIDs + current ms.",
+      "suggested_fix": "Regenerate the migration via `pnpm --filter @medbridge/api exec drizzle-kit generate` so subsequent generations chain by UUID; or accept the hand-authored values and add a note in conventions.md that this baseline was hand-crafted.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-006",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/middleware/errorHandler.ts",
+      "line": 39,
+      "summary": "Cast `err.status as 422` launders a runtime status as a literal 422; misleading because err.status varies across AppError subclasses (401/403/404/409/...).",
+      "suggested_fix": "Use `err.status as ContentfulStatusCode` (import the union from `hono/utils/http-status`) so the cast reflects the actual constraint without naming a misleading literal.",
+      "auto_fixable": true
+    }
+  ]
+}
