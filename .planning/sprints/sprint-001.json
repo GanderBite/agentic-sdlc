@@ -1,1 +1,24 @@
-{"id":"sprint-001","title":"API scaffold and authentication (login/refresh/me/logout) with CSRF, sessions, and seeded users","feature_brief":".planning/features/api-scaffold-auth.enriched.md","branch":"sprint/001-api-scaffold-auth","waves":["wave-1","wave-2","wave-3","wave-4","wave-5","wave-6","wave-7","wave-8","wave-9","wave-10","wave-smoke"],"orchestrator_token_budget":150000,"status":"todo","created_at":"2026-05-16T12:00:00Z","started_at":null,"completed_at":null}
+{
+  "id": "sprint-001",
+  "title": "API scaffold and authentication (login/refresh/me/logout) with CSRF, sessions, and seeded users",
+  "feature_brief": ".planning/features/api-scaffold-auth.enriched.md",
+  "branch": "sprint/001-api-scaffold-auth",
+  "waves": [
+    "wave-1",
+    "wave-2",
+    "wave-3",
+    "wave-4",
+    "wave-5",
+    "wave-6",
+    "wave-7",
+    "wave-8",
+    "wave-9",
+    "wave-10",
+    "wave-smoke"
+  ],
+  "orchestrator_token_budget": 150000,
+  "status": "todo",
+  "created_at": "2026-05-16T12:00:00Z",
+  "started_at": null,
+  "completed_at": null
+}

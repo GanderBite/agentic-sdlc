@@ -5,31 +5,31 @@
       "id": "F-001",
       "severity": "blocking",
       "category": "architecture",
-      "file": "pnpm-lock.yaml",
-      "line": 1,
-      "summary": "Builder created git commit 008f20b regenerating pnpm-lock.yaml; only wave-commit.sh may commit per version-control R1.",
-      "suggested_fix": "Reset commit 008f20b (human action); add pre-flight guard in builder runtime to refuse `git commit` invocations; keep regenerated file uncommitted for wave-commit.sh.",
+      "file": "package.json",
+      "line": 5,
+      "summary": "task-workspace-root custom[0] regex `^packageManager\\\":` is unsatisfiable: JSON line is indented and key is quoted (`  \"packageManager\":`); plan-defect blocks wave verdict.",
+      "suggested_fix": "Planner: rewrite custom[0].cmd to `rg --quiet '\"packageManager\":\\s*\"pnpm@10' package.json` (drop ^ anchor, restore leading quote). File content already satisfies the corrected regex; no implementation change required.",
       "auto_fixable": false
     },
     {
       "id": "F-002",
-      "severity": "high",
-      "category": "architecture",
-      "file": "package.json",
-      "line": 5,
-      "summary": "task-workspace-root custom check 1 regex is malformed: `^packageManager\":` cannot match a JSON line with leading whitespace and missing leading double-quote.",
-      "suggested_fix": "Planner must update task spec custom[0].cmd to `rg --quiet '\\\"packageManager\\\": \\\"pnpm@10' package.json` (drop ^ anchor, add leading quote). File content `\"packageManager\": \"pnpm@10.33.0\"` is correct.",
-      "auto_fixable": false
-    },
-    {
-      "id": "F-003",
       "severity": "low",
       "category": "security",
       "file": ".env.example",
-      "line": 5,
-      "summary": "JWT_SECRET placeholder `change-me` is 9 bytes; loadEnv will reject it at runtime (requires >=32 bytes per task-shared-env).",
-      "suggested_fix": "Replace with a 32+ byte placeholder, e.g. `JWT_SECRET=replace-with-32-byte-random-secret-xxxxx` so a naive copy-to-.env still satisfies the schema during local bring-up.",
+      "line": 10,
+      "summary": "JWT_SECRET placeholder `change-me` is 8 bytes; downstream env loader (wave-3 task-shared-env) enforces minimum 32 bytes so a naive copy-to-.env will fail.",
+      "suggested_fix": "Replace value with a 32+ byte placeholder, e.g. `JWT_SECRET=replace-with-32-byte-random-secret-xxxxx`, so local bring-up before manual rotation still satisfies schema.",
       "auto_fixable": true
+    },
+    {
+      "id": "F-003",
+      "severity": "info",
+      "category": "architecture",
+      "file": "package.json",
+      "line": 1,
+      "summary": "ARCHITECTURE.md missing at repo root and docs/ — wave-1 layering audit skipped per code-reviewing R4.4.",
+      "suggested_fix": "Add docs/ARCHITECTURE.md describing layer boundaries before subsequent waves; reviewer skipped R4.3 checks for this wave.",
+      "auto_fixable": false
     }
   ]
 }
