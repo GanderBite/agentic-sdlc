@@ -8,14 +8,14 @@
           "kind": "tests",
           "cmd": "pnpm --filter @medbridge/api exec vitest run test/integration/auth.login.test.ts test/integration/auth.refresh.test.ts test/integration/auth.me.test.ts test/integration/auth.logout.test.ts test/integration/auth.csrf.test.ts",
           "exit": 0,
-          "duration_ms": 5930,
+          "duration_ms": 6203,
           "flake_retries": 0
         },
         {
           "kind": "lint",
           "cmd": "pnpm biome check apps/api/test/integration",
           "exit": 0,
-          "duration_ms": 351,
+          "duration_ms": 360,
           "flake_retries": 0
         },
         {
@@ -57,35 +57,35 @@
           "kind": "custom",
           "cmd": "rg --quiet \"HttpOnly\" apps/api/test/integration/auth.login.test.ts",
           "exit": 0,
-          "duration_ms": 12,
+          "duration_ms": 10,
           "flake_retries": 0
         },
         {
           "kind": "custom",
           "cmd": "rg --quiet \"csrf_token\" apps/api/test/integration/auth.login.test.ts",
           "exit": 0,
-          "duration_ms": 11,
+          "duration_ms": 8,
           "flake_retries": 0
         },
         {
           "kind": "custom",
           "cmd": "rg --quiet \"401\" apps/api/test/integration/auth.login.test.ts",
           "exit": 0,
-          "duration_ms": 11,
+          "duration_ms": 8,
           "flake_retries": 0
         },
         {
           "kind": "custom",
           "cmd": "rg --quiet \"revoked_at\" apps/api/test/integration/auth.refresh.test.ts",
           "exit": 0,
-          "duration_ms": 11,
+          "duration_ms": 7,
           "flake_retries": 0
         },
         {
           "kind": "custom",
           "cmd": "rg --quiet \"FORBIDDEN\" apps/api/test/integration/auth.csrf.test.ts",
           "exit": 0,
-          "duration_ms": 11,
+          "duration_ms": 7,
           "flake_retries": 0
         }
       ],
@@ -98,14 +98,14 @@
           "kind": "tests",
           "cmd": "pnpm --filter @medbridge/api exec vitest run test/integration/auth.constant-time.test.ts test/integration/auth.log-scrub.test.ts test/integration/auth.boot-jwt-secret.test.ts test/integration/auth.concurrent-refresh.test.ts test/integration/auth.token-family.test.ts test/integration/seed.idempotent.test.ts",
           "exit": 0,
-          "duration_ms": 5400,
+          "duration_ms": 5798,
           "flake_retries": 0
         },
         {
           "kind": "lint",
           "cmd": "pnpm biome check apps/api/test/integration",
           "exit": 0,
-          "duration_ms": 351,
+          "duration_ms": 360,
           "flake_retries": 0
         },
         {
@@ -154,42 +154,42 @@
           "kind": "custom",
           "cmd": "rg --quiet \"toHaveBeenCalledTimes\\(1\\)\" apps/api/test/integration/auth.constant-time.test.ts",
           "exit": 0,
-          "duration_ms": 11,
+          "duration_ms": 7,
           "flake_retries": 0
         },
         {
           "kind": "custom",
           "cmd": "rg --quiet \"JWT_SECRET\" apps/api/test/integration/auth.boot-jwt-secret.test.ts",
           "exit": 0,
-          "duration_ms": 11,
+          "duration_ms": 7,
           "flake_retries": 0
         },
         {
           "kind": "custom",
           "cmd": "rg --quiet \"Promise\\.all\" apps/api/test/integration/auth.concurrent-refresh.test.ts",
           "exit": 0,
-          "duration_ms": 11,
+          "duration_ms": 7,
           "flake_retries": 0
         },
         {
           "kind": "custom",
           "cmd": "rg --quiet \"warn\" apps/api/test/integration/auth.token-family.test.ts",
           "exit": 0,
-          "duration_ms": 11,
+          "duration_ms": 7,
           "flake_retries": 0
         },
         {
           "kind": "custom",
           "cmd": "rg --quiet \"idempotent|twice\" apps/api/test/integration/seed.idempotent.test.ts",
           "exit": 0,
-          "duration_ms": 11,
+          "duration_ms": 7,
           "flake_retries": 0
         },
         {
           "kind": "custom",
           "cmd": "rg --quiet \"notContainsAny|password|refreshToken|csrf\" apps/api/test/integration/auth.log-scrub.test.ts",
           "exit": 0,
-          "duration_ms": 11,
+          "duration_ms": 7,
           "flake_retries": 0
         }
       ],

@@ -7,8 +7,8 @@
       "category": "security",
       "file": "apps/api/test/integration/auth.log-scrub.test.ts",
       "line": 151,
-      "summary": "log-scrub tests do not wire createLogCapture into the production pino logger; they only assert on the helper, leaving acceptance bullet 8 not genuinely exercised end-to-end.",
-      "suggested_fix": "Build the app with an injected logger writing to createLogCapture().destination (extend buildApp to accept a logger or expose a logger factory), run real auth flows, then call capture.notContainsAny([SEED_PLAINTEXT, sessionValue, refreshValue, csrfValue]).",
+      "summary": "Log-scrub tests do not wire createLogCapture into the production pino destination; only the helper is exercised. Acceptance bullet 8 is not verified end-to-end.",
+      "suggested_fix": "Extend buildApp to accept an injected logger (or destination) and pass createLogCapture().destination, run real login/refresh/me/logout, then call capture.notContainsAny([SEED_PLAINTEXT, sessionValue, refreshValue, csrfValue]). The current test would still pass if production redact paths were removed.",
       "auto_fixable": false
     },
     {
@@ -17,8 +17,8 @@
       "category": "duplication",
       "file": "apps/api/test/integration/auth.login.test.ts",
       "line": 16,
-      "summary": "vi.hoisted env-seed block plus the lazy-getter vi.mock for db/client is duplicated verbatim across all 11 integration test files; drift risk if the env contract changes.",
-      "suggested_fix": "Extract a shared helper such as apps/api/test/support/setup.ts exporting `setupTestEnv()` and the db/client mock factory; import once per test file. Reduces 11 copies to one source of truth.",
+      "summary": "vi.hoisted env-seed block plus the lazy-getter vi.mock for db/client is copy-pasted verbatim into all 11 integration test files; any env-contract change requires 11 edits.",
+      "suggested_fix": "Extract a shared `apps/api/test/support/setup.ts` exporting setupTestEnv() and the db/client mock factory; import once per test file. Reduces 11 copies to one source of truth.",
       "auto_fixable": false
     },
     {
@@ -26,9 +26,9 @@
       "severity": "medium",
       "category": "security",
       "file": "apps/api/test/integration/auth.token-family.test.ts",
-      "line": 154,
-      "summary": "Replay-warn test asserts exactly one warn call but does not assert log level is 'warn' nor that the message field equals 'refresh.replay_detected'; weakens enriched bullet 12.",
-      "suggested_fix": "Augment the warnCalls[0] assertion to also check the message string (second arg or first-arg.msg) contains 'replay' so a regression that silently swaps warn for debug or rewords the message would still fail the test.",
+      "line": 179,
+      "summary": "Replay-warn test asserts logger.warn called once and that the payload has userId/requestId keys but does not assert the log message equals 'refresh.replay_detected'; weakens bullet 12.",
+      "suggested_fix": "Augment the warnCalls[0] assertion to check warnArg.msg (or warnCalls[0][1]) contains 'replay' or matches the literal 'refresh.replay_detected' so a regression that silently changes the message would still fail the test.",
       "auto_fixable": false
     },
     {
@@ -37,8 +37,8 @@
       "category": "duplication",
       "file": "apps/api/test/integration/auth.refresh.test.ts",
       "line": 64,
-      "summary": "loginPatient helper is repeated across 6+ files with the same signature; consider hoisting to support/.",
-      "suggested_fix": "Add `loginAs(app, email, password?)` to apps/api/test/support/request.ts and replace the per-file copies.",
+      "summary": "loginPatient/loginAs helpers are repeated with the same shape across 6+ integration files; consider hoisting to support/.",
+      "suggested_fix": "Add `loginAs(app, email, password?)` to apps/api/test/support/request.ts and replace the per-file copies in refresh/me/logout/csrf/token-family/concurrent-refresh tests.",
       "auto_fixable": false
     },
     {
@@ -46,9 +46,9 @@
       "severity": "low",
       "category": "style",
       "file": "apps/api/test/integration/auth.refresh.test.ts",
-      "line": 196,
-      "summary": "Sad-path test 'returns non-200 when no refresh cookie is present' only asserts not 200/201 — does not check the actual expected status (422) or error code.",
-      "suggested_fix": "Tighten the assertion to expect(res.status).toBe(422) and expect(body.error.code).toBe('VALIDATION') so contract drift is caught.",
+      "line": 205,
+      "summary": "Sad-path 'returns non-200 when no refresh cookie is present' only asserts not 200/201 (test output shows real status is 422); too loose to catch contract drift.",
+      "suggested_fix": "Tighten to expect(res.status).toBe(422) and expect(body.error.code).toBe('VALIDATION') so a regression that swapped 422 for 401 or 500 would fail.",
       "auto_fixable": false
     },
     {
@@ -57,8 +57,8 @@
       "category": "architecture",
       "file": "apps/api/test/integration/auth.boot-jwt-secret.test.ts",
       "line": 22,
-      "summary": "Test seeds a valid JWT_SECRET via vi.hoisted so that env.ts module-scope `export const env = loadEnv()` does not throw on import — symptom of a known eager-load risk in shared/env.ts.",
-      "suggested_fix": "Track in retro: convert shared/env.ts to a lazy `getEnv()` or DI pattern so test files do not need a hoisted env stub to import the module under test.",
+      "summary": "Test seeds a valid JWT_SECRET via vi.hoisted and calls loadEnv() directly instead of the task-prescribed buildApp({ ...env, JWT_SECRET: 'too-short' }); symptom of the eager-load singleton in shared/env.ts.",
+      "suggested_fix": "Track in retro: convert shared/env.ts to lazy getEnv() or accept env into buildApp constructors (per project_env_eager_load memory). Then this test can exercise buildApp directly as bullet 10 intends.",
       "auto_fixable": false
     },
     {
@@ -67,8 +67,8 @@
       "category": "architecture",
       "file": "apps/api/test/integration/seed.idempotent.test.ts",
       "line": 62,
-      "summary": "Test re-implements seed insert logic locally (runSeed) rather than invoking apps/api/src/seed/main.ts; bullet 13 is satisfied behaviourally but a regression that breaks main.ts (side-effect script) would not be caught.",
-      "suggested_fix": "Refactor apps/api/src/seed/main.ts to export a pure `seedUsers(db)` function and have main() call it then pool.end(); import seedUsers in the test instead of duplicating the insert.",
+      "summary": "Test re-implements seed insert logic locally (runSeed) instead of invoking apps/api/src/seed/main.ts; a regression in main.ts (e.g. dropped ON CONFLICT) would not be caught by this test.",
+      "suggested_fix": "Refactor apps/api/src/seed/main.ts to export a pure `seedUsers(db)` and have main() call it then pool.end(); import seedUsers in the test rather than duplicating the insert SQL.",
       "auto_fixable": false
     }
   ]
