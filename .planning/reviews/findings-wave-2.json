@@ -5,68 +5,61 @@
       "id": "F-001",
       "severity": "high",
       "category": "architecture",
-      "file": "pnpm-lock.yaml",
-      "line": 1,
-      "summary": "Lockfile regenerated for contracts only; missing all 16 apps/api deps; breaks wave-1 frozen-install gate.",
-      "suggested_fix": "Run `pnpm install` at repo root (not filtered) so apps/api specifiers land in pnpm-lock.yaml. Verify `pnpm install --frozen-lockfile` exits 0 before staging.",
-      "auto_fixable": true
+      "file": "apps/api/vitest.config.ts",
+      "line": 5,
+      "summary": "vitest@^2 silently ignores test.projects (v3-only API); integration suite + testTimeout=60000 are dead config and integration tests will never run.",
+      "suggested_fix": "Use vitest v2 workspace API: set test.workspace=['./vitest.unit.config.ts','./vitest.integration.config.ts'] with two sibling configs, OR bump devDependency vitest to ^3 to make projects work. Verify with `pnpm exec vitest list` showing both suites.",
+      "auto_fixable": false
     },
     {
       "id": "F-002",
       "severity": "high",
       "category": "architecture",
-      "file": "apps/api/vitest.config.ts",
-      "line": 5,
-      "summary": "`test.projects` is a Vitest v3 API; lockfile resolves vitest@2.1.9 where this key is ignored — integration suite won't run as configured.",
-      "suggested_fix": "Either bump apps/api devDeps to `vitest@^3` (also packages/contracts for consistency), or move to v2's `test.workspace` model: top-level `workspace: './vitest.workspace.ts'` referencing two project configs.",
+      "file": "packages/contracts/package.json",
+      "line": 6,
+      "summary": "exports points to './src/index.ts' but contracts emits only .d.ts (emitDeclarationOnly); Node ESM cannot load .ts at runtime so production apps/api (compiled JS) cannot resolve @medbridge/contracts.",
+      "suggested_fix": "Drop emitDeclarationOnly in packages/contracts/tsconfig.json, emit JS to dist/, and set exports={'.':{import:'./dist/index.js',types:'./dist/index.d.ts'}}. Alternatively, document contracts as TS-source-only and have apps/api bundle it.",
       "auto_fixable": false
     },
     {
       "id": "F-003",
-      "severity": "low",
-      "category": "style",
-      "file": "packages/contracts/package.json",
-      "line": 6,
-      "summary": "`exports` points at './src/index.ts' while build emits only .d.ts (emitDeclarationOnly). Workspace-internal consumers OK; external Node consumers cannot resolve.",
-      "suggested_fix": "If contracts is workspace-only (per ARCHITECTURE §6.2 it is), leave as-is and document; otherwise use conditional exports `{ \"types\": \"./dist/index.d.ts\", \"import\": \"./src/index.ts\" }` and emit JS.",
-      "auto_fixable": false
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/package.json",
+      "line": 9,
+      "summary": "build script `tsc -b && cp -r src/db/migrations dist/db/migrations` will fail today: src/db/migrations does not exist (lands in wave-5).",
+      "suggested_fix": "Guard the copy: `tsc -b && mkdir -p dist/db && ([ -d src/db/migrations ] && cp -r src/db/migrations dist/db/migrations || true)`. Tighten once migrations wave lands.",
+      "auto_fixable": true
     },
     {
       "id": "F-004",
-      "severity": "low",
-      "category": "style",
-      "file": "packages/contracts/package.json",
-      "line": 8,
-      "summary": "`typecheck` script uses `tsc --noEmit` while project is `composite: true` and downstream tasks use `tsc -b` — mixed invocation modes risk stale tsbuildinfo.",
-      "suggested_fix": "Replace scripts.typecheck with `tsc -b` (consistent with contracts/tsconfig.json composite and downstream task-contracts-auth verification).",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/tsconfig.json",
+      "line": 1,
+      "summary": "No project `references` to packages/contracts though contracts is composite and apps/api imports it; `tsc -b` from apps/api won't rebuild contracts and IDE go-to-def may degrade.",
+      "suggested_fix": "Add `\"references\": [{\"path\": \"../../packages/contracts\"}]` to apps/api/tsconfig.json so `tsc -b` rebuilds contracts when its sources change.",
       "auto_fixable": true
     },
     {
       "id": "F-005",
-      "severity": "info",
+      "severity": "low",
       "category": "architecture",
-      "file": "packages/contracts/tsconfig.tsbuildinfo",
-      "line": 1,
-      "summary": "tsc -b produced packages/contracts/{tsconfig.tsbuildinfo,dist/*}; tsbuildinfo not in target_files and not covered by root .gitignore.",
-      "suggested_fix": "Add `*.tsbuildinfo` to root .gitignore (next wave's update list); dist/ is already ignored. No code change required this wave.",
-      "auto_fixable": true
+      "file": "apps/api/package.json",
+      "line": 16,
+      "summary": "Runtime dep @hono/node-server is not in ARCHITECTURE.md §6.3 allow-list; required by Hono on Node but no ADR documents the choice.",
+      "suggested_fix": "Add a note in docs/ARCHITECTURE.md §6.3 listing @hono/node-server as the Hono Node adapter, or capture it in tech-stack ADR.",
+      "auto_fixable": false
     },
     {
       "id": "F-006",
       "severity": "info",
       "category": "architecture",
-      "file": "pnpm-lock.yaml",
+      "file": "packages/contracts/src/index.ts",
       "line": 1,
-      "summary": "pnpm-lock.yaml is outside target_files for both wave-2 tasks; explicitly waived by wave instructions as expected install side-effect.",
-      "suggested_fix": "No action; informational scope-drift entry for audit completeness. The substantive issue is captured by F-001.",
+      "summary": "File on disk now re-exports './auth.js' (added by wave-3 commit 97c93ef); wave-2 scaffold originally produced an empty barrel — current content is post-wave-2 drift, not a wave-2 defect.",
+      "suggested_fix": "No action for wave-2; review-wave-3 already audits the auth.ts re-export. Informational pointer that the on-disk content differs from the wave-2 commit (0ba770d).",
       "auto_fixable": false
     }
-  ],
-  "summary": {
-    "blocking": 0,
-    "high": 2,
-    "medium": 0,
-    "low": 2,
-    "info": 2
-  }
+  ]
 }
