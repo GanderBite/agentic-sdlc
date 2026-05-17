@@ -9,3 +9,4 @@
 - [Log-scrub test only exercises helper](feedback_log_scrub_test_pattern.md) — flag `high`/security when capture destination is never injected into the production pino logger.
 - [Smoke lint scope trap](feedback_smoke_lint_scope.md) — `pnpm biome check .` hits framework-owned `.relay/.planning/.claude` trees; scope to `apps/ packages/` before flagging code-quality.
 - [Testcontainer withReuse() teardown race](feedback_testcontainer_withreuse_race.md) — per-file container.stop() in afterAll + shared withReuse() flakes; singleFork is partial. Push fix to globalSetup.
+- [Regex anchored at JSON key is unsatisfiable](feedback_regex_json_key_anchor_trap.md) — `^key":\\s*"val` cannot match indented quoted keys; plan-defect, route to plan repair (partial verdict), not code retry.

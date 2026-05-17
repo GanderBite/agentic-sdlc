@@ -3,32 +3,22 @@
   "findings": [
     {
       "id": "F-001",
-      "severity": "blocking",
+      "severity": "low",
       "category": "architecture",
-      "file": "package.json",
-      "line": 5,
-      "summary": "task-workspace-root custom[0] regex `^packageManager\\\":` is unsatisfiable: JSON line is indented and key is quoted (`  \"packageManager\":`); plan-defect blocks wave verdict.",
-      "suggested_fix": "Planner: rewrite custom[0].cmd to `rg --quiet '\"packageManager\":\\s*\"pnpm@10' package.json` (drop ^ anchor, restore leading quote). File content already satisfies the corrected regex; no implementation change required.",
+      "file": ".planning/sprints/sprint-001.tasks.json",
+      "line": 1,
+      "summary": "plan-defect: task-workspace-root custom[0] regex `^packageManager\":\\s*\"pnpm@10` cannot match valid JSON (key is quoted+indented); code at package.json:5 is spec-correct.",
+      "suggested_fix": "Edit sprint-001.tasks.json task-workspace-root.verification.custom[0].cmd to `rg --quiet '\"packageManager\"\\s*:\\s*\"pnpm@10' package.json` then re-run wave-1. Zero file changes required in code.",
       "auto_fixable": false
     },
     {
       "id": "F-002",
-      "severity": "low",
-      "category": "security",
-      "file": ".env.example",
-      "line": 10,
-      "summary": "JWT_SECRET placeholder `change-me` is 8 bytes; downstream env loader (wave-3 task-shared-env) enforces minimum 32 bytes so a naive copy-to-.env will fail.",
-      "suggested_fix": "Replace value with a 32+ byte placeholder, e.g. `JWT_SECRET=replace-with-32-byte-random-secret-xxxxx`, so local bring-up before manual rotation still satisfies schema.",
-      "auto_fixable": true
-    },
-    {
-      "id": "F-003",
       "severity": "info",
       "category": "architecture",
       "file": "package.json",
-      "line": 1,
-      "summary": "ARCHITECTURE.md missing at repo root and docs/ — wave-1 layering audit skipped per code-reviewing R4.4.",
-      "suggested_fix": "Add docs/ARCHITECTURE.md describing layer boundaries before subsequent waves; reviewer skipped R4.3 checks for this wave.",
+      "line": 5,
+      "summary": "wave-1 builder reported zero file changes this iteration; workspace already spec-correct from prior commit 10a084c (and lockfile regen 008f20b).",
+      "suggested_fix": "No action: the partial verdict reflects a plan defect (F-001), not a code defect. Apply F-001 fix and re-run wave-1 verification to clear the gate.",
       "auto_fixable": false
     }
   ]
