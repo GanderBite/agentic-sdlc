@@ -8,7 +8,7 @@
           "kind": "build",
           "cmd": "pnpm --filter @medbridge/contracts exec tsc -b",
           "exit": 0,
-          "duration_ms": 324,
+          "duration_ms": 330,
           "flake_retries": 0
         },
         {
@@ -43,7 +43,7 @@
           "kind": "custom",
           "cmd": "rg --quiet \"@medbridge/contracts\" packages/contracts/package.json",
           "exit": 0,
-          "duration_ms": 13,
+          "duration_ms": 12,
           "flake_retries": 0
         },
         {
