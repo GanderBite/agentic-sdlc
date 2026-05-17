@@ -1,21 +1,49 @@
 {
   "$schema": "https://raw.githubusercontent.com/ganderbite/relay-core/main/schemas/intel/modules.schema.json",
-  "snapshot_sha": "4ea7d103c254263c4eef97562c0d4b87f62edf17",
-  "fresh_repo": true,
-  "note": "Fresh repo — no application source on disk. Modules will be enumerated by intel-refresh once apps/ui and apps/api are scaffolded per the planned pnpm-workspace layout in docs/APPLICATION.md.",
-  "planned_modules": [
+  "snapshot_sha": "698a63298ece745c06d57a56a863284313daa83f",
+  "fresh_repo": false,
+  "modules": [
     {
-      "name": "api",
+      "name": "@medbridge/api",
       "path": "apps/api",
       "language": "typescript",
-      "rationale": "Hono backend, Drizzle ORM, JWT/argon2 auth — per docs/APPLICATION.md"
+      "test_path": [
+        "apps/api/src/**/*.test.ts",
+        "apps/api/test/integration/**/*.test.ts"
+      ],
+      "depends_on": [
+        "@medbridge/contracts",
+        "hono",
+        "@hono/node-server",
+        "drizzle-orm",
+        "drizzle-kit",
+        "pg",
+        "jose",
+        "argon2",
+        "pino",
+        "zod"
+      ],
+      "exports": [
+        "apps/api/src/main.ts (buildApp)",
+        "apps/api/src/modules/auth/index.ts (createAuthService, wireAuth, AuthService, AuthServiceDeps, LoginResult, UserResult)"
+      ],
+      "owners": []
     },
     {
-      "name": "ui",
-      "path": "apps/ui",
+      "name": "@medbridge/contracts",
+      "path": "packages/contracts",
       "language": "typescript",
-      "rationale": "React + Vite + Tailwind + TanStack Router/Query — per docs/APPLICATION.md"
+      "test_path": [
+        "packages/contracts/src/**/*.test.ts"
+      ],
+      "depends_on": [
+        "zod"
+      ],
+      "exports": [
+        "packages/contracts/src/index.ts (re-exports ./auth.ts — UserId, AuthErrorCode, errorEnvelope, loginRequest/Response, refreshRequest/Response, meResponse, logoutRequest)"
+      ],
+      "owners": []
     }
   ],
-  "modules": []
+  "note": "Two pnpm-workspace packages on disk. `apps/ui` is planned per docs/APPLICATION.md but not yet scaffolded — it will appear here once it lands."
 }

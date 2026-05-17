@@ -1,38 +1,74 @@
 # Database schema
 
-> **Status:** no schema on disk. The repo has no `apps/api/`, no Drizzle setup, no migrations. This file seeds the planning view derived from `docs/APPLICATION.md`; once Drizzle is in place, `intel-refresh` will replace it with the real tables.
+Snapshot: `698a63298ece745c06d57a56a863284313daa83f`. Derived from `apps/api/src/modules/auth/schema.ts`, `apps/api/src/db/migrations/0000_initial.sql`, and `apps/api/drizzle.config.ts`.
 
-## Planned tooling
+## Tooling
 
-- Database: **PostgreSQL** (Docker Compose service).
-- ORM: **Drizzle ORM**.
-- Migration tool: **Drizzle Kit** (`drizzle-kit generate`, `drizzle-kit migrate` — exact commands populated by `tech-stack` step).
-- Schema location (planned): `apps/api/src/db/schema/*.ts` with a barrel `apps/api/src/db/schema/index.ts`.
-- Migration location (planned): `apps/api/drizzle/` (generated SQL + meta).
+- **Database**: PostgreSQL 17 (`docker-compose.yml → postgres` service uses `postgres:17-alpine`).
+- **Driver**: `pg` (`Pool`); ORM is **Drizzle ORM** with the `drizzle-orm/node-postgres` adapter (`apps/api/src/db/client.ts`).
+- **Migration tool**: **Drizzle Kit** (`drizzle-kit` v0.30.x), configured by `apps/api/drizzle.config.ts`.
+- **Migration files**: `apps/api/src/db/migrations/*.sql` (statement-breakpointed), metadata in `apps/api/src/db/migrations/meta/`.
+- **Schema source**: `apps/api/src/db/schema.ts` (barrel) re-exports `apps/api/src/modules/auth/schema.ts`. Module-owned schema fragments are the rule — `db/schema.ts` should stay a thin re-export aggregator.
 
-## Planned entities (from APPLICATION.md)
+## Commands
 
-- `users` — base identity, `role` enum (`doctor` | `patient`), `password_hash` (argon2), `created_at`, `deleted_at` (soft delete).
-- `doctor_profiles` — name, contact, specializations[], FK → `users.id`.
-- `patient_profiles` — name, contact, FK → `users.id`.
-- `specializations` — lookup (cardiologist, dermatologist, …).
-- `slots` — `doctor_id`, `starts_at`, `ends_at`, status; doctor-configured.
-- `appointments` — `slot_id`, `patient_id`, `status` (`scheduled` | `completed`), `summary` (doctor-authored), soft-deletable.
-- `medical_records` — `patient_id`, free-form entries for medications, conditions, allergies (separate tables likely; refine in architecture step).
-- `medical_documents` — `patient_id`, `original_filename`, `stored_filename` (uuid), `mime_type`, `size_bytes`, `uploaded_at`, soft-deletable. JPEG/PNG/PDF ≤10 MB.
-- `appointment_documents` — join table sharing specific documents with an appointment.
-- `refresh_tokens` — for JWT rotation; rotated on each use, revocable.
+| Action | Command |
+|---|---|
+| Generate migration from schema diff | `pnpm --filter @medbridge/api exec drizzle-kit generate` |
+| Apply migrations | `pnpm --filter @medbridge/api exec drizzle-kit migrate` |
+| Inspect schema | `pnpm --filter @medbridge/api exec drizzle-kit studio` |
 
-## Constraints / invariants
+`DATABASE_URL` must be set; the compose `api-migrate` service supplies it and runs `pnpm drizzle-kit migrate && node dist/seed/main.js` on each boot.
 
-- **Soft delete everywhere**: all tables get `deleted_at TIMESTAMPTZ NULL`. Queries default to `WHERE deleted_at IS NULL`.
-- **No real patient data** ever (test fixtures included).
-- Stored document filenames are server-generated UUIDs; the original filename is preserved as a column for display only.
-- Appointments are immutable once scheduled (no cancel/reschedule per PoC trade-offs).
+## Extensions
 
-## Migration policy (planned)
+The initial migration enables:
 
-- Every schema change goes through Drizzle Kit generation; no hand-edited SQL except for raw fixtures.
-- Migrations are forward-only in PoC scope; rollback is out of scope.
+- `pgcrypto` — used by `gen_random_uuid()` for `id` defaults.
+- `citext` — used for `user.email` (case-insensitive equality without `LOWER()` wrapping). A custom Drizzle column type (`citext`) is declared in `modules/auth/schema.ts` to keep typings honest.
 
-Replace this file with actual schema diffs once `apps/api/src/db/schema/` exists.
+## Tables
+
+### `user`
+
+| Column | Type | Constraints |
+|---|---|---|
+| `id` | `uuid` | PRIMARY KEY, default `gen_random_uuid()` |
+| `email` | `citext` | NOT NULL, UNIQUE (`user_email_unique`) |
+| `role` | `text` | NOT NULL, CHECK `role IN ('patient', 'doctor')` (`user_role_check`) |
+| `password_hash` | `text` | NOT NULL (argon2id digest) |
+| `created_at` | `timestamptz` | NOT NULL, default `now()` |
+| `deleted_at` | `timestamptz` | NULL — soft-delete marker |
+
+Drizzle relation: `user.refreshTokens` → many `refresh_token`.
+
+### `refresh_token`
+
+| Column | Type | Constraints |
+|---|---|---|
+| `id` | `uuid` | PRIMARY KEY, default `gen_random_uuid()` |
+| `user_id` | `uuid` | NOT NULL, FK → `user.id` ON DELETE RESTRICT |
+| `hash` | `text` | NOT NULL, UNIQUE (`refresh_token_hash_unique`) — sha256 of the cookie value, never stored in plaintext |
+| `issued_at` | `timestamptz` | NOT NULL, default `now()` |
+| `expires_at` | `timestamptz` | NOT NULL |
+| `revoked_at` | `timestamptz` | NULL — set on rotation or explicit logout |
+| `replaced_by` | `uuid` | FK → `refresh_token.id` — chains rotations for token-family detection |
+
+Drizzle relations: `refresh_token.user` → one `user`; `refresh_token.replacement` → one `refresh_token` (self).
+
+## Invariants
+
+- **Soft delete is universal on `user`** (`deleted_at IS NULL` filter in `repo.findUserByEmail`). New tables that represent first-class domain entities should follow the same pattern when they land.
+- **Refresh-token family tracking**: rotation links the old row to its replacement via `replaced_by`. A reuse of an already-revoked token reveals a compromised family — see `auth.token-family.test.ts` for the policy in code.
+- **No plaintext secrets at rest**: `password_hash` is argon2id; `refresh_token.hash` is a content hash of the cookie value. The plaintext refresh token only ever lives in the `refresh` cookie.
+- **Forward-only migrations** for PoC scope; no rollback path. Migrate-then-seed is the boot order (`docker-compose.yml`).
+
+## Migration history
+
+| idx | tag | created |
+|---:|---|---|
+| 0 | `0000_initial` | 2025-05-16 (unix ms `1747353600000`) |
+
+## Out of scope (planned, not on disk)
+
+The following entities are described in `docs/APPLICATION.md` and `docs/ARCHITECTURE.md` but **have no schema yet**: `doctor_profile`, `patient_profile`, `specialization`, `slot`, `appointment`, `medical_record`, `medical_document`, `appointment_document`. Re-run `intel-refresh` once they land to repopulate this section.
