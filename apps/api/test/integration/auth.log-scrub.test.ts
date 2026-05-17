@@ -1,15 +1,23 @@
 /**
- * Adversarial integration test — log scrubbing / secret redaction.
+ * Adversarial test suite — log scrubbing / secret redaction.
  *
- * Wires the app with a pino destination captured by createLogCapture().
- * Replays login, refresh, me, and logout flows and asserts that no captured
- * log line contains:
- *   - the seeded plaintext password
- *   - any session JWT value
- *   - any refresh cookie raw value
- *   - the csrf_token cookie value
+ * Current coverage (honest scope):
+ *   1. createLogCapture() helper invariants — the destination.write / notContainsAny
+ *      contract is exercised with hand-crafted strings to ensure the helper itself
+ *      is correct.
+ *   2. Auth-flow integration — runs login → refresh → me → logout against a real
+ *      Postgres container and asserts the cookie-derived secret needle list is
+ *      non-trivial (non-empty, realistic lengths), so the helper tests are
+ *      meaningful.
  *
- * Uses notContainsAny from the log capture helper.
+ * Known gap / escalation:
+ *   Production log-scrub coverage (asserting that real pino output from the app
+ *   never contains secret needle values) CANNOT be implemented in this file without
+ *   modifying shared/logger.ts.  The pino logger is constructed at module load time
+ *   with no exported factory or REDACT_PATHS constant, so no injection seam exists.
+ *   The required fix is: export createLogger(opts?: { destination? }) from
+ *   shared/logger.ts, then vi.mock that module here using vi.importActual to obtain
+ *   the real REDACT_PATHS and supply capture.destination.
  *
  * Requires Docker to be running on the host.
  */
@@ -64,30 +72,22 @@ beforeEach(async () => {
 
 // ---------------------------------------------------------------------------
 // Helper: run the full login → refresh → me → logout flow and return the
-// captured log lines together with the cookie values that must not appear.
+// cookie values that must not appear in any log output.
+//
+// NOTE: This helper does NOT wire createLogCapture() into the production pino
+// logger.  shared/logger.ts constructs its pino instance at module load time
+// and does not export a factory or its REDACT_PATHS constant, so there is no
+// seam available in this file's scope to inject a custom destination without
+// modifying production code.  Asserting production log-scrub behaviour
+// requires shared/logger.ts to export createLogger(opts?) — that refactor is
+// tracked as a separate task.  Until then, runFullAuthFlow returns only the
+// real cookie values so callers can build a needle list for use with a
+// manually-populated capture (see the hand-crafted-destination tests below).
 // ---------------------------------------------------------------------------
 
 async function runFullAuthFlow(): Promise<{
-  logLines: string[];
   secretNeedles: string[];
 }> {
-  const capture = createLogCapture();
-
-  // Patch the pino logger's write destination at the module level is not
-  // straightforward, so instead we observe behavior via the cookie/header
-  // values that the app should never emit.
-  //
-  // We run the real app and collect the cookies from each response so we can
-  // check the captured log lines (via the module-level logger) don't contain
-  // any of those values.
-  //
-  // The pino logger in shared/logger.ts redacts paths like *.token, *.refreshToken,
-  // *.csrfToken, req.headers.cookie, req.body.password.
-  //
-  // For this test we use the app as-is and check that the logger's redact
-  // paths are effective by asserting observable output.  We capture by
-  // wrapping pino to a custom destination.
-
   const agent = createRequestAgent(app);
 
   // 1. Login
@@ -140,7 +140,7 @@ async function runFullAuthFlow(): Promise<{
     csrfAfterRefresh,
   ].filter(Boolean);
 
-  return { logLines: capture.lines, secretNeedles };
+  return { secretNeedles };
 }
 
 // ---------------------------------------------------------------------------
@@ -148,23 +148,19 @@ async function runFullAuthFlow(): Promise<{
 // ---------------------------------------------------------------------------
 
 describe('log scrubbing — auth flow', () => {
-  it('does not log the plaintext password in any captured line', async () => {
-    // We assert on the request body: since we cannot directly capture pino output
-    // without wiring a custom destination at logger creation time, we verify that
-    // the production redact config is correct by asserting the behavior:
-    // the logger is configured with redact paths including 'req.body.password' and '*.password'.
-    // This test asserts the password does not appear in any stringified body we can observe.
-
-    // Send a login request and capture the request body representation
-    const bodyString = JSON.stringify({ email: 'patient@seed.test', password: SEED_PLAINTEXT });
+  it('createLogCapture helper starts with an empty line buffer', () => {
+    // Baseline: a freshly created capture has no lines.
+    // This verifies the helper is in a clean state before any writes.
+    //
+    // NOTE: this capture is NOT wired into the production pino logger; it exists
+    // only to validate the helper's own invariants.  Production log-scrub
+    // coverage requires a factory seam in shared/logger.ts (out of scope here).
     const capture = createLogCapture();
 
-    // Verify the capture helper works (lines array starts empty)
     expect(capture.lines).toHaveLength(0);
 
-    // Verify notContainsAny does not throw for empty lines
-    capture.notContainsAny([SEED_PLAINTEXT]);
-    expect(true).toBe(true); // notContainsAny did not throw
+    // notContainsAny over zero lines must not throw regardless of the needles.
+    expect(() => capture.notContainsAny([SEED_PLAINTEXT])).not.toThrow();
   });
 
   it('notContainsAny throws when a needle is found in a log line', () => {
@@ -187,14 +183,34 @@ describe('log scrubbing — auth flow', () => {
     expect(() => capture.notContainsAny([SEED_PLAINTEXT, 'secrettoken123'])).not.toThrow();
   });
 
-  it('captures session JWT, refresh token, and csrf_token values from the auth flow', async () => {
-    // Run the full flow to get real secret values from cookie jar
+  it('auth flow produces non-trivial secret needle values from real cookie jar', async () => {
+    // Run the full login → refresh → me → logout cycle against the real app.
+    // We assert that the cookie-derived needle list is non-trivial so that the
+    // hand-crafted destination tests below are meaningful.
+    //
+    // NOTE: production log-scrub coverage (asserting capture.notContainsAny on
+    // real pino output) is not exercised here because shared/logger.ts does not
+    // export a factory that accepts a custom destination.  That seam must be
+    // added in shared/logger.ts before this assertion can be strengthened.
     const { secretNeedles } = await runFullAuthFlow();
 
-    // We have real token values to check against
-    // All secret needles should be non-empty strings
-    const nonEmpty = secretNeedles.filter((n) => n.length > 0);
-    expect(nonEmpty.length).toBeGreaterThan(0);
+    // Every needle should be a non-empty string.
+    expect(secretNeedles.length).toBeGreaterThan(0);
+    for (const needle of secretNeedles) {
+      expect(typeof needle).toBe('string');
+      expect(needle.length).toBeGreaterThan(0);
+    }
+
+    // The plain-text password must be included (it is the most critical needle).
+    expect(secretNeedles).toContain(SEED_PLAINTEXT);
+
+    // Token values (session JWT, refresh token, csrf token) should be
+    // non-trivially long — a realistic JWT is > 20 chars.
+    const tokenNeedles = secretNeedles.filter((n) => n !== SEED_PLAINTEXT);
+    expect(tokenNeedles.length).toBeGreaterThanOrEqual(1);
+    for (const token of tokenNeedles) {
+      expect(token.length).toBeGreaterThan(10);
+    }
   });
 
   it('log capture with real token values does not contain any secret when redaction is proper', () => {

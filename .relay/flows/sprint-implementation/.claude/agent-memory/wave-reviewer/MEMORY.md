@@ -11,3 +11,5 @@
 - [Testcontainer withReuse() teardown race](feedback_testcontainer_withreuse_race.md) — per-file container.stop() in afterAll + shared withReuse() flakes; singleFork is partial. Push fix to globalSetup.
 - [Regex anchored at JSON key is unsatisfiable](feedback_regex_json_key_anchor_trap.md) — `^key":\\s*"val` cannot match indented quoted keys; plan-defect, route to plan repair (partial verdict), not code retry.
 - [Layering violation severity is blocking](feedback_layering_violation_severity.md) — service.ts importing db client / schema directly is hard-rule per ARCHITECTURE §2.3; flag blocking + auto_fixable:false, not medium.
+- [Aggregate review allows empty tasks array](feedback_aggregate_review_empty_tasks.md) — Phase-2-only sprint audits set `tasks: []` and derive verdict from findings; validator accepts.
+- [Fix-iteration commit message claims need diff verification](feedback_fix_commit_skepticism.md) — even "fixed" items can be partially fixed or introduce new gaps; always re-read at HEAD.
