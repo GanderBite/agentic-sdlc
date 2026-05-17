@@ -45,7 +45,14 @@ export function buildApp(_env: typeof env): Hono {
   // ---- Global middleware (order: requestId → logger → cors → errorHandler) --
   app.use('*', requestId);
   app.use('*', loggerMiddleware);
-  app.use('*', cors({ origin: '*', credentials: true }));
+  const corsOrigins = _env.CORS_ORIGIN.split(',').map((o) => o.trim());
+  app.use(
+    '*',
+    cors({
+      origin: (origin) => (corsOrigins.includes(origin) ? origin : null),
+      credentials: true,
+    }),
+  );
   app.onError(errorHandler);
 
   // ---- Unauthenticated health check (ARCHITECTURE §6.1) --------------------

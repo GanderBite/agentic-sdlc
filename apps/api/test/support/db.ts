@@ -31,12 +31,9 @@ export interface TestDb {
 export async function startPostgresContainer(): Promise<TestDb> {
   const builder = new PostgreSqlContainer('postgres:17-alpine');
 
-  // Local reuse: keep the container alive between pnpm test runs.
-  // CI must always start fresh — TESTCONTAINERS_REUSE_ENABLE is ignored when CI=true.
-  if (process.env.CI !== 'true') {
-    builder.withReuse();
-  }
-
+  // withReuse() is intentionally disabled: each test file calls stopPostgresContainer in
+  // afterAll, so reusing a shared container causes a teardown race — the first file to
+  // finish kills the container for all subsequent files (F-004).
   const container = await builder.start();
 
   const pool = new Pool({
