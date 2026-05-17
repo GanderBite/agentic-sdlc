@@ -2,8 +2,8 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_USER: ${POSTGRES_USER:-medbridge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
       POSTGRES_DB: ${POSTGRES_DB:-medbridge}
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -22,7 +22,7 @@ services:
       target: migrate
     image: medbridge/api-migrate:dev
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-medbridge}
+      DATABASE_URL: postgres://${POSTGRES_USER:-medbridge}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-medbridge}
       SEED_PASSWORD: ${SEED_PASSWORD:-CorrectHorseBatteryStaple1!}
     command: ["sh", "-c", "pnpm drizzle-kit migrate && node dist/seed/main.js"]
     depends_on:
@@ -37,8 +37,8 @@ services:
       target: runtime
     image: medbridge/api:dev
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-medbridge}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      DATABASE_URL: postgres://${POSTGRES_USER:-medbridge}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-medbridge}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
       UPLOAD_DIR: ${UPLOAD_DIR:-/var/lib/medbridge/uploads}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       PORT: ${PORT:-3000}

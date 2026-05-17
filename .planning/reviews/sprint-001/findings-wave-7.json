@@ -1,0 +1,35 @@
+{
+  "wave_id": "wave-7",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "high",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/service.ts",
+      "line": 29,
+      "summary": "service.ts imports db and schema directly, bypassing repo.ts (ARCHITECTURE.md §2.3 layering rule)",
+      "suggested_fix": "Add findUserById(id) to apps/api/src/modules/auth/repo.ts in a follow-up wave and replace the two inline db.select().from(userTable) calls in refresh() and me() with authRepo.findUserById(...).",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-002",
+      "severity": "high",
+      "category": "security",
+      "file": "docker-compose.yml",
+      "line": 41,
+      "summary": "JWT_SECRET strict-required form replaced with weak default 'change-me'; removes compose-time fail-fast gate",
+      "suggested_fix": "Restore JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set} (and POSTGRES_PASSWORD likewise) and provide a committed .env.example so reviewer-side docker compose config has values to interpolate.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-003",
+      "severity": "medium",
+      "category": "security",
+      "file": "docker-compose.yml",
+      "line": 6,
+      "summary": "POSTGRES_PASSWORD default 'change-me' enables silent weak-credential dev/CI setups",
+      "suggested_fix": "Replace :-change-me with :?POSTGRES_PASSWORD must be set, or surface the default only through a .env.example loaded via env_file.",
+      "auto_fixable": false
+    }
+  ]
+}
