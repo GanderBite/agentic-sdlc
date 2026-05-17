@@ -1,0 +1,55 @@
+{
+  "wave_id": "wave-8",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/modules/auth/service.test.ts",
+      "line": 23,
+      "summary": "vi.mock specifiers use .ts extension while the production imports they shadow use .js (../../db/client.js, ../../shared/env.js, ./tokens.js)",
+      "suggested_fix": "Change vi.mock('../../db/client.ts'), vi.mock('../../shared/env.ts'), vi.mock('./tokens.ts') to the .js specifiers so they literally match the production import strings",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-002",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "line": 91,
+      "summary": "auth.login parses request body via c.req.json() with no try/catch; malformed JSON surfaces as a non-AppError SyntaxError and the errorHandler maps it to 500 INTERNAL rather than 400/422",
+      "suggested_fix": "Wrap `await c.req.json()` in try/catch and throw `new ValidationError('Malformed JSON body')` on parse failure so the client gets a 422 with a meaningful code",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-003",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "line": 42,
+      "summary": "AuthRouterVars.user.role is typed as plain string; contracts/auth.ts defines role as z.enum(['patient','doctor']) and could narrow the variable type",
+      "suggested_fix": "Replace `user: { userId: string; role: string }` with `user: { userId: string; role: 'patient' | 'doctor' }` or a type derived from contracts UserShape",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-004",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/modules/auth/index.ts",
+      "line": 33,
+      "summary": "wireAuth uses Hono<any> with a biome-ignore suppression instead of a shared AppEnv generic, weakening end-to-end variable typing across mounted routes",
+      "suggested_fix": "Introduce a shared AppEnv type in apps/api/src/main.ts (or shared/types.ts) and replace `Hono<any>` with `Hono<AppEnv>`; drop the biome-ignore",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-005",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/service.test.ts",
+      "line": 60,
+      "summary": "Token module is mocked wholesale; unit suite never exercises the real session-token mint/verify path",
+      "suggested_fix": "Acceptable for unit scope — rely on tokens.test.ts (wave-4) and integration tests for end-to-end coverage; no action required here",
+      "auto_fixable": false
+    }
+  ]
+}
