@@ -1,25 +1,77 @@
 {
   "$schema": "https://raw.githubusercontent.com/ganderbite/relay-core/main/schemas/intel/build-graph.schema.json",
-  "snapshot_sha": "4ea7d103c254263c4eef97562c0d4b87f62edf17",
-  "fresh_repo": true,
-  "note": "Fresh repo — no package.json on disk, so no commands have been DERIVED. The intel-keeper refuses to invent commands. The tech-stack step will pick concrete tools; intel-refresh will then populate this file from real scripts.",
+  "snapshot_sha": "698a63298ece745c06d57a56a863284313daa83f",
+  "fresh_repo": false,
   "tools": {
-    "package_manager": null,
-    "test_runner": null,
-    "linter": null,
-    "type_checker": null,
-    "builder": null,
-    "migration_tool": null
+    "package_manager": "pnpm@10.33.0",
+    "test_runner": "vitest",
+    "linter": "biome",
+    "type_checker": "tsc",
+    "builder": "tsc",
+    "migration_tool": "drizzle-kit"
   },
   "global": {
-    "install": null,
-    "test": null,
-    "lint": null,
-    "typecheck": null,
-    "build": null,
-    "format": null
+    "install": "pnpm install",
+    "test": "pnpm -r test",
+    "lint": "biome check apps packages",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build",
+    "format": "biome check --write apps packages"
   },
-  "per_module": {},
-  "smoke": [],
-  "planner_guidance": "Until this file is repopulated, task.verification for any sprint task must remain manual (human review) or rely on commands the planner explicitly declares and documents in the task itself."
+  "per_module": {
+    "@medbridge/api": {
+      "path": "apps/api",
+      "test": "pnpm --filter @medbridge/api test",
+      "typecheck": "pnpm --filter @medbridge/api typecheck",
+      "build": "pnpm --filter @medbridge/api build",
+      "lint": "pnpm --filter @medbridge/api lint",
+      "format": "pnpm --filter @medbridge/api format",
+      "dev": "pnpm --filter @medbridge/api dev",
+      "raw_scripts": {
+        "test": "vitest run",
+        "typecheck": "tsc -b",
+        "build": "tsc -b && cp -r src/db/migrations dist/db/migrations",
+        "dev": "tsx watch src/main.ts",
+        "lint": "biome check src",
+        "format": "biome check --write src"
+      },
+      "notes": "vitest config defines two projects: `unit` (src/**/*.test.ts) and `integration` (test/integration/**/*.test.ts, singleFork). Integration tests use @testcontainers/postgresql against a real Postgres."
+    },
+    "@medbridge/contracts": {
+      "path": "packages/contracts",
+      "test": "pnpm --filter @medbridge/contracts test",
+      "typecheck": "pnpm --filter @medbridge/contracts typecheck",
+      "lint": "pnpm --filter @medbridge/contracts lint",
+      "format": "pnpm --filter @medbridge/contracts format",
+      "raw_scripts": {
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "lint": "biome check src",
+        "format": "biome check --write src"
+      },
+      "notes": "No `build` script — package exports `./src/index.ts` directly. vitest config sets passWithNoTests=true; no test files exist yet."
+    }
+  },
+  "migrations": {
+    "tool": "drizzle-kit",
+    "config": "apps/api/drizzle.config.ts",
+    "schema": "apps/api/src/db/schema.ts",
+    "out": "apps/api/src/db/migrations",
+    "generate": "pnpm --filter @medbridge/api exec drizzle-kit generate",
+    "apply": "pnpm --filter @medbridge/api exec drizzle-kit migrate",
+    "notes": "DATABASE_URL must be set. In Docker Compose, `api-migrate` service runs `pnpm drizzle-kit migrate && node dist/seed/main.js`."
+  },
+  "smoke": [
+    {
+      "name": "compose-up",
+      "command": "docker compose up --build",
+      "notes": "Boots postgres → api-migrate (drizzle-kit migrate + seed) → api. Healthcheck: GET http://localhost:3000/api/health → { ok: true }."
+    },
+    {
+      "name": "api-health",
+      "command": "curl -fsS http://localhost:3000/api/health",
+      "notes": "Hono health route registered in apps/api/src/main.ts."
+    }
+  ],
+  "planner_guidance": "All commands above are derived from real package.json scripts. Prefer per-module pnpm filter commands for narrowly-scoped task verification; reserve `pnpm -r` for cross-package checks."
 }
