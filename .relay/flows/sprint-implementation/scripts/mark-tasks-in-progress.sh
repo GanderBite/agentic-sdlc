@@ -44,6 +44,9 @@ next_wave=$(jq -r --slurpfile state "$state_file" '
 
 if [ -z "$next_wave" ]; then
   log "all waves already marked done — leaving state untouched (wave-runner will emit all_waves_done)"
+  # Still sync the plan files in case a previous run wrote state but never
+  # synced (e.g. user re-runs after a crash).
+  bash "$(dirname "$0")/sync-sprint-status.sh"
   exit 0
 fi
 
@@ -72,3 +75,7 @@ jq --arg w "$next_wave" --argjson tasks "$task_ids" '
 mv -f "$tmp" "$state_file"
 
 log "state updated: current_wave=$next_wave"
+
+# Mirror the durable state into the sprint plan files so the user-facing
+# sprint-001.json / .waves.json / .tasks.json reflect the latest status.
+bash "$(dirname "$0")/sync-sprint-status.sh"

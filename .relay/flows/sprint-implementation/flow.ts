@@ -3,6 +3,8 @@ import { WaveOutcomeSchema } from "./schemas/wave-outcome.js";
 import { ExecutionPlanSchema } from "./schemas/execution-plan.js";
 import { RetroSchema } from "./schemas/retro.js";
 import { BuilderAgentsSchema } from "./schemas/builder-agents.js";
+import { ReviewOutcomeSchema } from "./schemas/review-outcome.js";
+import { FixOutcomeSchema } from "./schemas/fix-outcome.js";
 
 /**
  * sprint-implementation — execute one sprint per AGENTIC_SDLC.md §7.3.
@@ -168,10 +170,57 @@ export default defineFlow({
       maxIterations: 20,
     }),
 
+    // Post-wave aggregate code-review-fix loop. The wave-loop already runs
+    // a per-wave reviewer, but per §16.1 v1 escalates blocking findings to
+    // humans without auto-fixing. This loop closes that gap:
+    //   review        — spawn wave-reviewer over the full sprint diff,
+    //                   emit review_outcome with `clean` flag.
+    //   fix-findings  — if not clean, dispatch file-scoped fixer Tasks to
+    //                   existing builder personas (reuses builder_agents).
+    //                   No-op if review_outcome.clean === true.
+    //   fix-commit    — commit the fix-pass diff (idempotent + no-op safe).
+    // Loop exits as soon as review_outcome.clean === true, or after at most
+    // 3 iterations. `onFail: "continue"` so an unclean exhaust still flows
+    // into retro (which surfaces the unclean state in its narrative).
+    "review-fix-loop": step.loop({
+      dependsOn: ["wave-loop"],
+      body: {
+        review: step.prompt({
+          promptFile: "prompts/04_review.md",
+          tools: ["Read", "Glob", "Grep", "Bash", "Task", "Write"],
+          model: "opus",
+          agents: { from: "handoff.builder_agents", required: true },
+          output: { handoff: "review_outcome", schema: ReviewOutcomeSchema },
+        }),
+
+        "fix-findings": step.prompt({
+          promptFile: "prompts/05_fix_findings.md",
+          dependsOn: ["review"],
+          tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Task"],
+          model: "opus",
+          agents: { from: "handoff.builder_agents", required: true },
+          output: { handoff: "fix_outcome", schema: FixOutcomeSchema },
+        }),
+
+        "fix-commit": step.script({
+          run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/fix-commit.sh\""],
+          dependsOn: ["fix-findings"],
+          onFail: "abort",
+        }),
+      },
+      until: { from: "review_outcome", when: { clean: true } },
+      maxIterations: 3,
+      onFail: "continue",
+    }),
+
     retro: step.prompt({
       promptFile: "prompts/03_retro.md",
-      dependsOn: ["wave-loop"],
-      contextFrom: ["execution_plan", "wave-loop.wave_outcome"],
+      dependsOn: ["review-fix-loop"],
+      contextFrom: [
+        "execution_plan",
+        "wave-loop.wave_outcome",
+        "review-fix-loop.review_outcome",
+      ],
       tools: ["Read", "Write", "Bash"],
       model: "opus",
       output: { handoff: "retro", schema: RetroSchema },
