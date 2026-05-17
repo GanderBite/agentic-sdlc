@@ -111,7 +111,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 2,
-      "status": "todo"
+      "status": "done"
     },
     {
       "id": "wave-smoke",
