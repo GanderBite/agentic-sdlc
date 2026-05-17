@@ -1,12 +1,16 @@
 ---
 name: feedback_vitest_projects
-description: Vitest's `test.projects` config key is v3-only; v2 requires a `workspace` field pointing at vitest.workspace.ts.
+description: Vitest@2.1.9 actually does honor `test.projects` (empirically verified); the v2/v3 split is not as clean as docs suggest — empirically validate before flagging.
 metadata:
   type: feedback
 ---
 
-When a vitest.config.ts uses `test: { projects: [...] }`, that is the **Vitest 3** API. In Vitest 2.x the field is silently ignored — multi-project mode is configured via `test.workspace: './vitest.workspace.ts'` or a top-level `vitest.workspace.ts`.
+Earlier memory claimed `test.projects` was v3-only and silently ignored by v2. **Empirically falsified in sprint-001 wave-2 re-review (2026-05-17)** on vitest@2.1.9:
 
-**Why:** A planner can satisfy a substring custom check (`rg integration vitest.config.ts`) while the config is non-functional under the installed runtime. Latent failure surfaces only once integration tests exist.
+- `apps/api/vitest.config.ts` uses `test.projects: [{...unit}, {...integration}]`.
+- `pnpm --filter @medbridge/api exec vitest list` discovers BOTH suites (1 unit file with 6 tests + 7 integration files with all expected tests).
+- `pnpm --filter @medbridge/api exec vitest run` executes both suites; integration `testTimeout: 60000` is honored (testcontainer tests take ~7s and pass).
 
-**How to apply:** Whenever a wave introduces a vitest.config.ts with multi-project intent, cross-check the installed vitest major version in pnpm-lock.yaml against the chosen config API. Flag as `high` (medium at minimum) — substring gates won't catch it. Confirmed in sprint-001 wave-2: apps/api/vitest.config.ts uses test.projects with vitest@2.1.9 resolved; `pnpm exec vitest run` exits 0 with "No test files found" using default include, ignoring the projects array entirely (integration testTimeout 60000 dropped silently).
+**Why:** vitest 2.1.x added experimental forward-compat support for the v3 `projects` API even though docs only mention `workspace` for v2. Treating "projects key" as an automatic v2 misconfiguration is a false positive.
+
+**How to apply:** When you see `test.projects` in a vitest config alongside `vitest@^2`, do NOT flag based on docs alone — run `pnpm exec vitest list` and observe whether both project suites are enumerated. Only flag if discovery actually drops a suite. The v2 `workspace` key is still valid, but `projects` is no longer a guaranteed failure on v2.x.

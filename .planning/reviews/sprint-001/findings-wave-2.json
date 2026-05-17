@@ -3,62 +3,42 @@
   "findings": [
     {
       "id": "F-001",
-      "severity": "high",
+      "severity": "medium",
       "category": "architecture",
-      "file": "apps/api/vitest.config.ts",
-      "line": 5,
-      "summary": "vitest@^2 silently ignores test.projects (v3-only API); integration suite + testTimeout=60000 are dead config and integration tests will never run.",
-      "suggested_fix": "Use vitest v2 workspace API: set test.workspace=['./vitest.unit.config.ts','./vitest.integration.config.ts'] with two sibling configs, OR bump devDependency vitest to ^3 to make projects work. Verify with `pnpm exec vitest list` showing both suites.",
+      "file": "packages/contracts/package.json",
+      "line": 6,
+      "summary": "exports points at './src/index.ts'; bare `node` cannot resolve .ts (verified: ERR_MODULE_NOT_FOUND). All current consumers (tsx/vitest) transpile so dev+tests are green, but production `node dist/main.js` will fail to load @medbridge/contracts.",
+      "suggested_fix": "Either (a) emit JS to dist/ (drop emitDeclarationOnly in packages/contracts/tsconfig.json) and set exports={'.':{import:'./dist/index.js',types:'./dist/index.d.ts'}}, or (b) bundle contracts into apps/api at build time and document the source-only contract.",
       "auto_fixable": false
     },
     {
       "id": "F-002",
-      "severity": "high",
-      "category": "architecture",
-      "file": "packages/contracts/package.json",
-      "line": 6,
-      "summary": "exports points to './src/index.ts' but contracts emits only .d.ts (emitDeclarationOnly); Node ESM cannot load .ts at runtime so production apps/api (compiled JS) cannot resolve @medbridge/contracts.",
-      "suggested_fix": "Drop emitDeclarationOnly in packages/contracts/tsconfig.json, emit JS to dist/, and set exports={'.':{import:'./dist/index.js',types:'./dist/index.d.ts'}}. Alternatively, document contracts as TS-source-only and have apps/api bundle it.",
-      "auto_fixable": false
-    },
-    {
-      "id": "F-003",
-      "severity": "medium",
-      "category": "architecture",
-      "file": "apps/api/package.json",
-      "line": 9,
-      "summary": "build script `tsc -b && cp -r src/db/migrations dist/db/migrations` will fail today: src/db/migrations does not exist (lands in wave-5).",
-      "suggested_fix": "Guard the copy: `tsc -b && mkdir -p dist/db && ([ -d src/db/migrations ] && cp -r src/db/migrations dist/db/migrations || true)`. Tighten once migrations wave lands.",
-      "auto_fixable": true
-    },
-    {
-      "id": "F-004",
-      "severity": "medium",
+      "severity": "low",
       "category": "architecture",
       "file": "apps/api/tsconfig.json",
       "line": 1,
-      "summary": "No project `references` to packages/contracts though contracts is composite and apps/api imports it; `tsc -b` from apps/api won't rebuild contracts and IDE go-to-def may degrade.",
-      "suggested_fix": "Add `\"references\": [{\"path\": \"../../packages/contracts\"}]` to apps/api/tsconfig.json so `tsc -b` rebuilds contracts when its sources change.",
+      "summary": "No TypeScript project `references` to ../../packages/contracts though contracts is composite and apps/api imports from it; `tsc -b` works today only because the workspace symlink exposes contracts/dist/*.d.ts.",
+      "suggested_fix": "Add `\"references\": [{\"path\": \"../../packages/contracts\"}]` so apps/api's `tsc -b` rebuilds contracts on contracts source change and the composite graph is self-consistent.",
       "auto_fixable": true
     },
     {
-      "id": "F-005",
+      "id": "F-003",
       "severity": "low",
       "category": "architecture",
       "file": "apps/api/package.json",
       "line": 16,
-      "summary": "Runtime dep @hono/node-server is not in ARCHITECTURE.md §6.3 allow-list; required by Hono on Node but no ADR documents the choice.",
-      "suggested_fix": "Add a note in docs/ARCHITECTURE.md §6.3 listing @hono/node-server as the Hono Node adapter, or capture it in tech-stack ADR.",
+      "summary": "Runtime dep @hono/node-server is not enumerated in ARCHITECTURE.md §6.3 allow-list (which lists hono, drizzle-orm, pg, zod, argon2, jose, pino). The Node adapter is necessary for Hono on Node but undocumented.",
+      "suggested_fix": "Add @hono/node-server to docs/ARCHITECTURE.md §6.3 as the Hono Node adapter, or capture in a tech-stack ADR.",
       "auto_fixable": false
     },
     {
-      "id": "F-006",
+      "id": "F-004",
       "severity": "info",
       "category": "architecture",
       "file": "packages/contracts/src/index.ts",
       "line": 1,
-      "summary": "File on disk now re-exports './auth.js' (added by wave-3 commit 97c93ef); wave-2 scaffold originally produced an empty barrel — current content is post-wave-2 drift, not a wave-2 defect.",
-      "suggested_fix": "No action for wave-2; review-wave-3 already audits the auth.ts re-export. Informational pointer that the on-disk content differs from the wave-2 commit (0ba770d).",
+      "summary": "On-disk content (`export * from './auth.js'`) differs from wave-2's empty barrel — re-exports added by wave-3 commit 97c93ef. Not a wave-2 defect; the wave-2 scaffold spec called for an empty barrel and that is what 0ba770d committed.",
+      "suggested_fix": "No action for wave-2; the auth re-export is covered by review-wave-3 findings. Informational pointer that the working-tree state reflects later waves.",
       "auto_fixable": false
     }
   ]
