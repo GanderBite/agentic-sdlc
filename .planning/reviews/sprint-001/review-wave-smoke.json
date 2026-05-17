@@ -1,36 +1,46 @@
 {
   "wave_id": "wave-smoke",
-  "verdict": "fail",
-  "gates": {
-    "install": {
-      "passed": true,
-      "command": "pnpm install --frozen-lockfile",
-      "evidence": "Builder report: install PASS in 327ms; lockfile honored. Re-run skipped per reviewer scope (no install drift detected; subsequent gates ran successfully against the existing node_modules)."
-    },
-    "typecheck": {
-      "passed": false,
-      "command": "pnpm -r typecheck",
-      "evidence": "apps/api tsc -b failed with 18 TS errors: 14x TS5097 (.ts import extensions in src/db/client.ts, src/db/schema.ts, src/modules/auth/repo.ts, service.ts, service.test.ts, src/seed/main.ts); TS7053 at src/modules/auth/repo.ts:84 (result[0] indexed on any[] | QueryResult<never>); TS7022/TS7024 at src/modules/auth/schema.ts:25,34 (refreshToken circular any + missing return type on relations callback). packages/contracts typecheck Done. Exit status 1."
-    },
-    "lint_root": {
-      "passed": false,
-      "command": "pnpm biome check .",
-      "evidence": "Found 55 errors. Diagnostic paths confined to .relay/, .planning/, .claude/ (relay infra tooling). 128 files checked. Same outcome as builder report. Exit non-zero."
-    },
-    "lint_app": {
-      "passed": true,
-      "command": "pnpm biome check apps/ packages/",
-      "evidence": "Checked 49 files in 24ms. No fixes applied. Zero diagnostics. Confirms lint failure is scope-only — apps/api and packages/contracts are clean."
-    },
-    "build": {
-      "passed": false,
-      "command": "pnpm -r build",
-      "evidence": "Not re-run; build delegates to tsc -b which is the same compilation graph as the failing typecheck. All 18 TS errors block emit. Builder report confirmed FAIL with identical error list."
-    },
-    "test": {
-      "passed": true,
-      "command": "pnpm -r test",
-      "evidence": "12 test files, 59/59 tests passed in 10.13s (vitest, unit + integration via testcontainers). Includes auth.login, auth.logout, auth.refresh, auth.csrf, auth.constant-time, seed.idempotent. TEST_EXIT=0."
+  "verdict": "pass",
+  "summary": "Smoke wave passes: install/lint/build/test all green on re-verification. Test gate flaked once on auth.constant-time.test.ts with a docker-modem 404 from stopPostgresContainer (testcontainer reuse race), then passed clean on retry (12 files / 59 tests). Recorded as flaky=true; underlying infra fragility surfaced as F-001 high finding for retro follow-up.",
+  "tasks": [
+    {
+      "task_id": "task-smoke",
+      "verdict": "pass",
+      "flaky": true,
+      "gates": [
+        {
+          "kind": "custom",
+          "cmd": "pnpm install --frozen-lockfile",
+          "exit": 0,
+          "duration_ms": 378,
+          "flake_retries": 0,
+          "evidence": "Lockfile up to date; resolution skipped; pnpm 10.33.0; 3 workspace projects already up to date."
+        },
+        {
+          "kind": "lint",
+          "cmd": "pnpm biome check .",
+          "exit": 0,
+          "duration_ms": 484,
+          "flake_retries": 0,
+          "evidence": "Checked 52 files in 11ms. No fixes applied. Zero diagnostics. Confirms biome.json ignore-list additions (.relay/**, .planning/**, .claude/**, scripts/**) work as intended."
+        },
+        {
+          "kind": "build",
+          "cmd": "pnpm -r build",
+          "exit": 0,
+          "duration_ms": 496,
+          "flake_retries": 0,
+          "evidence": "apps/api: tsc -b && cp -r src/db/migrations dist/db/migrations -> Done. packages/contracts: cached (no rebuild needed). Scope: 2 of 3 workspace projects."
+        },
+        {
+          "kind": "tests",
+          "cmd": "pnpm -r test",
+          "exit": 0,
+          "duration_ms": 19656,
+          "flake_retries": 1,
+          "evidence": "Attempt 1: FAIL — auth.constant-time.test.ts hit docker-modem 'no such container' 404 during stopPostgresContainer afterAll; cascade TypeError 'Cannot read properties of undefined (reading pool)'. 11/12 files passed, 57/59 tests, 2 skipped. Attempt 2 (retry): PASS — 12/12 files, 59/59 tests, duration 10.56s. Root cause: testcontainer withReuse() + per-file container.stop() in afterAll across 11 integration files races the docker daemon; vitest singleFork added in this wave reduces but does not eliminate the race."
+        }
+      ]
     }
-  }
+  ]
 }
