@@ -7,8 +7,8 @@
       "category": "architecture",
       "file": ".planning/sprints/sprint-001.tasks.json",
       "line": 1,
-      "summary": "plan-defect: task-workspace-root custom[0] regex `^packageManager\":\\s*\"pnpm@10` cannot match valid JSON (key is quoted+indented); code at package.json:5 is spec-correct.",
-      "suggested_fix": "Edit sprint-001.tasks.json task-workspace-root.verification.custom[0].cmd to `rg --quiet '\"packageManager\"\\s*:\\s*\"pnpm@10' package.json` then re-run wave-1. Zero file changes required in code.",
+      "summary": "plan-defect: task-workspace-root custom[0] regex `^packageManager\":\\s*\"pnpm@10` cannot match indented JSON key at package.json:5; code is spec-correct.",
+      "suggested_fix": "Edit sprint-001.tasks.json task-workspace-root.verification.custom[0].cmd to `rg --quiet '\"packageManager\"\\s*:\\s*\"pnpm@10' package.json` then re-run wave-1. Zero code changes required.",
       "auto_fixable": false
     },
     {
@@ -17,8 +17,8 @@
       "category": "architecture",
       "file": "package.json",
       "line": 5,
-      "summary": "wave-1 builder reported zero file changes this iteration; workspace already spec-correct from prior commit 10a084c (and lockfile regen 008f20b).",
-      "suggested_fix": "No action: the partial verdict reflects a plan defect (F-001), not a code defect. Apply F-001 fix and re-run wave-1 verification to clear the gate.",
+      "summary": "wave-1 builder reported zero file changes this iteration; workspace already spec-correct from prior commits (10a084c scaffold, 008f20b lockfile).",
+      "suggested_fix": "No action required: partial verdict reflects F-001 plan defect, not a code defect. Apply F-001 plan-repair and re-run wave-1 verification to clear the gate.",
       "auto_fixable": false
     }
   ]
