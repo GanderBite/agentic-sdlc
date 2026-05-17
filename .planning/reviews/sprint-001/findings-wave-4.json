@@ -1,65 +1,63 @@
 {
   "wave_id": "wave-4",
+  "sprint_id": "sprint-001",
+  "verdict": "fail",
   "findings": [
     {
-      "id": "F-001",
       "severity": "blocking",
-      "category": "architecture",
       "file": "apps/api/src/db/client.ts",
       "line": 5,
-      "summary": "Relative imports use `.ts` extensions (env.ts, schema.ts); under NodeNext+verbatimModuleSyntax tsc -b fails with TS5097 and the whole apps/api typecheck breaks.",
-      "suggested_fix": "Rewrite line 5 to `from '../shared/env.js'` and line 6 to `from './schema.js'` — matches the project convention set by shared/logger.ts and modules/auth/tokens.ts. Re-run `pnpm --filter @medbridge/api typecheck` to confirm zero errors.",
-      "auto_fixable": true
-    },
-    {
-      "id": "F-002",
-      "severity": "high",
       "category": "architecture",
-      "file": "apps/api/src/db/client.ts",
-      "line": 22,
-      "summary": "Module top-level `pool = new Pool(...)` plus `export const db = createDb(pool)` opens a real pg connection pool at import time and re-imports the eager env singleton already flagged in wave-3 F-001 — defeats the buildApp(env) DI seam.",
-      "suggested_fix": "Drop the eager singletons: export only `createDb(pool)` and a `createPool(env: Env)` factory. main.ts (wave-7) builds them once after loadEnv(); integration tests inject their own Pool. Same posture as the wave-3 F-001 / F-002 logger fix.",
-      "auto_fixable": false
+      "message": "Relative imports use `.ts` extensions ('../shared/env.ts' line 5, './schema.ts' line 6). Under NodeNext + verbatimModuleSyntax tsc -b emits TS5097 and the apps/api typecheck/build break — already confirmed blocking in the smoke wave (findings-wave-smoke F-001). Sprint-001 convention is `.js` extensions on relative imports."
     },
     {
-      "id": "F-003",
-      "severity": "medium",
-      "category": "architecture",
-      "file": "apps/api/src/modules/auth/tokens.ts",
-      "line": 93,
-      "summary": "hashRefreshToken returns `string` synchronously, but the task spec mandates `Promise<string>`; callers typed against the spec will hit a TS signature mismatch.",
-      "suggested_fix": "Either change the signature to `async function hashRefreshToken(raw: string): Promise<string>` (return the digest directly — async wraps it) or escalate to the planner for a spec amendment. Sync is fine at runtime; the issue is the contracted Promise return type.",
-      "auto_fixable": true
-    },
-    {
-      "id": "F-004",
-      "severity": "medium",
-      "category": "architecture",
-      "file": "apps/api/src/db/client.ts",
-      "line": 17,
-      "summary": "Pool sizing (max 10, idleTimeoutMillis, connectionTimeoutMillis) is hardcoded; the task spec said `sized from env` but env.ts has no DB_POOL_MAX/timeouts. Builder hit a planner gap.",
-      "suggested_fix": "Either (a) extend env.ts with DB_POOL_MAX / DB_IDLE_TIMEOUT_MS / DB_CONN_TIMEOUT_MS (note env.ts is not in this task's target_files — planner must amend) and read them here, or (b) accept the constants and amend the task spec. Surface this to the planner via step.ask before wave-5.",
-      "auto_fixable": false
-    },
-    {
-      "id": "F-005",
-      "severity": "low",
-      "category": "duplication",
-      "file": "apps/api/src/modules/auth/tokens.ts",
-      "line": 10,
-      "summary": "tokens.ts calls loadEnv() at module top-level for the fail-fast side-effect, but the eager `export const env = loadEnv()` in shared/env.ts already validates at first import; the second call is redundant.",
-      "suggested_fix": "Once wave-3 F-001 lands (eager singleton removed), tokens.ts' explicit loadEnv() call becomes the canonical fail-fast trigger. Until then, leave a JSDoc comment noting the redundancy and rely on env.ts's singleton.",
-      "auto_fixable": false
-    },
-    {
-      "id": "F-006",
-      "severity": "info",
-      "category": "architecture",
+      "severity": "blocking",
       "file": "apps/api/src/db/schema.ts",
       "line": 1,
-      "summary": "Barrel intentionally empty per task spec (downstream tasks add module schemas). Matches ARCHITECTURE.md §4.2.",
-      "suggested_fix": "No action this wave. When wave-5+ adds modules/*/schema.ts, re-export here.",
-      "auto_fixable": false
+      "category": "architecture",
+      "message": "Barrel re-export uses `.ts` extension (`export * from '../modules/auth/schema.ts'`). Same TS5097 class as client.ts — rewrite to `'../modules/auth/schema.js'` so the schema barrel can be consumed by client.ts and downstream wave-5+ modules without breaking emit."
+    },
+    {
+      "severity": "high",
+      "file": "apps/api/src/db/client.ts",
+      "line": 15,
+      "category": "architecture",
+      "message": "Module-level `new Pool(...)` plus `export const db = createDb(pool)` opens a real pg connection pool at import time and depends on the eager `env` singleton from shared/env.ts. This defeats the buildApp(env) DI seam wave-7 needs for JWT_SECRET fail-fast tests and forces every test that imports anything transitive through db/client.ts to spin up Postgres. Expose only `createDb(pool)` and a `createPool(env: Env)` factory; main.ts builds them once after loadEnv()."
+    },
+    {
+      "severity": "medium",
+      "file": "apps/api/src/modules/auth/tokens.ts",
+      "line": 93,
+      "category": "architecture",
+      "message": "`hashRefreshToken(raw): string` is synchronous, but the task-auth-tokens contract in sprint-001.tasks.json line 503 mandates `hashRefreshToken(raw): Promise<string>`. Callers typed against the spec will see a signature mismatch. Change to `async function hashRefreshToken(raw: string): Promise<string>` (returns the same hex string; async wraps it) or escalate to the planner for a spec amendment."
+    },
+    {
+      "severity": "medium",
+      "file": "apps/api/src/db/client.ts",
+      "line": 17,
+      "category": "architecture",
+      "message": "Connection-pool sizing (max 10, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 5_000) is hardcoded; enriched task spec said `sized from env` but env.ts has no DB_POOL_MAX / DB_IDLE_TIMEOUT_MS / DB_CONN_TIMEOUT_MS keys — a planner gap. Either extend env.ts (requires target_files amendment since env.ts is not in this task's scope) or amend the spec to accept the constants; surface via step.ask before wave-5."
+    },
+    {
+      "severity": "low",
+      "file": "apps/api/src/modules/auth/tokens.ts",
+      "line": 10,
+      "category": "duplication",
+      "message": "Top-level `const _env = loadEnv(); void _env;` is redundant: shared/env.ts already eager-loads via `export const env: Env = loadEnv()` at line 26, so the first import of env.ts already throws on an undersized JWT_SECRET. The explicit call is harmless today but becomes load-bearing only after the env eager-singleton is removed (the wave-3 logger DI fix posture)."
+    },
+    {
+      "severity": "info",
+      "file": "apps/api/src/db/schema.ts",
+      "line": 1,
+      "category": "architecture",
+      "message": "Schema barrel currently re-exports only ../modules/auth/schema; matches ARCHITECTURE.md §4.2 barrel convention. No action this wave — downstream tasks (wave-5+) will add additional module schema re-exports here."
     }
-  ]
+  ],
+  "summary": {
+    "blocking": 2,
+    "high": 1,
+    "medium": 2,
+    "low": 1,
+    "info": 1
+  }
 }
