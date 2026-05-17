@@ -1,0 +1,45 @@
+{
+  "wave_id": "wave-6",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/src/seed/main.ts",
+      "line": 25,
+      "summary": "Seed calls drizzle db.insert directly, bypassing module repo layer (insertUser).",
+      "suggested_fix": "Import insertUser from apps/api/src/modules/auth/repo.ts and call it once per user instead of building the insert inline; preserves §2.3 'repo.ts is the only db-touching file' for the auth module.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-002",
+      "severity": "low",
+      "category": "security",
+      "file": "apps/api/src/seed/main.ts",
+      "line": 17,
+      "summary": "SEED_PASSWORD default literal hardcoded in source (also in .env.example).",
+      "suggested_fix": "Acceptable for PoC seed but consider removing the default and failing fast when SEED_PASSWORD is unset in non-dev environments; or guard with NODE_ENV check.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-003",
+      "severity": "low",
+      "category": "architecture",
+      "file": "apps/api/test/support/fixtures.ts",
+      "line": 31,
+      "summary": "insertSeedUsers emails differ from production seed (seed.test vs medbridge.test) — silent drift risk.",
+      "suggested_fix": "Either reuse PATIENT_EMAIL/DOCTOR_EMAIL constants from a shared module or document the deliberate split in a top-of-file comment so future readers do not assume parity.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-004",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/test/support/db.ts",
+      "line": 37,
+      "summary": "withReuse() left enabled outside CI may surface stale schema between local runs after migration changes.",
+      "suggested_fix": "Document that contributors must run `docker rm` on the reused container when migrations change; or invalidate reuse via container name including a migrations-folder hash.",
+      "auto_fixable": false
+    }
+  ]
+}
