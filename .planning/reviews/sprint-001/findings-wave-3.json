@@ -28,7 +28,7 @@
       "file": "apps/api/src/shared/logger.ts",
       "line": 5,
       "summary": "pino redact wildcard `*.password` matches one nesting level only; deeper paths like req.body.user.password are not redacted",
-      "suggested_fix": "Add explicit deep paths (e.g. `req.body.user.password`) or use pino's `**.password` style only if compatible. Pair with a unit test asserting nested payload redaction in wave-7+.",
+      "suggested_fix": "Add explicit deep paths (e.g. `req.body.user.password`) or extend the REDACT_PATHS list with `**.password` if pino's `*` mode allows it. Add a unit test asserting nested payload redaction in wave-7+.",
       "auto_fixable": false
     },
     {
@@ -49,6 +49,16 @@
       "line": 19,
       "summary": "UserId branded type duplicated across apps/api/shared/ids.ts and packages/contracts/src/auth.ts (zod brand) without a shared bridge",
       "suggested_fix": "Document in conventions or have shared/ids re-export the zod brand from @medbridge/contracts so call sites use one canonical UserId type.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-006",
+      "severity": "low",
+      "category": "architecture",
+      "file": "apps/api/src/shared/logger.ts",
+      "line": 3,
+      "summary": "logger.ts imports `{ env }` singleton at module load, transitively forcing env validation before any DI seam can substitute LOG_LEVEL",
+      "suggested_fix": "Once F-001's getEnv() lazy seam lands, change `level: env.LOG_LEVEL` to `level: getEnv().LOG_LEVEL` inside a logger factory, or accept `LOG_LEVEL` as a buildLogger(opts) argument so buildApp wires it.",
       "auto_fixable": false
     }
   ]
