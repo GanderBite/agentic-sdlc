@@ -3,42 +3,112 @@
   "findings": [
     {
       "id": "F-001",
-      "severity": "blocking",
-      "category": "architecture",
-      "file": "apps/api/src/modules/auth/service.ts",
-      "line": 29,
-      "summary": "Cross-wave: 16 TS5097 errors from .ts-extension imports gate the @medbridge/api typecheck; tsc -b exits 1.",
-      "suggested_fix": "Follow-up wave: convert .ts to .js in db/client.ts(5,6), db/schema.ts(1), modules/auth/repo.ts(4,5), modules/auth/service.ts(29,34,35), service.test.ts(71,73), seed/main.ts(1,2,3,4). main.ts itself is clean.",
-      "auto_fixable": true
-    },
-    {
-      "id": "F-002",
-      "severity": "low",
-      "category": "duplication",
-      "file": "apps/api/src/main.ts",
-      "line": 19,
-      "summary": "loadEnv(process.env) at boot is redundant with eager singleton in shared/env.ts line 26; both validate on import.",
-      "suggested_fix": "Either remove the eager `export const env = loadEnv()` from shared/env.ts (preferred, makes DI testable per agent memory project_env_eager_load) OR drop the explicit loadEnv() call in main.ts. Today both run.",
-      "auto_fixable": false
-    },
-    {
-      "id": "F-003",
-      "severity": "low",
-      "category": "architecture",
-      "file": "apps/api/src/main.ts",
-      "line": 42,
-      "summary": "buildApp accepts env via parameter but ignores it (_env); the app reads env transitively through module-level singletons.",
-      "suggested_fix": "Either thread env into createAuthService / db client constructors for full DI (matches buildApp(env) factory pattern) or drop the unused parameter and document that env is a process-level singleton.",
-      "auto_fixable": false
-    },
-    {
-      "id": "F-004",
       "severity": "high",
       "category": "security",
       "file": "apps/api/src/main.ts",
       "line": 48,
       "summary": "cors({ origin: '*', credentials: true }) is silently rejected by browsers; breaks cookie-based auth per ARCHITECTURE §5.4.",
-      "suggested_fix": "Narrow CORS origin to the SPA host via env (CORS_ORIGIN) — browsers ignore Access-Control-Allow-Credentials when Allow-Origin is '*'. Cookie auth (session/refresh/csrf) silently fails in browsers.",
+      "suggested_fix": "Narrow CORS origin to the SPA host via env (CORS_ORIGIN). Browsers ignore Access-Control-Allow-Credentials when Allow-Origin is '*' so session/refresh/csrf cookies silently fail.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-002",
+      "severity": "medium",
+      "category": "duplication",
+      "file": "apps/api/src/modules/auth/service.test.ts",
+      "line": 23,
+      "summary": "vi.mock specifiers still point at '.ts' paths while SUT imports were rewritten to '.js'; mock factories may fail to intercept the renamed module IDs.",
+      "suggested_fix": "Update vi.mock('../../db/client.ts'|'../../shared/env.ts'|'./tokens.ts') to use the matching '.js' specifiers (or import-resolved IDs) and re-run vitest to confirm interception.",
+      "auto_fixable": true
+    },
+    {
+      "id": "F-003",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/src/main.ts",
+      "line": 42,
+      "summary": "buildApp(env) accepts env as _env and ignores it; createAuthService/db/hasher all resolve env through module-level singletons, so the DI seam is illusory.",
+      "suggested_fix": "Either thread env into the inner constructors so integration tests can inject test config, or drop the env parameter and rename to buildApp() — document that env is a process-level singleton.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-004",
+      "severity": "low",
+      "category": "duplication",
+      "file": "apps/api/src/main.ts",
+      "line": 19,
+      "summary": "loadEnv(process.env) at boot duplicates the eager singleton in shared/env.ts:26; both invocations validate the env at import time.",
+      "suggested_fix": "Remove the eager `export const env = loadEnv()` from shared/env.ts (preferred — restores DI per agent memory env_eager_load) OR drop the explicit loadEnv() call here. Today both run.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-005",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/db/client.ts",
+      "line": 1,
+      "summary": "Edited outside task-app-main target_files (create-only apps/api/src/main.ts); authorised by wave-runner to unblock the build gate (TS5097 .ts->.js fix).",
+      "suggested_fix": "Extend task-app-main.target_files.may_also_touch in the next plan revision OR split TS5097 cleanup into its own chore task to keep wave scope honest.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-006",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/db/schema.ts",
+      "line": 1,
+      "summary": "Edited outside task-app-main target_files (TS5097 .ts->.js fix); same scope-drift root cause as F-005.",
+      "suggested_fix": "Bundle with F-005 when updating the plan's may_also_touch list.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-007",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/repo.ts",
+      "line": 1,
+      "summary": "Edited outside task-app-main target_files (TS5097 .ts->.js fix); same scope-drift root cause as F-005.",
+      "suggested_fix": "Bundle with F-005 when updating the plan's may_also_touch list.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-008",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/schema.ts",
+      "line": 34,
+      "summary": "Edited outside task-app-main target_files (TS5097 plus TS7022 explicit AnyPgColumn return type on refreshToken.replacedBy circular self-reference).",
+      "suggested_fix": "Bundle with F-005 when updating the plan's may_also_touch list; the AnyPgColumn annotation is the correct fix for the circular reference.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-009",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/service.ts",
+      "line": 29,
+      "summary": "Edited outside task-app-main target_files (TS5097 .ts->.js fix on db/passwords/repo/schema/tokens imports).",
+      "suggested_fix": "Bundle with F-005 when updating the plan's may_also_touch list.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-010",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/service.test.ts",
+      "line": 71,
+      "summary": "Edited outside task-app-main target_files (TS5097 .ts->.js fix on the post-mock import block). Note this file still has unresolved vi.mock specifier mismatch (see F-002).",
+      "suggested_fix": "Bundle with F-005 when updating the plan's may_also_touch list.",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-011",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/seed/main.ts",
+      "line": 1,
+      "summary": "Edited outside task-app-main target_files (TS5097 .ts->.js fix); same scope-drift root cause as F-005.",
+      "suggested_fix": "Bundle with F-005 when updating the plan's may_also_touch list.",
       "auto_fixable": false
     }
   ]

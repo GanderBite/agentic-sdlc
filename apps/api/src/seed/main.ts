@@ -1,7 +1,7 @@
-import { db, pool } from '../db/client.ts';
-import { defaultPasswordHasher } from '../modules/auth/passwords.ts';
-import { user } from '../modules/auth/schema.ts';
-import { logger } from '../shared/logger.ts';
+import { db, pool } from '../db/client.js';
+import { defaultPasswordHasher } from '../modules/auth/passwords.js';
+import { user } from '../modules/auth/schema.js';
+import { logger } from '../shared/logger.js';
 
 // ---------------------------------------------------------------------------
 // Seed entry-point
