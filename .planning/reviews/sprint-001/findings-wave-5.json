@@ -3,80 +3,43 @@
   "findings": [
     {
       "id": "F-001",
-      "severity": "blocking",
-      "category": "architecture",
-      "file": "apps/api/src/db/schema.ts",
-      "line": 1,
-      "summary": "Barrel re-exports from '../modules/auth/schema.ts' with a literal .ts extension; under NodeNext+verbatimModuleSyntax tsc -b fails with TS5097 (allowImportingTsExtensions is not set).",
-      "suggested_fix": "Change line 1 to `export * from '../modules/auth/schema.js';` — same .js convention used by shared/logger.ts and modules/auth/tokens.ts. Re-run `pnpm --filter @medbridge/api typecheck` to confirm zero TS5097 errors.",
-      "auto_fixable": true
-    },
-    {
-      "id": "F-002",
-      "severity": "blocking",
-      "category": "architecture",
-      "file": "apps/api/src/modules/auth/schema.ts",
-      "line": 25,
-      "summary": "`refreshToken` self-references via `replacedBy` -> refreshToken.id without an explicit type annotation, producing TS7022 / TS7024 (implicit any on a recursive initializer). Breaks tsc -b for apps/api.",
-      "suggested_fix": "Add an explicit table type annotation, e.g. `export const refreshToken: PgTableWithColumns<...> = pgTable(...)` OR split the self-FK out via an `addForeignKey`-style follow-up. Simpler fix: split into two-step table definition or annotate the const. Confirm with `pnpm --filter @medbridge/api typecheck`.",
+      "severity": "medium",
+      "category": "style",
+      "file": "apps/api/src/middleware/errorHandler.ts",
+      "line": 39,
+      "summary": "Cast `err.status as 422` lies to the type-checker; runtime status is correct but the literal annotation is wrong for any non-422 AppError.",
+      "suggested_fix": "Replace `as 422` with a Hono ContentfulStatusCode cast: import { ContentfulStatusCode } from 'hono/utils/http-status' and use `err.status as ContentfulStatusCode`.",
       "auto_fixable": false
     },
     {
+      "id": "F-002",
+      "severity": "low",
+      "category": "performance",
+      "file": "apps/api/src/middleware/logger.ts",
+      "line": 28,
+      "summary": "When userId is present, a second withRequestId child logger is created instead of adding a binding to the existing child.",
+      "suggested_fix": "Change line 28 to `const log = userId ? child.child({ userId }) : child;` so we rebind rather than rebuild the pino child.",
+      "auto_fixable": true
+    },
+    {
       "id": "F-003",
-      "severity": "high",
-      "category": "architecture",
-      "file": "apps/api/src/middleware/authn.ts",
-      "line": 5,
-      "summary": "authn imports the eager `env` singleton from shared/env.ts and reads `env.JWT_SECRET` at request time; perpetuates the wave-3 F-001 / wave-4 F-002 eager-load anti-pattern and defeats buildApp(env) DI in wave-7/9.",
-      "suggested_fix": "Accept `jwtSecret` (or the whole `Env`) via a middleware factory: `export function authn(jwtSecret: string): MiddlewareHandler`. Compose in main.ts (wave-9) once env is loaded. Same posture as the wave-4 F-002 db/client.ts fix that is still pending.",
+      "severity": "low",
+      "category": "performance",
+      "file": "apps/api/src/db/migrations/0000_initial.sql",
+      "line": 16,
+      "summary": "refresh_token.user_id foreign key has no supporting index; per-user revocation and cleanup scans will be sequential as the table grows.",
+      "suggested_fix": "Append `CREATE INDEX refresh_token_user_id_idx ON refresh_token(user_id);` and add the matching `index('refresh_token_user_id_idx').on(t.userId)` declaration in apps/api/src/modules/auth/schema.ts.",
       "auto_fixable": false
     },
     {
       "id": "F-004",
-      "severity": "medium",
-      "category": "architecture",
-      "file": "apps/api/src/middleware/csrf.ts",
-      "line": 11,
-      "summary": "STATE_CHANGING_METHODS includes PUT, but ARCHITECTURE.md §5.4 specifies only POST/PATCH/DELETE require CSRF; the task description also lists POST/PATCH/DELETE only.",
-      "suggested_fix": "Either drop 'PUT' from the Set to match the architecture spec, or amend ARCHITECTURE.md §5.4 / the task description to record that PUT is intentionally guarded. The RPC-style route convention (verb in path) means PUT is never used in practice, so removing it is the lower-risk fix.",
-      "auto_fixable": true
-    },
-    {
-      "id": "F-005",
-      "severity": "medium",
-      "category": "architecture",
-      "file": "apps/api/src/middleware/authz.ts",
-      "line": 29,
-      "summary": "`const userRole = user.role as string` casts `user` (typed as unknown via c.get) without consulting the SessionPayload schema; if a future authn change drops `role`, this silently coerces undefined to the string 'undefined'.",
-      "suggested_fix": "Either (a) declare a Hono `Variables` type for the app context that types `user` as SessionPayload, or (b) zod-parse `c.get('user')` against the existing sessionPayloadSchema before reading `.role`. Option (a) is the cleaner long-term fix.",
-      "auto_fixable": false
-    },
-    {
-      "id": "F-006",
-      "severity": "low",
-      "category": "style",
-      "file": "apps/api/src/middleware/errorHandler.ts",
-      "line": 39,
-      "summary": "`err.status as 422` casts to a single literal HTTP status, which is incorrect for non-422 AppError subclasses (401/403/404/409/413/415/500); the cast happens to compile but misrepresents the value to readers.",
-      "suggested_fix": "Cast to Hono's `ContentfulStatusCode` (from `hono/utils/http-status`) instead: `err.status as ContentfulStatusCode`. Removes the misleading 422 literal while keeping the assignment type-safe.",
-      "auto_fixable": true
-    },
-    {
-      "id": "F-007",
       "severity": "info",
       "category": "architecture",
-      "file": "apps/api/src/db/migrations/meta/_journal.json",
-      "line": 8,
-      "summary": "Migration `when` timestamp is 1747353600000 (2025-05-16), one year before today (2026-05-16); drizzle-kit typically stamps the generation time. Cosmetic but inconsistent with reality.",
-      "suggested_fix": "On the next drizzle-kit generate run the timestamp will be regenerated. No action this wave unless migration ordering is challenged later.",
+      "file": "apps/api/src/middleware/authn.ts",
+      "line": 45,
+      "summary": "authn reads env.JWT_SECRET from the eager-load singleton; consistent with sprint pattern but reinforces the wave-7 buildApp DI gap.",
+      "suggested_fix": "Track for wave-7: pass JWT secret into authn via factory/DI so buildApp can fail-fast on missing JWT_SECRET in tests without re-importing the env module.",
       "auto_fixable": false
     }
-  ],
-  "summary": {
-    "blocking": 2,
-    "high": 1,
-    "medium": 2,
-    "low": 1,
-    "info": 1
-  }
+  ]
 }
