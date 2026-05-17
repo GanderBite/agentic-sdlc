@@ -3,72 +3,52 @@
   "findings": [
     {
       "id": "F-001",
-      "severity": "high",
+      "severity": "medium",
       "category": "architecture",
       "file": "apps/api/src/shared/env.ts",
       "line": 26,
-      "summary": "Module top-level `export const env = loadEnv()` runs at import time; defeats the buildApp(env) DI seam required for the JWT_SECRET fail-fast test (enriched bullet 10).",
-      "suggested_fix": "Drop the eager singleton: remove line 26 and require every consumer to take Env via constructor/factory args. main.ts calls `const env = loadEnv(process.env)` then passes it into buildApp/createLogger/createDb. Integration tests that need to override JWT_SECRET then call buildApp({ ...baseEnv, JWT_SECRET: 'too-short' }) and observe the throw without a prior import-time crash.",
+      "summary": "env singleton built at module import time defeats DI/fail-fast tests that need to feed a custom source",
+      "suggested_fix": "Keep loadEnv() factory; defer singleton construction to a buildApp/main bootstrap, or lazy-init via `let _env; export const getEnv = () => _env ??= loadEnv()`.",
       "auto_fixable": false
     },
     {
       "id": "F-002",
-      "severity": "high",
-      "category": "architecture",
-      "file": "apps/api/src/shared/logger.ts",
-      "line": 3,
-      "summary": "logger.ts imports the eager `env` singleton from env.js, so any module that imports logger triggers loadEnv() at module-load; propagates the eager-load coupling across the entire app.",
-      "suggested_fix": "Convert logger to a factory: `export function createLogger(level: Env['LOG_LEVEL']): pino.Logger`. main.ts builds it once after `loadEnv`; tests pass any level they like. Move REDACT_PATHS as-is. Update withRequestId to accept the base logger.",
-      "auto_fixable": false
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/shared/errors.ts",
+      "line": 47,
+      "summary": "Subclass constructors repeat Object.setPrototypeOf already executed in AppError base ctor via new.target.prototype",
+      "suggested_fix": "Remove the trailing `Object.setPrototypeOf(this, new.target.prototype);` line from each subclass constructor (errors.ts L47, L57, L67, L77, L87, L97, L107); the base ctor already handles it.",
+      "auto_fixable": true
     },
     {
       "id": "F-003",
-      "severity": "medium",
-      "category": "duplication",
-      "file": "apps/api/src/shared/ids.ts",
-      "line": 19,
-      "summary": "UserId is defined as `Brand<string,'UserId'>` here, but packages/contracts/src/auth.ts defines an incompatible Zod-branded UserId; values typed via one cannot flow into the other without casts.",
-      "suggested_fix": "Pick one source of truth. Either (a) re-export the Zod-branded type from contracts and drop the local Brand-based definition, or (b) define the structural brand once in shared/ids.ts and have contracts' z.string().uuid() return that exact branded type via `.transform(s => s as UserId)`. Same for RefreshTokenId.",
+      "severity": "low",
+      "category": "security",
+      "file": "apps/api/src/shared/logger.ts",
+      "line": 5,
+      "summary": "pino redact wildcard `*.password` matches one nesting level only; deeper paths like req.body.user.password are not redacted",
+      "suggested_fix": "Add explicit deep paths (e.g. `req.body.user.password`) or use pino's `**.password` style only if compatible. Pair with a unit test asserting nested payload redaction in wave-7+.",
       "auto_fixable": false
     },
     {
       "id": "F-004",
-      "severity": "medium",
-      "category": "security",
-      "file": "apps/api/src/shared/http.ts",
-      "line": 43,
-      "summary": "csrfCookieOptions sets secure:true unconditionally; browsers will not send the csrf cookie over plain HTTP, breaking the double-submit flow in local dev (Vite proxy on http://localhost) and in integration tests that drive Hono via app.request with http URLs.",
-      "suggested_fix": "Make `secure` env-gated for all three presets: `secure: env.NODE_ENV !== 'development' && env.NODE_ENV !== 'test'` (or pass secure via factory args so http.ts stays env-free). Keep HttpOnly+SameSite=Lax invariants. Document the production posture in a JSDoc comment.",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/passwords.ts",
+      "line": 32,
+      "summary": "PasswordHasher.verify(hash, plain) parameter order is non-conventional; most ecosystems use verify(plain, hash)",
+      "suggested_fix": "Keep current order (matches argon2 lib's verify(digest, password)); ensure auth.service callers and test spies in wave-7+ assert the documented order. No code change required.",
       "auto_fixable": false
     },
     {
       "id": "F-005",
-      "severity": "low",
-      "category": "architecture",
-      "file": "apps/api/src/shared/errors.ts",
-      "line": 13,
-      "summary": "ErrorCode includes 'INTERNAL' but no InternalError subclass exists; errorHandler middleware (next wave) cannot construct one to surface 5xx with a stable code.",
-      "suggested_fix": "Add `export class InternalError extends AppError { override readonly code = 'INTERNAL' as const; constructor(message='Internal error', details?){ super('INTERNAL', message, 500, details); this.name='InternalError'; Object.setPrototypeOf(this, new.target.prototype); } }`. Or drop 'INTERNAL' from ErrorCode and have errorHandler render unknown errors with a literal 500 body it composes inline.",
-      "auto_fixable": true
-    },
-    {
-      "id": "F-006",
-      "severity": "low",
-      "category": "style",
-      "file": "apps/api/src/shared/errors.ts",
-      "line": 26,
-      "summary": "Base AppError ctor sets this.name='AppError' but every subclass immediately overwrites it; the base assignment is dead-but-harmless code.",
-      "suggested_fix": "Drop `this.name = 'AppError'` from the base constructor (line 26) — subclasses already set their own name. Reduces noise. The Object.setPrototypeOf line should stay.",
-      "auto_fixable": true
-    },
-    {
-      "id": "F-007",
       "severity": "info",
       "category": "architecture",
-      "file": "packages/contracts/src/auth.ts",
-      "line": 76,
-      "summary": "refreshResponse and meResponse are structurally identical to loginResponse — three names for the same shape. Acceptable now, will become noise if any of them diverges.",
-      "suggested_fix": "Either alias them (`export const refreshResponse = loginResponse`) or keep distinct for future divergence per the task spec. No action required this wave; revisit if/when wave-7 auth.routes introduces fields specific to one response.",
+      "file": "apps/api/src/shared/ids.ts",
+      "line": 19,
+      "summary": "UserId branded type duplicated across apps/api/shared/ids.ts and packages/contracts/src/auth.ts (zod brand) without a shared bridge",
+      "suggested_fix": "Document in conventions or have shared/ids re-export the zod brand from @medbridge/contracts so call sites use one canonical UserId type.",
       "auto_fixable": false
     }
   ]

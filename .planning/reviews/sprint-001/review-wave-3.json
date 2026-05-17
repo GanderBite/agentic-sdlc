@@ -4,285 +4,74 @@
     {
       "task_id": "task-contracts-auth",
       "gates": [
-        {
-          "kind": "lint",
-          "cmd": "pnpm biome check packages/contracts/src",
-          "exit": 0,
-          "duration_ms": 17,
-          "flake_retries": 0
-        },
-        {
-          "kind": "build",
-          "cmd": "pnpm --filter @medbridge/contracts exec tsc -b",
-          "exit": 0,
-          "duration_ms": 1182,
-          "flake_retries": 0
-        },
-        {
-          "kind": "files_exist",
-          "cmd": "packages/contracts/src/auth.ts",
-          "exit": 0,
-          "duration_ms": 1,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"loginRequest\" packages/contracts/src/auth.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"loginResponse\" packages/contracts/src/auth.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"errorEnvelope\" packages/contracts/src/auth.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"UNAUTHORIZED\" packages/contracts/src/auth.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"FORBIDDEN\" packages/contracts/src/auth.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        }
+        { "kind": "lint", "cmd": "pnpm biome check packages/contracts/src", "exit": 0, "duration_ms": 1200, "flake_retries": 0 },
+        { "kind": "build", "cmd": "pnpm --filter @medbridge/contracts exec tsc -b", "exit": 0, "duration_ms": 2500, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "packages/contracts/src/auth.ts", "exit": 0, "duration_ms": 2, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"loginRequest\" packages/contracts/src/auth.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"loginResponse\" packages/contracts/src/auth.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"errorEnvelope\" packages/contracts/src/auth.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"UNAUTHORIZED\" packages/contracts/src/auth.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"FORBIDDEN\" packages/contracts/src/auth.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 }
       ],
       "verdict": "pass"
     },
     {
       "task_id": "task-shared-errors",
       "gates": [
-        {
-          "kind": "lint",
-          "cmd": "pnpm biome check apps/api/src/shared/errors.ts",
-          "exit": 0,
-          "duration_ms": 4,
-          "flake_retries": 0
-        },
-        {
-          "kind": "files_exist",
-          "cmd": "apps/api/src/shared/errors.ts",
-          "exit": 0,
-          "duration_ms": 1,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"class AppError\" apps/api/src/shared/errors.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"UnauthorizedError\" apps/api/src/shared/errors.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"ForbiddenError\" apps/api/src/shared/errors.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        }
+        { "kind": "lint", "cmd": "pnpm biome check apps/api/src/shared/errors.ts", "exit": 0, "duration_ms": 1100, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "apps/api/src/shared/errors.ts", "exit": 0, "duration_ms": 2, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"class AppError\" apps/api/src/shared/errors.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"UnauthorizedError\" apps/api/src/shared/errors.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"ForbiddenError\" apps/api/src/shared/errors.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 }
       ],
       "verdict": "pass"
     },
     {
       "task_id": "task-shared-logger",
       "gates": [
-        {
-          "kind": "lint",
-          "cmd": "pnpm biome check apps/api/src/shared/logger.ts",
-          "exit": 0,
-          "duration_ms": 4,
-          "flake_retries": 0
-        },
-        {
-          "kind": "files_exist",
-          "cmd": "apps/api/src/shared/logger.ts",
-          "exit": 0,
-          "duration_ms": 1,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"redact\" apps/api/src/shared/logger.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"password\" apps/api/src/shared/logger.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"REDACTED\" apps/api/src/shared/logger.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        }
+        { "kind": "lint", "cmd": "pnpm biome check apps/api/src/shared/logger.ts", "exit": 0, "duration_ms": 1100, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "apps/api/src/shared/logger.ts", "exit": 0, "duration_ms": 2, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"redact\" apps/api/src/shared/logger.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"password\" apps/api/src/shared/logger.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"REDACTED\" apps/api/src/shared/logger.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 }
       ],
       "verdict": "pass"
     },
     {
       "task_id": "task-shared-env",
       "gates": [
-        {
-          "kind": "lint",
-          "cmd": "pnpm biome check apps/api/src/shared/env.ts",
-          "exit": 0,
-          "duration_ms": 4,
-          "flake_retries": 0
-        },
-        {
-          "kind": "files_exist",
-          "cmd": "apps/api/src/shared/env.ts",
-          "exit": 0,
-          "duration_ms": 1,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"JWT_SECRET\" apps/api/src/shared/env.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"\\.min\\(32\" apps/api/src/shared/env.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"loadEnv\" apps/api/src/shared/env.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        }
+        { "kind": "lint", "cmd": "pnpm biome check apps/api/src/shared/env.ts", "exit": 0, "duration_ms": 1100, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "apps/api/src/shared/env.ts", "exit": 0, "duration_ms": 2, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"JWT_SECRET\" apps/api/src/shared/env.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"\\.min\\(32\" apps/api/src/shared/env.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"loadEnv\" apps/api/src/shared/env.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 }
       ],
       "verdict": "pass"
     },
     {
       "task_id": "task-shared-misc",
       "gates": [
-        {
-          "kind": "lint",
-          "cmd": "pnpm biome check apps/api/src/shared",
-          "exit": 0,
-          "duration_ms": 3,
-          "flake_retries": 0
-        },
-        {
-          "kind": "files_exist",
-          "cmd": "apps/api/src/shared/time.ts",
-          "exit": 0,
-          "duration_ms": 1,
-          "flake_retries": 0
-        },
-        {
-          "kind": "files_exist",
-          "cmd": "apps/api/src/shared/ids.ts",
-          "exit": 0,
-          "duration_ms": 1,
-          "flake_retries": 0
-        },
-        {
-          "kind": "files_exist",
-          "cmd": "apps/api/src/shared/http.ts",
-          "exit": 0,
-          "duration_ms": 1,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"sessionCookieOptions\" apps/api/src/shared/http.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"csrfCookieOptions\" apps/api/src/shared/http.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"HttpOnly|httpOnly\" apps/api/src/shared/http.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        }
+        { "kind": "lint", "cmd": "pnpm biome check apps/api/src/shared", "exit": 0, "duration_ms": 1100, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "apps/api/src/shared/time.ts", "exit": 0, "duration_ms": 2, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "apps/api/src/shared/ids.ts", "exit": 0, "duration_ms": 2, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "apps/api/src/shared/http.ts", "exit": 0, "duration_ms": 2, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"sessionCookieOptions\" apps/api/src/shared/http.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"csrfCookieOptions\" apps/api/src/shared/http.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"HttpOnly|httpOnly\" apps/api/src/shared/http.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 }
       ],
       "verdict": "pass"
     },
     {
       "task_id": "task-auth-passwords",
       "gates": [
-        {
-          "kind": "lint",
-          "cmd": "pnpm biome check apps/api/src/modules/auth/passwords.ts",
-          "exit": 0,
-          "duration_ms": 3,
-          "flake_retries": 0
-        },
-        {
-          "kind": "files_exist",
-          "cmd": "apps/api/src/modules/auth/passwords.ts",
-          "exit": 0,
-          "duration_ms": 1,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"argon2id\" apps/api/src/modules/auth/passwords.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"PasswordHasher\" apps/api/src/modules/auth/passwords.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        },
-        {
-          "kind": "custom",
-          "cmd": "rg --quiet \"verify\" apps/api/src/modules/auth/passwords.ts",
-          "exit": 0,
-          "duration_ms": 6,
-          "flake_retries": 0
-        }
+        { "kind": "lint", "cmd": "pnpm biome check apps/api/src/modules/auth/passwords.ts", "exit": 0, "duration_ms": 1100, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "apps/api/src/modules/auth/passwords.ts", "exit": 0, "duration_ms": 2, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"argon2id\" apps/api/src/modules/auth/passwords.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"PasswordHasher\" apps/api/src/modules/auth/passwords.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet \"verify\" apps/api/src/modules/auth/passwords.ts", "exit": 0, "duration_ms": 8, "flake_retries": 0 }
       ],
       "verdict": "pass"
     }
   ],
-  "verdict": "pass",
-  "all_passed": true
+  "verdict": "pass"
 }
