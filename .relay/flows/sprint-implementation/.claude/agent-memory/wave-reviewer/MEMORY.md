@@ -13,3 +13,4 @@
 - [Layering violation severity is blocking](feedback_layering_violation_severity.md) — service.ts importing db client / schema directly is hard-rule per ARCHITECTURE §2.3; flag blocking + auto_fixable:false, not medium.
 - [Aggregate review allows empty tasks array](feedback_aggregate_review_empty_tasks.md) — Phase-2-only sprint audits set `tasks: []` and derive verdict from findings; validator accepts.
 - [Fix-iteration commit message claims need diff verification](feedback_fix_commit_skepticism.md) — even "fixed" items can be partially fixed or introduce new gaps; always re-read at HEAD.
+- [Review-loop cap with re-deferred findings](feedback_review_loop_cap_escalation.md) — when iter-N hits cap with prior fixes deferred, add a final info-finding proposing a next-sprint bundle; do NOT downgrade severity just because findings are old.
