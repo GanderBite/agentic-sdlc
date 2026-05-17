@@ -8,3 +8,4 @@
 - [Review verdict enum mismatch](feedback_review_verdict_enums.md) — top-level review verdict uses `failed` (§22 enum), task-level uses `fail` (§10.1 enum). Validator enforces.
 - [Log-scrub test only exercises helper](feedback_log_scrub_test_pattern.md) — flag `high`/security when capture destination is never injected into the production pino logger.
 - [Smoke lint scope trap](feedback_smoke_lint_scope.md) — `pnpm biome check .` hits framework-owned `.relay/.planning/.claude` trees; scope to `apps/ packages/` before flagging code-quality.
+- [Testcontainer withReuse() teardown race](feedback_testcontainer_withreuse_race.md) — per-file container.stop() in afterAll + shared withReuse() flakes; singleFork is partial. Push fix to globalSetup.

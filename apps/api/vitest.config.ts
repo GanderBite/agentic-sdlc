@@ -22,6 +22,14 @@ export default defineConfig({
           include: ['test/integration/**/*.test.ts'],
           exclude: ['node_modules', 'dist'],
           testTimeout: 60000,
+          // Run integration test files serially so testcontainer instances using
+          // withReuse() are not torn down by one file while another is still active.
+          pool: 'forks',
+          poolOptions: {
+            forks: {
+              singleFork: true,
+            },
+          },
         },
       },
     ],

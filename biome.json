@@ -9,7 +9,11 @@
       "**/node_modules/**",
       "**/migrations/meta/**",
       "pnpm-lock.yaml",
-      ".turbo/**"
+      ".turbo/**",
+      ".relay/**",
+      ".planning/**",
+      ".claude/**",
+      "scripts/**"
     ]
   },
   "vcs": {

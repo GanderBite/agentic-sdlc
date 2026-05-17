@@ -1,5 +1,13 @@
 import { relations, sql } from 'drizzle-orm';
-import { check, customType, pgTable, text, timestamp, uuid, type AnyPgColumn } from 'drizzle-orm/pg-core';
+import {
+  type AnyPgColumn,
+  check,
+  customType,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 // citext is a Postgres extension type (case-insensitive text).
 // Drizzle does not ship a first-party column for it, so we declare one here.
