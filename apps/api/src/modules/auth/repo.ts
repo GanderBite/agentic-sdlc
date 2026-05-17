@@ -1,8 +1,8 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { InferSelectModel } from 'drizzle-orm';
 
-import { db } from '../../db/client.ts';
-import { refreshToken, user } from './schema.ts';
+import { db } from '../../db/client.js';
+import { refreshToken, user } from './schema.js';
 
 // ---------------------------------------------------------------------------
 // Exported types

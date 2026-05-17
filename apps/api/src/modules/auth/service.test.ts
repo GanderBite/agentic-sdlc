@@ -68,11 +68,11 @@ vi.mock('./tokens.ts', () => ({
 // Imports after mocks are hoisted
 // ---------------------------------------------------------------------------
 
-import { UnauthorizedError } from '../../shared/errors.ts';
-import type { PasswordHasher } from './passwords.ts';
-import { createAuthService } from './service.ts';
-import type { AuthRepo } from './service.ts';
-import type { Clock, ServiceLogger } from './service.ts';
+import { UnauthorizedError } from '../../shared/errors.js';
+import type { PasswordHasher } from './passwords.js';
+import { createAuthService } from './service.js';
+import type { AuthRepo } from './service.js';
+import type { Clock, ServiceLogger } from './service.js';
 
 // ---------------------------------------------------------------------------
 // Fixture helpers

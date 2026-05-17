@@ -26,13 +26,13 @@ import { randomBytes } from 'node:crypto';
 
 import { eq } from 'drizzle-orm';
 
-import { db } from '../../db/client.ts';
+import { db } from '../../db/client.js';
 import { env } from '../../shared/env.js';
 import { UnauthorizedError } from '../../shared/errors.js';
-import type { PasswordHasher } from './passwords.ts';
-import type * as repo from './repo.ts';
-import { user as userTable } from './schema.ts';
-import { createRefreshTokenValue, createSessionToken, hashRefreshToken } from './tokens.ts';
+import type { PasswordHasher } from './passwords.js';
+import type * as repo from './repo.js';
+import { user as userTable } from './schema.js';
+import { createRefreshTokenValue, createSessionToken, hashRefreshToken } from './tokens.js';
 
 // ---------------------------------------------------------------------------
 // DI interfaces

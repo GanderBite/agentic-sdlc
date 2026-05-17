@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
-import { check, customType, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { check, customType, pgTable, text, timestamp, uuid, type AnyPgColumn } from 'drizzle-orm/pg-core';
 
 // citext is a Postgres extension type (case-insensitive text).
 // Drizzle does not ship a first-party column for it, so we declare one here.
@@ -31,7 +31,7 @@ export const refreshToken = pgTable('refresh_token', {
   issuedAt: timestamp('issued_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
   expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
   revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'date' }),
-  replacedBy: uuid('replaced_by').references(() => refreshToken.id),
+  replacedBy: uuid('replaced_by').references((): AnyPgColumn => refreshToken.id),
 });
 
 export const userRelations = relations(user, ({ many }) => ({
