@@ -8,6 +8,7 @@ const envSchema = z.object({
   UPLOAD_DIR: z.string().default('/var/lib/medbridge/uploads'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  CORS_ORIGIN: z.string().default('http://localhost:5173'),
 });
 
 export type Env = z.infer<typeof envSchema>;
