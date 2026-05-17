@@ -8,7 +8,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 4,
-      "status": "done"
+      "status": "todo"
     },
     {
       "id": "wave-2",
@@ -19,7 +19,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 4,
-      "status": "done"
+      "status": "todo"
     },
     {
       "id": "wave-3",
@@ -34,7 +34,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 4,
-      "status": "done"
+      "status": "todo"
     },
     {
       "id": "wave-4",
@@ -45,7 +45,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 4,
-      "status": "done"
+      "status": "todo"
     },
     {
       "id": "wave-5",
@@ -56,7 +56,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 4,
-      "status": "done"
+      "status": "todo"
     },
     {
       "id": "wave-6",
@@ -68,7 +68,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 4,
-      "status": "done"
+      "status": "todo"
     },
     {
       "id": "wave-7",
@@ -79,7 +79,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 4,
-      "status": "done"
+      "status": "todo"
     },
     {
       "id": "wave-8",
@@ -90,7 +90,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 4,
-      "status": "done"
+      "status": "todo"
     },
     {
       "id": "wave-9",
@@ -100,7 +100,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 4,
-      "status": "done"
+      "status": "todo"
     },
     {
       "id": "wave-10",
@@ -111,7 +111,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 2,
-      "status": "done"
+      "status": "todo"
     },
     {
       "id": "wave-smoke",
