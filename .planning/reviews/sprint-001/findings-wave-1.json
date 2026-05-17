@@ -3,22 +3,12 @@
   "findings": [
     {
       "id": "F-001",
-      "severity": "low",
-      "category": "architecture",
-      "file": ".planning/sprints/sprint-001.tasks.json",
-      "line": 1,
-      "summary": "plan-defect: task-workspace-root custom[0] regex `^packageManager\":\\s*\"pnpm@10` cannot match indented JSON key at package.json:5; code is spec-correct.",
-      "suggested_fix": "Edit sprint-001.tasks.json task-workspace-root.verification.custom[0].cmd to `rg --quiet '\"packageManager\"\\s*:\\s*\"pnpm@10' package.json` then re-run wave-1. Zero code changes required.",
-      "auto_fixable": false
-    },
-    {
-      "id": "F-002",
       "severity": "info",
       "category": "architecture",
-      "file": "package.json",
-      "line": 5,
-      "summary": "wave-1 builder reported zero file changes this iteration; workspace already spec-correct from prior commits (10a084c scaffold, 008f20b lockfile).",
-      "suggested_fix": "No action required: partial verdict reflects F-001 plan defect, not a code defect. Apply F-001 plan-repair and re-run wave-1 verification to clear the gate.",
+      "file": ".planning/sprints/sprint-001.tasks.json",
+      "line": 1687,
+      "summary": "Plan defect: custom regex '^packageManager\\\":\\s*\\\"pnpm@10' is unsatisfiable for valid JSON; gate fails even though artifact is correct.",
+      "suggested_fix": "Repair the custom gate in task-workspace-root: replace pattern with '\"packageManager\":\\s*\"pnpm@10' (drop the '^' anchor, or anchor to a literal leading-whitespace+quote prefix).",
       "auto_fixable": false
     }
   ]
