@@ -64,7 +64,7 @@
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
-      "status": "in_progress",
+      "status": "todo",
       "attempts": [],
       "actuals": null
     },
@@ -692,7 +692,7 @@
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
-      "status": "in_progress",
+      "status": "todo",
       "attempts": [],
       "actuals": null
     },
@@ -1708,7 +1708,7 @@
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
-      "status": "blocked",
+      "status": "in_progress",
       "attempts": [],
       "actuals": null
     }
