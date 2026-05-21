@@ -1,9 +1,14 @@
 # Hot files (top files touched in last 200 commits)
 
-Snapshot: `698a63298ece745c06d57a56a863284313daa83f`.
-History depth: **63 commits** total in this repo (less than 200). Threshold for "hot" (>10% of the window) therefore lands at **>6 commits**.
+Snapshot: `1c1ea6393c49b62e98fdc61a77c743b222a459bc`.
 
-Source query:
+> **Status: FRESH REPO.** Sprint-001 was reset on commit `1c1ea63`. Every product file produced by the prior run has been deleted from the working tree; only docs, planning artefacts, workflow tooling, and `pnpm-workspace.yaml` survive on disk. There are no `apps/` or `packages/` files left to count against the >10% threshold.
+
+## Result: n/a
+
+`hot-files` measures *product* code churn (`apps/**`, `packages/**`). With those directories empty, the leaderboard is empty by construction — listing churn against deleted files would mislead reviewers.
+
+Source query (kept for documentation; produces nothing useful right now):
 
 ```sh
 git log --pretty=format: --name-only -200 \
@@ -11,29 +16,7 @@ git log --pretty=format: --name-only -200 \
   | sort | uniq -c | sort -rn | head -30
 ```
 
-## Result: no product files cross the 10% threshold yet
-
-The repo is one sprint old; product code only landed in the last ~30 commits. Reviewers should treat the table below as the leaderboard of files most likely to churn next, not as confirmed stability hot-spots.
-
-| Commits | File |
-|---:|---|
-| 3 | `apps/api/src/modules/auth/schema.ts` |
-| 3 | `apps/api/src/db/schema.ts` |
-| 2 | `packages/contracts/src/index.ts` |
-| 2 | `docs/APPLICATION.md` |
-| 2 | `apps/api/vitest.config.ts` |
-| 2 | `apps/api/test/support/db.ts` |
-| 2 | `apps/api/test/integration/auth.log-scrub.test.ts` |
-| 2 | `apps/api/src/shared/logger.ts` |
-| 2 | `apps/api/src/shared/env.ts` |
-| 2 | `apps/api/src/seed/main.ts` |
-| 2 | `apps/api/src/modules/auth/service.ts` |
-| 2 | `apps/api/src/modules/auth/service.test.ts` |
-| 2 | `apps/api/src/modules/auth/repo.ts` |
-| 2 | `apps/api/src/main.ts` |
-| 2 | `apps/api/src/db/client.ts` |
-
 ## Planner guidance
 
-- Until the history reaches a meaningful 200-commit window, `wave-reviewer` should give extra weight to **any** change in `apps/api/src/modules/auth/**` and `apps/api/src/db/**` — those are the load-bearing files of the only landed module, and the schema/auth-service pair has churned the most so far.
-- Re-run `relay run intel-refresh` after every sprint; once the window crosses ~200 commits, the actual "hot-spot" cohort will start to stabilise and the leaderboard above will be replaced with a true >10% list.
+- Treat all freshly-scaffolded modules in the next sprint as "warm by default" — there is no churn history to lean on.
+- Re-run `relay run intel-refresh` after the first sprint that lands code; once the window has real product commits the leaderboard will start to mean something again.

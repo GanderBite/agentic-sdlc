@@ -1,49 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/ganderbite/relay-core/main/schemas/intel/modules.schema.json",
-  "snapshot_sha": "698a63298ece745c06d57a56a863284313daa83f",
-  "fresh_repo": false,
-  "modules": [
-    {
-      "name": "@medbridge/api",
-      "path": "apps/api",
-      "language": "typescript",
-      "test_path": [
-        "apps/api/src/**/*.test.ts",
-        "apps/api/test/integration/**/*.test.ts"
-      ],
-      "depends_on": [
-        "@medbridge/contracts",
-        "hono",
-        "@hono/node-server",
-        "drizzle-orm",
-        "drizzle-kit",
-        "pg",
-        "jose",
-        "argon2",
-        "pino",
-        "zod"
-      ],
-      "exports": [
-        "apps/api/src/main.ts (buildApp)",
-        "apps/api/src/modules/auth/index.ts (createAuthService, wireAuth, AuthService, AuthServiceDeps, LoginResult, UserResult)"
-      ],
-      "owners": []
-    },
-    {
-      "name": "@medbridge/contracts",
-      "path": "packages/contracts",
-      "language": "typescript",
-      "test_path": [
-        "packages/contracts/src/**/*.test.ts"
-      ],
-      "depends_on": [
-        "zod"
-      ],
-      "exports": [
-        "packages/contracts/src/index.ts (re-exports ./auth.ts — UserId, AuthErrorCode, errorEnvelope, loginRequest/Response, refreshRequest/Response, meResponse, logoutRequest)"
-      ],
-      "owners": []
-    }
-  ],
-  "note": "Two pnpm-workspace packages on disk. `apps/ui` is planned per docs/APPLICATION.md but not yet scaffolded — it will appear here once it lands."
+  "snapshot_sha": "1c1ea6393c49b62e98fdc61a77c743b222a459bc",
+  "fresh_repo": true,
+  "modules": [],
+  "note": "Sprint-001 was reset to a clean slate (commit 1c1ea63) so the hardened workflow can re-run. `pnpm-workspace.yaml` is preserved on disk and lists `apps/*` and `packages/*` as workspace globs, but no module directories exist yet — no `package.json`, no `apps/`, no `packages/`. Modules will reappear here once the next sprint scaffolds them and `intel-refresh` is re-run."
 }

@@ -1,74 +1,35 @@
 # Database schema
 
-Snapshot: `698a63298ece745c06d57a56a863284313daa83f`. Derived from `apps/api/src/modules/auth/schema.ts`, `apps/api/src/db/migrations/0000_initial.sql`, and `apps/api/drizzle.config.ts`.
+Snapshot: `1c1ea6393c49b62e98fdc61a77c743b222a459bc`.
 
-## Tooling
+> **Status: FRESH REPO.** Sprint-001 was reset (commit `1c1ea63`). No `apps/api/src/db/schema.ts`, no `drizzle.config.ts`, no `migrations/` on disk. There is nothing to derive a schema from.
 
-- **Database**: PostgreSQL 17 (`docker-compose.yml → postgres` service uses `postgres:17-alpine`).
-- **Driver**: `pg` (`Pool`); ORM is **Drizzle ORM** with the `drizzle-orm/node-postgres` adapter (`apps/api/src/db/client.ts`).
-- **Migration tool**: **Drizzle Kit** (`drizzle-kit` v0.30.x), configured by `apps/api/drizzle.config.ts`.
+## Result: n/a
+
+No database schema currently exists in the repository. Drizzle is planned (per `docs/APPLICATION.md` / `docs/TECH_STACK.md`) but has not yet been scaffolded.
+
+## Planned tooling (NOT yet on disk)
+
+- **Database**: PostgreSQL (latest LTS — version pinned by `docker-compose.yml` once it lands again).
+- **Driver**: `pg` (`Pool`), with Drizzle's `drizzle-orm/node-postgres` adapter.
+- **ORM**: Drizzle ORM.
+- **Migration tool**: Drizzle Kit, configured by `apps/api/drizzle.config.ts`.
 - **Migration files**: `apps/api/src/db/migrations/*.sql` (statement-breakpointed), metadata in `apps/api/src/db/migrations/meta/`.
-- **Schema source**: `apps/api/src/db/schema.ts` (barrel) re-exports `apps/api/src/modules/auth/schema.ts`. Module-owned schema fragments are the rule — `db/schema.ts` should stay a thin re-export aggregator.
+- **Schema source**: `apps/api/src/db/schema.ts` as a barrel that re-exports module-owned schema fragments (`modules/<feature>/schema.ts`).
 
-## Commands
+## Planned invariants
 
-| Action | Command |
-|---|---|
-| Generate migration from schema diff | `pnpm --filter @medbridge/api exec drizzle-kit generate` |
-| Apply migrations | `pnpm --filter @medbridge/api exec drizzle-kit migrate` |
-| Inspect schema | `pnpm --filter @medbridge/api exec drizzle-kit studio` |
+- **Soft delete** on first-class domain entities via `deleted_at` (queries default to `WHERE deleted_at IS NULL`).
+- **No plaintext secrets at rest**: passwords stored as argon2id digests; refresh-token rows store a content hash of the cookie value, never the plaintext token.
+- **Forward-only migrations** for PoC scope; no rollback path. Migrate-then-seed is the planned boot order.
+- **Refresh-token family tracking**: rotation links the old row to its replacement (e.g. `replaced_by`) so reuse of a revoked token reveals a compromised family.
 
-`DATABASE_URL` must be set; the compose `api-migrate` service supplies it and runs `pnpm drizzle-kit migrate && node dist/seed/main.js` on each boot.
+## Planned entities (from `docs/APPLICATION.md` / `docs/ARCHITECTURE.md`)
 
-## Extensions
+The application brief calls for the following tables when the schema is scaffolded; none exist yet:
 
-The initial migration enables:
+`user`, `doctor_profile`, `patient_profile`, `specialization`, `slot`, `appointment`, `medical_record`, `medical_document`, `appointment_document`, `refresh_token`.
 
-- `pgcrypto` — used by `gen_random_uuid()` for `id` defaults.
-- `citext` — used for `user.email` (case-insensitive equality without `LOWER()` wrapping). A custom Drizzle column type (`citext`) is declared in `modules/auth/schema.ts` to keep typings honest.
+## Re-derivation contract
 
-## Tables
-
-### `user`
-
-| Column | Type | Constraints |
-|---|---|---|
-| `id` | `uuid` | PRIMARY KEY, default `gen_random_uuid()` |
-| `email` | `citext` | NOT NULL, UNIQUE (`user_email_unique`) |
-| `role` | `text` | NOT NULL, CHECK `role IN ('patient', 'doctor')` (`user_role_check`) |
-| `password_hash` | `text` | NOT NULL (argon2id digest) |
-| `created_at` | `timestamptz` | NOT NULL, default `now()` |
-| `deleted_at` | `timestamptz` | NULL — soft-delete marker |
-
-Drizzle relation: `user.refreshTokens` → many `refresh_token`.
-
-### `refresh_token`
-
-| Column | Type | Constraints |
-|---|---|---|
-| `id` | `uuid` | PRIMARY KEY, default `gen_random_uuid()` |
-| `user_id` | `uuid` | NOT NULL, FK → `user.id` ON DELETE RESTRICT |
-| `hash` | `text` | NOT NULL, UNIQUE (`refresh_token_hash_unique`) — sha256 of the cookie value, never stored in plaintext |
-| `issued_at` | `timestamptz` | NOT NULL, default `now()` |
-| `expires_at` | `timestamptz` | NOT NULL |
-| `revoked_at` | `timestamptz` | NULL — set on rotation or explicit logout |
-| `replaced_by` | `uuid` | FK → `refresh_token.id` — chains rotations for token-family detection |
-
-Drizzle relations: `refresh_token.user` → one `user`; `refresh_token.replacement` → one `refresh_token` (self).
-
-## Invariants
-
-- **Soft delete is universal on `user`** (`deleted_at IS NULL` filter in `repo.findUserByEmail`). New tables that represent first-class domain entities should follow the same pattern when they land.
-- **Refresh-token family tracking**: rotation links the old row to its replacement via `replaced_by`. A reuse of an already-revoked token reveals a compromised family — see `auth.token-family.test.ts` for the policy in code.
-- **No plaintext secrets at rest**: `password_hash` is argon2id; `refresh_token.hash` is a content hash of the cookie value. The plaintext refresh token only ever lives in the `refresh` cookie.
-- **Forward-only migrations** for PoC scope; no rollback path. Migrate-then-seed is the boot order (`docker-compose.yml`).
-
-## Migration history
-
-| idx | tag | created |
-|---:|---|---|
-| 0 | `0000_initial` | 2025-05-16 (unix ms `1747353600000`) |
-
-## Out of scope (planned, not on disk)
-
-The following entities are described in `docs/APPLICATION.md` and `docs/ARCHITECTURE.md` but **have no schema yet**: `doctor_profile`, `patient_profile`, `specialization`, `slot`, `appointment`, `medical_record`, `medical_document`, `appointment_document`. Re-run `intel-refresh` once they land to repopulate this section.
+Once `apps/api/src/db/schema.ts` and `apps/api/src/db/migrations/` exist again, `relay run intel-refresh` will replace this placeholder with the real table list, columns, constraints, relations, and migration history derived from the on-disk schema and SQL.
