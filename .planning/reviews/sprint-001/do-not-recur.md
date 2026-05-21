@@ -43,3 +43,8 @@ One line per non-info finding. Pattern descriptions only — no tool-specific sy
 [medium] app-factory function accepts an env parameter but ignores it; integration tests cannot inject test-scoped configuration without going through the import-time singleton — auto_fixable=false — first_seen=wave-9
 [low] application entry point relies on transitive import side effects to instantiate the database pool instead of constructing it explicitly in main — auto_fixable=false — first_seen=wave-9
 [low] underscore-prefixed local identifier convention applied to symbols that are subsequently read, diluting the "intentionally unused" signal — auto_fixable=true — first_seen=wave-9
+[blocking] global csrf+authn middleware composed before route handlers, so per-route public-route flag set inside the body never reaches the upstream gate; bootstrap routes unreachable through the production app factory — auto_fixable=false — first_seen=wave-10
+[high] integration tests construct their own router-only app instead of exercising the production app factory, masking middleware-composition defects from the test gate — auto_fixable=false — first_seen=wave-10
+[low] integration test factory accepts a logger parameter that is never read inside the function body — auto_fixable=true — first_seen=wave-10
+[low] adversarial-boot test exercises the env-validation helper directly instead of the app entrypoint named in the task spec — auto_fixable=false — first_seen=wave-10
+[low] per-file test repo factory duplicated verbatim across multiple integration test files instead of shared via support module — auto_fixable=false — first_seen=wave-10
