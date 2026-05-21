@@ -16,6 +16,6 @@ import { newUuid } from '../shared/ids.js';
 export async function requestId(c: Context, next: Next): Promise<void> {
   const id = newUuid();
   c.set('requestId', id);
+  c.header('X-Request-Id', id);
   await next();
-  c.res.headers.set('X-Request-Id', id);
 }

@@ -98,7 +98,7 @@ async function truncate(): Promise<void> {
 // Test-pool repo adapter
 // ---------------------------------------------------------------------------
 
-function makeTestRepo(capturedLogger: ReturnType<typeof createCapturedLogger>): AuthRepo {
+function makeTestRepo(): AuthRepo {
   return {
     async findUserByEmail(email) {
       const rows = await db.select().from(user).where(eq(user.email, email)).limit(1);
@@ -153,7 +153,7 @@ function buildTestApp(capturedLogger: ReturnType<typeof createCapturedLogger>): 
   // auth.logout and auth.me enforce auth per-route via inline middleware.
 
   const authService = createAuthService({
-    repo: makeTestRepo(capturedLogger),
+    repo: makeTestRepo(),
     hasher: defaultPasswordHasher,
     clock: defaultClock,
     logger: capturedLogger.child({ module: 'auth' }),

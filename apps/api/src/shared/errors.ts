@@ -1,17 +1,6 @@
-// ---------------------------------------------------------------------------
-// Error code literal type — mirrors the AuthErrorCode enum in packages/contracts/src/auth.ts
-// Keep code literals in sync; do NOT import from contracts here.
-// ---------------------------------------------------------------------------
+import { AuthErrorCode } from '@medbridge/contracts';
 
-export type ErrorCode =
-  | 'VALIDATION'
-  | 'UNAUTHORIZED'
-  | 'FORBIDDEN'
-  | 'NOT_FOUND'
-  | 'CONFLICT'
-  | 'PAYLOAD_TOO_LARGE'
-  | 'UNSUPPORTED_MEDIA'
-  | 'INTERNAL';
+export type ErrorCode = AuthErrorCode;
 
 // ---------------------------------------------------------------------------
 // Base AppError

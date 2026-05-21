@@ -98,7 +98,7 @@ export function createRefreshTokenValue(): string {
  * appropriate here (no need for a slow KDF like argon2).
  * Returns a lowercase hex string.
  */
-export async function hashRefreshToken(raw: string): Promise<string> {
+export function hashRefreshToken(raw: string): string {
   return createHash('sha256').update(raw).digest('hex');
 }
 

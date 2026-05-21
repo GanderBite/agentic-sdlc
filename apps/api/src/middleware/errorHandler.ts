@@ -3,6 +3,7 @@ import type { Logger } from 'pino';
 import { ZodError } from 'zod';
 
 import { AppError, ValidationError } from '../shared/errors.js';
+import { logger } from '../shared/logger.js';
 
 /**
  * Hono `onError` handler — the single place where all thrown errors are
@@ -50,9 +51,7 @@ export function errorHandler(err: unknown, c: Context): Response {
   }
 
   // ── Unknown / unexpected errors ──────────────────────────────────────────
-  if (log) {
-    log.error({ err, requestId }, 'Unhandled error');
-  }
+  (log ?? logger).error({ err, requestId }, 'Unhandled error');
 
   return c.json(
     {

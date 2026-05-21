@@ -18,7 +18,7 @@ import { z } from 'zod';
 
 import { defaultPasswordHasher } from '../modules/auth/passwords.js';
 import { user } from '../modules/auth/schema.js';
-import { SEED_DOCTOR_EMAIL, SEED_PATIENT_EMAIL } from './constants.js';
+import { SEED_DOCTOR_EMAIL, SEED_PATIENT_EMAIL, SEED_PASSWORD_ENV } from './constants.js';
 
 // ---------------------------------------------------------------------------
 // Env — minimal schema for the seed; avoids importing shared/env.ts which
@@ -26,7 +26,7 @@ import { SEED_DOCTOR_EMAIL, SEED_PATIENT_EMAIL } from './constants.js';
 // ---------------------------------------------------------------------------
 const seedEnvSchema = z.object({
   DATABASE_URL: z.string().url(),
-  SEED_PASSWORD: z.string().default('CorrectHorseBatteryStaple1!'),
+  [SEED_PASSWORD_ENV]: z.string().default('CorrectHorseBatteryStaple1!'),
 });
 
 const envResult = seedEnvSchema.safeParse(process.env);
@@ -36,7 +36,7 @@ if (!envResult.success) {
   process.exit(1);
 }
 
-const { DATABASE_URL, SEED_PASSWORD } = envResult.data;
+const { DATABASE_URL, [SEED_PASSWORD_ENV]: SEED_PASSWORD } = envResult.data;
 
 // ---------------------------------------------------------------------------
 // Bootstrap

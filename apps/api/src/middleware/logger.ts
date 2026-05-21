@@ -25,9 +25,9 @@ export async function logger(c: Context, next: Next): Promise<void> {
 
   // After the response is produced the user claim may have been set by authn.
   const userId = (c.get('user') as { userId?: string } | undefined)?.userId;
-  const childLog = withRequestId(requestId, userId);
+  const emitLog = userId ? log.child({ userId }) : log;
 
-  childLog.info(
+  emitLog.info(
     {
       method: c.req.method,
       path: c.req.path,
