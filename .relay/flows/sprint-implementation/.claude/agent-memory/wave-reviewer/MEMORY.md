@@ -5,3 +5,4 @@
 - [Branded ID divergence between contracts and shared/ids](project_branded_id_divergence.md) — same-named UserId branded twice with different strategies = medium architecture finding; pick one home before downstream service consumes.
 - [Missing build gate on source-touching tasks](project_missing_build_gate_pattern.md) — planner omits verification.build despite changes touching non-test source; TS errors only surface at terminal smoke.
 - [Cross-task literal drift in parallel waves](project_cross_task_literal_drift.md) — parallel builders re-invent domain literals (passwords, emails) instead of importing from a canonical source; always cross-grep duplicate literals in Phase 2.
+- [Route handlers bypass response contract schemas](project_route_contract_bypass.md) — c.json(rawDbRow) leaks passwordHash and other private columns; always cross-reference c.json call sites against packages/contracts response schemas.

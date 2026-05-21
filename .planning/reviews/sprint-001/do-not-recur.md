@@ -36,3 +36,7 @@ One line per non-info finding. Pattern descriptions only — no tool-specific sy
 [medium] runtime container image copies node_modules from dev-deps stage; ships devDependencies into production image — auto_fixable=false — first_seen=wave-7
 [low] container entrypoint command duplicated between compose service definition and image CMD; drift risk if one changes — auto_fixable=true — first_seen=wave-7
 [low] package manager version pinned only inside Dockerfile (corepack) without matching root packageManager field; host/image parity not enforced — auto_fixable=false — first_seen=wave-7
+[blocking] route handler returns raw DB row instead of parsing through response contract schema; passwordHash and timestamps leak into JSON response — auto_fixable=true — first_seen=wave-8
+[low] test file defines dead helper factory bypassed by a near-identical adjacent factory — auto_fixable=true — first_seen=wave-8
+[low] Hono context get without typed Variables generic, requiring inline `as` casts at every read site — auto_fixable=false — first_seen=wave-8
+[low] logout handler invokes hash + DB rotate on missing cookie value instead of short-circuiting — auto_fixable=false — first_seen=wave-8
