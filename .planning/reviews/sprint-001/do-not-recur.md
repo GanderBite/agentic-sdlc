@@ -19,3 +19,8 @@ One line per non-info finding. Pattern descriptions only — no tool-specific sy
 [medium] planner task verification.build is empty despite changes touching non-test source; TS compile errors surface only at terminal smoke wave — auto_fixable=false — first_seen=wave-4
 [low] drizzle-kit config silently falls back to empty connection URL when env var is unset instead of failing fast at CLI invocation — auto_fixable=false — first_seen=wave-4
 [low] crypto hash helper marked async but performs only synchronous work; Promise wrapper adds no value over synchronous return — auto_fixable=false — first_seen=wave-4
+[medium] request-id header set after await next() so error responses constructed by onError lose the correlation header — auto_fixable=true — first_seen=wave-5
+[medium] error handler logs unknown errors only when a request-scoped logger is present; missing logger middleware silently swallows 500s — auto_fixable=false — first_seen=wave-5
+[medium] enum-like text column declared without drizzle enum option so TS column type widens to string and loses the literal-union narrowing the DB CHECK enforces — auto_fixable=false — first_seen=wave-5
+[low] state-changing-methods set widened beyond architecture spec without documented justification — auto_fixable=true — first_seen=wave-5
+[low] per-request child logger constructed twice instead of branching on userId presence — auto_fixable=false — first_seen=wave-5

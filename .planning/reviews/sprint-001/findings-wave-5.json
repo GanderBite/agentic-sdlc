@@ -1,0 +1,71 @@
+{
+  "wave_id": "wave-5",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "medium",
+      "category": "security",
+      "file": "apps/api/src/middleware/requestId.ts",
+      "line": 20,
+      "summary": "X-Request-Id is set after await next(); Hono's onError returns a fresh Response so the header is lost on error paths, breaking correlation for failing requests",
+      "suggested_fix": "Move c.res.headers.set('X-Request-Id', id) to before await next() (or also set in errorHandler before c.json(...)) so every response — success and error — carries the correlation id",
+      "auto_fixable": true,
+      "first_seen_iteration": "wave-5"
+    },
+    {
+      "id": "F-002",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/src/middleware/errorHandler.ts",
+      "line": 53,
+      "summary": "Unknown errors are only logged when c.get('log') is populated; if logger middleware did not run (ordering bug) unknown errors are silently swallowed as 500",
+      "suggested_fix": "Fall back to the module-level pino logger from shared/logger.js when c.get('log') is undefined, so unknown errors are NEVER silently dropped regardless of middleware ordering",
+      "auto_fixable": false,
+      "first_seen_iteration": "wave-5"
+    },
+    {
+      "id": "F-003",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/schema.ts",
+      "line": 26,
+      "summary": "role column is declared as plain text with a Postgres CHECK; Drizzle TS type widens to string so insert call-sites lose the 'patient' | 'doctor' narrowing the DB enforces",
+      "suggested_fix": "Use text('role', { enum: ['patient', 'doctor'] as const }) so Drizzle narrows the TS type to the same literal union the CHECK enforces — accounts will inherit this user table per the task description",
+      "auto_fixable": false,
+      "first_seen_iteration": "wave-5"
+    },
+    {
+      "id": "F-004",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/middleware/csrf.ts",
+      "line": 9,
+      "summary": "STATE_CHANGING_METHODS includes PUT while task spec and ARCHITECTURE §5.4 enumerate only POST/PATCH/DELETE; undocumented widening",
+      "suggested_fix": "Either drop 'PUT' from STATE_CHANGING_METHODS to match the spec, or leave a code comment + ARCHITECTURE §5.4 footnote that PUT is intentionally covered for forward compatibility",
+      "auto_fixable": true,
+      "first_seen_iteration": "wave-5"
+    },
+    {
+      "id": "F-005",
+      "severity": "low",
+      "category": "performance",
+      "file": "apps/api/src/middleware/logger.ts",
+      "line": 28,
+      "summary": "withRequestId(requestId) is called twice per request (pre-handler and post-handler); the second call rebuilds a child logger only to add userId",
+      "suggested_fix": "Capture the pre-handler child as `log`; after next() do `(userId ? log.child({ userId }) : log).info({ method, path, status, durationMs }, 'request.complete')` to avoid the second withRequestId invocation",
+      "auto_fixable": false,
+      "first_seen_iteration": "wave-5"
+    },
+    {
+      "id": "F-006",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/middleware/authn.ts",
+      "line": 4,
+      "summary": "middleware imports verifySessionToken directly from modules/auth/tokens.js; ARCHITECTURE §6.2 requires cross-module imports to go through <module>/index.ts (no auth/index.ts exists yet)",
+      "suggested_fix": "Planner: add apps/api/src/modules/auth/index.ts in the next wave re-exporting verifySessionToken (and other public-surface helpers); update authn.ts to import from '../modules/auth/index.js'",
+      "auto_fixable": false,
+      "first_seen_iteration": "wave-5"
+    }
+  ]
+}
