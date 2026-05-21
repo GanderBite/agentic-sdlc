@@ -1,2 +1,4 @@
 - [Lockfile drift on workspace scaffold waves](project_lockfile_drift_pattern.md) — when a wave adds a new workspace package manifest, builders often forget to regenerate the lockfile, causing the next wave's frozen-install gate to fail.
 - [Orchestrator-claimed verification often diverges from reality](feedback_trust_but_verify.md) — the orchestrator's "BUILDER VERIFICATION RESULTS" summary can claim success on wave-level gates that were never actually run; always re-run mechanical gates.
+- [Validator path in prompt is stale](project_validator_path.md) — scripts/validate-review.mjs does not exist at repo root; real path is .relay/flows/sprint-implementation/scripts/.
+- [Recurring planner-spec regex defect in task-workspace-root](project_recurring_regex_defect.md) — verification.custom[0] regex omits leading whitespace+quote; review-fix-loop fixers cannot patch plan files.
