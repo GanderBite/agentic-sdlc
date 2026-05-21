@@ -24,3 +24,11 @@ One line per non-info finding. Pattern descriptions only — no tool-specific sy
 [medium] enum-like text column declared without drizzle enum option so TS column type widens to string and loses the literal-union narrowing the DB CHECK enforces — auto_fixable=false — first_seen=wave-5
 [low] state-changing-methods set widened beyond architecture spec without documented justification — auto_fixable=true — first_seen=wave-5
 [low] per-request child logger constructed twice instead of branching on userId presence — auto_fixable=false — first_seen=wave-5
+[blocking] tsconfig rootDir excludes test/ tree while include matches it; first test files created cause TS6059 every typecheck — auto_fixable=false — first_seen=wave-6
+[blocking] seeded plaintext password literal duplicated across seed script and test-support module with divergent values — auto_fixable=true — first_seen=wave-6
+[medium] seeded-user emails diverge between docker seed script and integration-test fixture inserts; harness cannot exercise the real seed — auto_fixable=false — first_seen=wave-6
+[medium] log-capture harness hardcodes redaction path list instead of sharing the production logger's redact config, so prod and tests can drift silently — auto_fixable=false — first_seen=wave-6
+[medium] one-shot seed has a baked-in default password literal instead of failing fast when the env override is absent in non-dev environments — auto_fixable=false — first_seen=wave-6
+[low] soft-delete filter applied in application code after the SELECT instead of in the SQL where clause — auto_fixable=true — first_seen=wave-6
+[low] one-shot script uses console for output instead of pino, breaking structured-JSON log convention for the container that runs it — auto_fixable=false — first_seen=wave-6
+[low] fluent builder method called for its side effect with return value discarded, brittle to library version changes — auto_fixable=true — first_seen=wave-6
