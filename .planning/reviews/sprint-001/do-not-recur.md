@@ -32,3 +32,7 @@ One line per non-info finding. Pattern descriptions only — no tool-specific sy
 [low] soft-delete filter applied in application code after the SELECT instead of in the SQL where clause — auto_fixable=true — first_seen=wave-6
 [low] one-shot script uses console for output instead of pino, breaking structured-JSON log convention for the container that runs it — auto_fixable=false — first_seen=wave-6
 [low] fluent builder method called for its side effect with return value discarded, brittle to library version changes — auto_fixable=true — first_seen=wave-6
+[high] runtime container image runs as root; no non-root USER directive in final stage — auto_fixable=false — first_seen=wave-7
+[medium] runtime container image copies node_modules from dev-deps stage; ships devDependencies into production image — auto_fixable=false — first_seen=wave-7
+[low] container entrypoint command duplicated between compose service definition and image CMD; drift risk if one changes — auto_fixable=true — first_seen=wave-7
+[low] package manager version pinned only inside Dockerfile (corepack) without matching root packageManager field; host/image parity not enforced — auto_fixable=false — first_seen=wave-7
