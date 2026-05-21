@@ -40,3 +40,6 @@ One line per non-info finding. Pattern descriptions only — no tool-specific sy
 [low] test file defines dead helper factory bypassed by a near-identical adjacent factory — auto_fixable=true — first_seen=wave-8
 [low] Hono context get without typed Variables generic, requiring inline `as` casts at every read site — auto_fixable=false — first_seen=wave-8
 [low] logout handler invokes hash + DB rotate on missing cookie value instead of short-circuiting — auto_fixable=false — first_seen=wave-8
+[medium] app-factory function accepts an env parameter but ignores it; integration tests cannot inject test-scoped configuration without going through the import-time singleton — auto_fixable=false — first_seen=wave-9
+[low] application entry point relies on transitive import side effects to instantiate the database pool instead of constructing it explicitly in main — auto_fixable=false — first_seen=wave-9
+[low] underscore-prefixed local identifier convention applied to symbols that are subsequently read, diluting the "intentionally unused" signal — auto_fixable=true — first_seen=wave-9

@@ -6,3 +6,4 @@
 - [Missing build gate on source-touching tasks](project_missing_build_gate_pattern.md) — planner omits verification.build despite changes touching non-test source; TS errors only surface at terminal smoke.
 - [Cross-task literal drift in parallel waves](project_cross_task_literal_drift.md) — parallel builders re-invent domain literals (passwords, emails) instead of importing from a canonical source; always cross-grep duplicate literals in Phase 2.
 - [Route handlers bypass response contract schemas](project_route_contract_bypass.md) — c.json(rawDbRow) leaks passwordHash and other private columns; always cross-reference c.json call sites against packages/contracts response schemas.
+- [review.verdict enum divergence](project_review_verdict_enum_divergence.md) — code-reviewing skill says `pass|fail|reviewer_overload`; validator demands `pass|blocked|failed|partial|reviewer_overload`. Use the validator's enum at the top level.
