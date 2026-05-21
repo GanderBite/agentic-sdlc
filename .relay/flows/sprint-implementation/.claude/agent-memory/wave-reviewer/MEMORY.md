@@ -1,0 +1,2 @@
+- [Lockfile drift on workspace scaffold waves](project_lockfile_drift_pattern.md) — when a wave adds a new workspace package manifest, builders often forget to regenerate the lockfile, causing the next wave's frozen-install gate to fail.
+- [Orchestrator-claimed verification often diverges from reality](feedback_trust_but_verify.md) — the orchestrator's "BUILDER VERIFICATION RESULTS" summary can claim success on wave-level gates that were never actually run; always re-run mechanical gates.
