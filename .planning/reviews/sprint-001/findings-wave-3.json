@@ -1,0 +1,27 @@
+{
+  "wave_id": "wave-3",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/src/shared/ids.ts",
+      "line": 15,
+      "summary": "UserId brand in shared/ids.ts (`string & { __brand: 'UserId' }`) is structurally incompatible with the Zod-branded UserId in packages/contracts/src/auth.ts — same name, two parallel nominal types, downstream service code must cast across them",
+      "suggested_fix": "Pick one home for UserId: either (a) import UserId type from @medbridge/contracts and re-export from shared/ids.ts, dropping the local brand, OR (b) move the structural brand into contracts and have its Zod schema produce the same brand via z.string().uuid().transform(s => s as UserId). Decide before task-auth-service so the factory's user.id flow stays end-to-end-typed without `as`.",
+      "auto_fixable": false,
+      "first_seen_iteration": "wave-3"
+    },
+    {
+      "id": "F-002",
+      "severity": "low",
+      "category": "architecture",
+      "file": "apps/api/src/shared/env.ts",
+      "line": 24,
+      "summary": "`export const env: Env = loadEnv();` runs at module-load time, so any transitive importer (logger.ts already does so on line 3) eagerly parses process.env on import — breaks pure-unit imports of logger without a real environment and couples test setup to env presence even when the test does not exercise env paths",
+      "suggested_fix": "Either (a) drop the eager singleton and have call sites construct `loadEnv(process.env)` in main.ts/seed/main.ts and pass it down (matches the DI ethos already used for clock/hasher), OR (b) make `env` lazy via `let _env: Env | undefined; export const env = (): Env => (_env ??= loadEnv())` so importers that never touch env do not crash. The planner spec mentions a singleton but the fail-fast test only needs the `loadEnv(source)` factory, which is already exported.",
+      "auto_fixable": false,
+      "first_seen_iteration": "wave-3"
+    }
+  ]
+}

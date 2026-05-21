@@ -2,3 +2,4 @@
 - [Orchestrator-claimed verification often diverges from reality](feedback_trust_but_verify.md) — the orchestrator's "BUILDER VERIFICATION RESULTS" summary can claim success on wave-level gates that were never actually run; always re-run mechanical gates.
 - [Validator path in prompt is stale](project_validator_path.md) — scripts/validate-review.mjs does not exist at repo root; real path is .relay/flows/sprint-implementation/scripts/.
 - [Recurring planner-spec regex defect in task-workspace-root](project_recurring_regex_defect.md) — verification.custom[0] regex omits leading whitespace+quote; review-fix-loop fixers cannot patch plan files.
+- [Branded ID divergence between contracts and shared/ids](project_branded_id_divergence.md) — same-named UserId branded twice with different strategies = medium architecture finding; pick one home before downstream service consumes.

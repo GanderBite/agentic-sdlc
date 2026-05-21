@@ -1,2 +1,1 @@
-// re-export contract schemas here
-export {};
+export * from './auth.js';

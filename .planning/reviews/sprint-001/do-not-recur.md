@@ -12,3 +12,5 @@ One line per non-info finding. Pattern descriptions only — no tool-specific sy
 [medium] vitest config has empty include glob without passWithNoTests option; recursive test command fails on package with no tests — auto_fixable=true — first_seen=wave-2
 [low] per-package lint script scopes diverge across workspace packages (src vs src+test) without documented convention — auto_fixable=false — first_seen=wave-2
 [low] manifest scripts reference forward-declared dist artifacts and tooling that downstream tasks will create — auto_fixable=false — first_seen=wave-2
+[medium] same-named branded identifier defined twice with incompatible brand strategies across contracts and api shared utils — auto_fixable=false — first_seen=wave-3
+[low] shared env module evaluates its parsing factory at module-load time, eagerly coupling every transitive importer to a fully-populated process environment — auto_fixable=false — first_seen=wave-3
