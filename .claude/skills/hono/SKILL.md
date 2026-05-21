@@ -198,3 +198,45 @@ WHY: This project runs on Node 25 via `@hono/node-server`. Rules 24 and 26 forbi
 - **AppError** — project error class, see `docs/ARCHITECTURE.md §5.2`. Carries `code`, `message`, `httpStatus`, `details?`.
 - **AppVariables** — typed `c.set/get` keys: `requestId`, `log`, `user`, `db`. Declared in `src/types/hono.ts`.
 - **CSRF double-submit** — cookie `csrf` (not httpOnly) must equal header `x-csrf-token` on state-changing requests.
+
+## Builder protocol
+
+Contract per `verification-gates §R6`. Runs **after edits, before `task.verification`**. Idempotent.
+
+```sh
+# Reject bare Error throws and ad-hoc c.json({ error: ... }) in handlers — Rule 15.
+if [ -n "${TARGET_FILES}" ]; then
+  handler_files=$(printf '%s\n' ${TARGET_FILES} | grep -E '(routes|handlers|middleware)/.*\.ts$' || true)
+  if [ -n "${handler_files}" ]; then
+    if printf '%s\n' ${handler_files} | xargs rg --line-number --no-heading \
+        "throw new Error\(|c\.json\(\s*\{\s*error:" 2>/dev/null; then
+      echo "[hono builder protocol] handler throws bare Error or returns ad-hoc { error: ... }; use AppError (Rule 15)." >&2
+      exit 1
+    fi
+  fi
+fi
+```
+
+## Verification recipe
+
+Gates the **planner** may append for route/middleware tasks.
+
+```json
+{
+  "custom": [
+    { "cmd": "rg --quiet '@hono/zod-validator' apps/api/src/routes", "expect_exit": 0 }
+  ]
+}
+```
+
+Recipe rules:
+- A task that creates a new route file MUST verify the validator import appears (Rule 9). Planner adds a `custom` gate pinned to the specific file.
+- The standard `tests` and `lint` gates come from `vitest` and `biome` recipes — hono does not duplicate them.
+
+## Common pitfalls
+
+1. **Throwing bare `Error` from a handler / middleware** (Rule 15). FIX: throw `AppError` with the typed code; Builder protocol detects it.
+2. **Calling `schema.parse(...)` inside a handler** instead of `zValidator` (Rule 9). FIX: use `zValidator('json' | 'query' | 'param' | 'form', schema)` in the route binding.
+3. **Hard-coded secret defaults like `"change-me"` in compose / env defaults** (this was a wave-7 deferred finding in sprint-001). FIX: refuse to start without the env var; tests provide a test-only secret via a fixture, never via a default. Cross-ref `docker-compose` skill.
+4. **Middleware order violations** (Rule 4). FIX: `requestId → logger → cors → secureHeaders → csrf → auth → routes → onError`. Wave-reviewer rejects deviations.
+5. **Reading `await c.req.json()` after a validator ran** (Rule 11). FIX: read validated data with `c.req.valid('json' | 'query' | 'param' | 'form')`.

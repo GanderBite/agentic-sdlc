@@ -234,3 +234,54 @@ Violates Rule 26. FIX: `provider: 'v8'`.
 - **Project (`test.projects`)** — a sub-configuration with its own `environment`, `include`, and `setupFiles`. Replaces the legacy `workspace` field in Vitest 2.1.
 - **Provider (coverage)** — the backend that instruments code for coverage. V8 uses Node's built-in coverage hooks; Istanbul rewrites the AST. MedBridge mandates V8.
 - **Setup file** — a module listed in `test.setupFiles`; runs once per test file before any test, after `beforeAll` is registered. Use for global mocks and env-var seeding.
+
+## Builder protocol
+
+Contract per `verification-gates §R6`. Runs **after edits, before `task.verification`**. Idempotent. Scope: the `*.test.ts` / `*.test.tsx` files this task created or modified.
+
+```sh
+# Reject .only / .skip / it.todo in committed test files (Rule 10).
+# These are easy to leave in during local iteration and the wave-reviewer
+# rejects them — catching at builder time is much cheaper.
+if [ -n "${TARGET_FILES}" ]; then
+  test_files=$(printf '%s\n' ${TARGET_FILES} | grep -E '\.(test|spec)\.(ts|tsx)$' || true)
+  if [ -n "${test_files}" ]; then
+    if printf '%s\n' ${test_files} | xargs rg --line-number --no-heading \
+        '\b(it|test|describe)\.(only|skip|todo)\b' 2>/dev/null; then
+      echo "[vitest builder protocol] .only/.skip/.todo found in committed test file — remove before gates run." >&2
+      exit 1
+    fi
+  fi
+fi
+```
+
+## Verification recipe
+
+Gates the **planner** may append to any task whose `skills` include `vitest`. First token is `pnpm` (in `build-graph.json → tools`).
+
+```json
+{
+  "tests": [
+    "pnpm --filter <package-that-owns-target-files> test"
+  ]
+}
+```
+
+If a task creates integration tests (path `apps/api/test/integration/**`), additionally emit:
+
+```json
+{ "tests": ["pnpm --filter apps/api test:integration"] }
+```
+
+Recipe rules:
+- **Scope by package**, never `pnpm -r test` for a single-package task.
+- Per Rule 29, the `test` script is single-shot (`vitest run`). The planner trusts that; if the gate hangs the failure is a Rule 29 violation in the package, not a planner bug.
+- Coverage gates (`test:coverage`) are appended only when an acceptance bullet mentions a coverage threshold.
+
+## Common pitfalls
+
+1. **`.only` / `.skip` / `it.todo` left in a committed test file** (Rule 10). FIX: Builder protocol catches it before gates.
+2. **Test runs hang in CI because `test` script omits `run`** (Rule 29). FIX: `"test": "vitest run"`; use `test:watch` for the local loop.
+3. **Top-level closure inside hoisted `vi.mock` factory** (Rule 13). Hoisting moves the call above imports — top-level `const`s aren't bound yet. FIX: use `vi.hoisted` or inline the literal.
+4. **Module mock leaks across files because timers stay fake** (Rule 17). FIX: `vi.useRealTimers()` in `afterEach`.
+5. **`it.concurrent` over shared state** (Rule 23). FIX: drop `.concurrent` for any test that touches timers, mocks, or DB.

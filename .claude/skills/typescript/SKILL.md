@@ -157,3 +157,70 @@ const x: Opt = { a: undefined };
 - **Discriminated union**: a union of object types sharing a literal-typed tag field (`kind`, `type`, `_t`) used for narrowing.
 - **`satisfies`**: post-fix operator that type-checks a value against a constraint without widening its inferred type.
 - **Exact optional property types**: under `exactOptionalPropertyTypes: true`, `a?: T` and `a?: T | undefined` are distinct types.
+
+## Module-system convention (load-bearing — TS5097)
+
+This repo compiles with `tsc` (no bundler) and the workspace `tsconfig.json` resolves modules under **NodeNext**. Under NodeNext, relative imports MUST carry an explicit file extension, and that extension MUST be the **output** extension (`.js`), NEVER the source extension (`.ts` / `.tsx`). The compiler errors with TS5097 if a relative `import … from "./foo.ts"` appears in a `.ts` source file.
+
+Examples (all in `apps/api/src/**` or `packages/contracts/src/**`):
+
+```ts
+// CORRECT — relative imports use the OUTPUT extension `.js`
+import { findUserById } from "./repo.js";
+import type { User } from "./schema.js";
+import { sql } from "drizzle-orm";              // bare specifier: no extension
+
+// INCORRECT — TS5097 under NodeNext (this is the recurring drift from sprint-001)
+import { findUserById } from "./repo.ts";       // wrong extension
+import { findUserById } from "./repo";          // missing extension
+import { findUserById } from "./repo.tsx";      // wrong extension
+```
+
+Bare specifiers (`drizzle-orm`, `@medbridge/contracts`, `node:path`) never take an extension. The rule applies to relative (`./`, `../`) and absolute-from-root (`/`) imports only.
+
+## Builder protocol
+
+Contract per `verification-gates §R6`. Runs **after edits, before `task.verification`**. Idempotent, scoped to `${TARGET_FILES}`. Catches the TS5097 drift before the gate audits it.
+
+```sh
+# Reject any relative import whose specifier ends in .ts/.tsx — these
+# would fail TS5097 under NodeNext. Scope: files this task touched.
+if [ -n "${TARGET_FILES}" ]; then
+  ts_files=$(printf '%s\n' ${TARGET_FILES} | grep -E '\.(ts|tsx)$' || true)
+  if [ -n "${ts_files}" ]; then
+    if printf '%s\n' ${ts_files} | xargs -I{} rg --line-number --no-heading \
+        "from\s+['\"](\.\.?\/[^'\"]+)\.(ts|tsx)['\"]" {} ; then
+      echo "[typescript builder protocol] relative import uses source extension (.ts/.tsx); use .js per Module-system convention." >&2
+      exit 1
+    fi
+  fi
+fi
+```
+
+The check is a fail-fast detector, not an auto-fixer — the builder rewrites the import line itself (each match prints `<file>:<line>:<text>`), then re-runs the protocol until clean. A codemod is intentionally out of scope: the substitution is mechanical but the human-readable diff helps the builder catch deeper module-graph mistakes (e.g. importing from a not-yet-created file).
+
+## Verification recipe
+
+Gates the **planner** may append to any task whose `skills` include `typescript`. First token is `pnpm` (in `build-graph.json → tools`).
+
+```json
+{
+  "build": [
+    "pnpm --filter <package-that-owns-target-files> typecheck"
+  ]
+}
+```
+
+Recipe rules:
+- **Scope MUST match the touched package(s).** Same derivation as `biome/Verification recipe` — workspace name whose directory is the longest prefix of any `target_files` path.
+- A `typecheck` script in the package is expected (per the `pnpm` skill); if absent, the planner re-prompts rather than substituting `tsc --noEmit` (which lacks the workspace's `tsconfig.json` extends chain).
+- Tasks whose `target_files` span multiple packages emit one `build` entry per package — never a `pnpm -r typecheck` for a package-scoped task.
+
+## Common pitfalls
+
+1. **TS5097: relative import uses `.ts` or `.tsx` source extension** (or omits the extension entirely). The single highest-recurrence drift in this repo's sprint history — see `sprint-planning/references/common-pitfalls.md`. FIX: see **Module-system convention** above; Builder protocol catches it before gates run.
+2. **`as T` cast to silence the compiler** (Rule 3). Hides genuine type errors. FIX: refactor or narrow with a guard; the only allowed escape is `as unknown as T` with a justifying comment.
+3. **Eager singletons that bypass DI seams** — `export const db = drizzle(...)` evaluated at module top-level; test code cannot substitute a fake. FIX: export a factory (`makeDb(pool)`) or a `getDb()` lazy accessor. See `references/strict-mode-ergonomics.md` and per-sprint `do-not-recur.md` digests.
+4. **Untyped catch parameter** (Rule 19). `catch (e: any)` defeats Rule 1. FIX: leave the catch parameter implicit (`catch (e)` ⇒ `unknown`) and narrow with `instanceof`.
+5. **Non-`async` function returning `Promise<T>`** (Rule 20). Breaks stack traces and confuses callers. FIX: mark the function `async` and `await` inside, or wrap with `async () => libCall()`.
+6. **Floating promise** (Rule 21). FIX: `await`, `void`-prefix with a comment, or `.catch(handler)`.

@@ -221,3 +221,54 @@ Violates Rule 25. FIX: `pnpm test --watch` or `pnpm --filter @medbridge/api test
 - **`workspace:*` protocol** — a dep range that resolves only inside the workspace. Rewritten at publish time.
 - **Isolated `node_modules`** — pnpm default: each package sees only its declared deps. Transitives live in `node_modules/.pnpm/` and are not directly resolvable.
 - **`--frozen-lockfile`** — install mode that fails instead of mutating `pnpm-lock.yaml`. Reproducibility gate for CI and Docker.
+
+## Builder protocol
+
+Contract per `verification-gates §R6`. Runs **after edits, before `task.verification`**, only when the task mutated `package.json` or `pnpm-workspace.yaml`. Idempotent.
+
+```sh
+# Re-sync the lockfile if any manifest changed. Rule 4 says a package.json
+# diff without a lockfile diff is a wave-reviewer reject — catch it here.
+if printf '%s\n' ${TARGET_FILES} | grep -qE '(^|/)(package\.json|pnpm-workspace\.yaml)$'; then
+  pnpm install --lockfile-only
+fi
+
+# Assert packageManager pin format (Rule 1). Catches the unsatisfiable-regex
+# class of plan defects: validate the actual JSON value, not a string regex.
+if [ -f package.json ]; then
+  node -e '
+    const m = require("./package.json").packageManager || "";
+    if (!/^pnpm@\d+\.\d+\.\d+$/.test(m)) {
+      console.error(`[pnpm builder protocol] packageManager must match pnpm@X.Y.Z, got: ${m}`);
+      process.exit(1);
+    }
+  '
+fi
+```
+
+**Why `--lockfile-only` and not bare `pnpm install`:** Builder protocols must not install/extract tarballs (slow, network-touching, mutates `node_modules/`). `--lockfile-only` updates `pnpm-lock.yaml` in place — exactly what Rule 4 requires the builder to commit.
+
+## Verification recipe
+
+Gates the **planner** may append for tasks that touched dependency manifests.
+
+```json
+{
+  "custom": [
+    { "cmd": "pnpm install --frozen-lockfile --offline", "expect_exit": 0 }
+  ]
+}
+```
+
+Recipe rules:
+- Only emit when `task.target_files.{create,update}` contains a `package.json` or `pnpm-workspace.yaml`.
+- `--frozen-lockfile` is mandatory (Rule 5) — it's the gate that asserts the lockfile and manifests agree. `--offline` keeps the gate hermetic; if a dep was added the Builder protocol already pulled it via `--lockfile-only` + a separate fetch the planner cannot rely on, so the planner only emits this gate when it is confident the cache is warm.
+- Never emit `pnpm install` (without `--frozen-lockfile`) as a gate — that mutates the lockfile and turns the gate into an edit.
+
+## Common pitfalls
+
+1. **`packageManager` pin validated with a hand-rolled regex** (the wave-1 block in sprint-001 used `^packageManager\":\s*\"pnpm@10` — no leading `"`, no match possible). FIX: validate the parsed JSON value (`require("./package.json").packageManager`) against `/^pnpm@\d+\.\d+\.\d+$/`, never grep the raw file. Builder protocol above shows the pattern; `sprint-planning §R4a` enforces it at plan time.
+2. **`package.json` diff with no `pnpm-lock.yaml` diff** (Rule 4). FIX: Builder protocol runs `pnpm install --lockfile-only` automatically when a manifest is in scope.
+3. **Adding a dep at the repo root that belongs in a workspace** (Rule 20). FIX: use `pnpm --filter <pkg> add <dep>`; root deps use `pnpm add -Dw`.
+4. **CI step using bare `pnpm install`** instead of `--frozen-lockfile` (Rule 5). FIX: every CI / `Dockerfile` install step is `pnpm install --frozen-lockfile`.
+5. **Internal dep with a registry version range** (Rule 10). FIX: `workspace:*`.

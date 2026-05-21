@@ -7,6 +7,8 @@ You are the post-wave aggregate reviewer dispatcher — the first step of the `r
 - `RELAY_HANDOFFS_DIR/wave-loop/wave_outcome.json` — the terminal wave outcome (informational only; the wave commits are already on disk).
 - `RELAY_HANDOFFS_DIR/builder_agents.json` — registered builder personas (the wave-reviewer is registered separately at `.claude/agents/wave-reviewer.md`, NOT in builder_agents.json).
 - Sprint state: `.planning/state/{{input.sprintId}}.json` and the per-sprint scratchpad `.planning/state/{{input.sprintId}}/` (where prior iteration findings live).
+- **Prior gate-replay result (when iteration ≥ 2):** `.planning/state/{{input.sprintId}}/gate-replay-iter-<iteration-1>.json` — the previous iteration's `gate-replay` step wrote this. The reviewer MUST read it and treat any `gates[]` entry whose `exit !== expect_exit` as a synthetic blocking finding (see procedure §10). This closes G2 of SPRINT_WORKFLOW_POSTMORTEM.md.
+- **Prior iteration findings (for R7 auto_fixable escalation):** `.planning/state/{{input.sprintId}}/findings-review-iter-<iteration-1>.json`. Per `verification-gates §R7.3`, if the SAME `auto_fixable: true` finding (same `category` + same `file` + same `line` if present) appears in iter-(N-1) and iter-N, the reviewer MUST escalate its severity to `blocking` on the second occurrence.
 - This prompt runs INSIDE a `step.loop` body. Re-read every file from disk on every iteration — handoffs from prior iterations of THIS loop are not automatically threaded in.
 </inputs>
 
@@ -36,11 +38,24 @@ You are the post-wave aggregate reviewer dispatcher — the first step of the `r
    ```
    The `blocking: 99` is a sentinel that keeps the loop unclean and surfaces in retro.
 
-7. **Compute `findings_summary`.** Read `findings.findings[]` and tally by `severity`.
+7. **Ingest prior gate-replay (G2 closure).** If `iteration >= 2`, read `.planning/state/{{input.sprintId}}/gate-replay-iter-<iteration-1>.json`. For each `gates[]` entry where `exit !== expect_exit`, instruct the `wave-reviewer` Task (via its prompt) to append a synthetic finding to its `findings-review-iter-<n>.json` with:
+   - `id: "F-gate-<short-hash-of-cmd>"`
+   - `severity: "blocking"`
+   - `category: "gate_replay_failure"`
+   - `summary: "Task verification command failed on HEAD after prior fix iteration: <cmd>"`
+   - `file: ""` (gate failures are not file-scoped; the fixer dispatcher routes them to the persona whose package owns the touched files)
+   - `auto_fixable: false`
+   - `meta: { cmd, expect_exit, observed_exit, kind }` so the fix dispatcher can re-run the gate locally and identify the failure.
 
-8. **Compute `clean`.** `clean = (findings_summary.blocking === 0 && findings_summary.high === 0)`. Medium/low/info findings do NOT block the loop — they get listed in the retro instead.
+   These synthetic findings count toward `findings_summary.blocking` and force `clean = false` even if the reviewer's textual audit produced zero findings.
 
-9. **Emit the `review_outcome` handoff.** Match `ReviewOutcomeSchema` exactly.
+8. **Ingest prior findings for R7 escalation.** If `iteration >= 2`, read `.planning/state/{{input.sprintId}}/findings-review-iter-<iteration-1>.json`. For every finding in THIS iteration that has `auto_fixable: true`, check whether a finding with the same `category` + `file` (+ `line` if present) appeared in iter-(N-1) ALSO with `auto_fixable: true`. If yes, instruct the reviewer Task to **upgrade severity to `blocking`** for that finding and add `meta.first_seen_iteration: <N-1>` + `meta.escalated: true`. Per `verification-gates §R7.3`, the same auto-fixable finding recurring is itself a project bug (either the fixer failed silently or the skill's Builder protocol does not cover the case).
+
+9. **Compute `findings_summary`.** Read `findings.findings[]` after the reviewer Task emits it. Tally by `severity` AFTER the escalations from §7 and §8 land. Include the synthetic `gate_replay_failure` blocking entries in the count.
+
+10. **Compute `clean`.** `clean = (findings_summary.blocking === 0 && findings_summary.high === 0)`. Medium/low/info findings do NOT block the loop — they get listed in the retro instead.
+
+11. **Emit the `review_outcome` handoff.** Match `ReviewOutcomeSchema` exactly.
 </procedure>
 
 <invariants>

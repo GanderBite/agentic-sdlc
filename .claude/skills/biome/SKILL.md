@@ -291,3 +291,46 @@ Violates Rule 1 and Rule 9. FIX: there is exactly one `biome.json` at the repo r
 - **`--unsafe`** — additionally apply fixes Biome flags as potentially behavior-changing. Manual review only.
 - **Recommended set** — the curated default rules Biome ships per major version. Bumping Biome may change membership; pin Biome to `^1.9.x` and validate on bump.
 - **Override** — an entry under `overrides[]` that scopes config changes to a glob. Used for legitimate exceptions (test fixtures), not workspace style drift.
+
+## Builder protocol
+
+Contract per `verification-gates §R6`. The builder runs this **after edits, before `task.verification`**. Idempotent, scoped to `${TARGET_FILES}`, may mutate the working tree. Non-zero exit aborts the task with diagnostic.
+
+```sh
+# Apply safe lint + format fixes scoped to files this task touched.
+# ${TARGET_FILES} is space-separated repo-relative paths from
+# task.target_files.{create,update,may_also_touch} (filtered to existing .ts/.tsx/.js/.jsx/.json/.jsonc).
+# Empty expansion → skip silently (no-op task).
+if [ -n "${TARGET_FILES}" ]; then
+  pnpm exec biome check --write --no-errors-on-unmatched ${TARGET_FILES}
+fi
+```
+
+**Why scoped:** running `biome check --write` repo-wide rewrites unrelated files outside the task's diff envelope (a §R4d lint-scope violation). The wave-reviewer compares scope, not just exit code.
+
+## Verification recipe
+
+Gates the **planner** may append to any task whose `skills` include `biome`. Same provenance contract as `verification-gates §R1` — first token is `pnpm` (in `build-graph.json → tools`), no inventions.
+
+```json
+{
+  "lint": [
+    "pnpm --filter <package-that-owns-target-files> lint"
+  ]
+}
+```
+
+Recipe rules:
+- **Scope MUST match the touched package(s).** Compute `<package-that-owns-target-files>` as the union of `pnpm` workspace names whose `package.json` directory is the longest prefix of any path in `target_files.{create,update,remove}`. Never substitute `pnpm -r lint` unless `target_files` is empty or repo-root-scoped.
+- One entry per touched package — never a piped one-liner (`verification-gates §R5.6`).
+- If the package has no `lint` script, fall back to `pnpm --filter <pkg> exec biome check src` (rule 21 guarantees the script exists; the fallback is a planner safety net).
+
+## Common pitfalls
+
+Patterns the reviewer should flag and the builder should avoid. Cross-referenced from `sprint-planning/references/common-pitfalls.md` and from per-sprint `do-not-recur.md` digests.
+
+1. **Repo-root lint as a wave gate** (e.g. `pnpm -r lint` or `pnpm exec biome check apps packages` on a package-scoped task). Drifts the failure surface from "this wave's diff" to "everything in the repo." FIX: planner uses the scope from **Verification recipe**; reviewer rejects out-of-scope lint gates.
+2. **Silent disable of a recommended or pinned rule** (Rule 7 / Rule 6 violation). FIX: keep the rule on, add an `overrides[].include` entry with a `// reason:` comment OR add a `references/rules.md` entry.
+3. **Builder runs verification gate without the Builder protocol first** — guarantees the same lint diagnostics are re-discovered as findings every wave. FIX: §R6 contract requires builders to execute the protocol before gates.
+4. **`--write` wired into CI** (Rule 16). Auto-fix in CI hides the failing input from history. FIX: only run `--write` in the Builder protocol (local builder process) and in the pre-commit hook; CI uses bare `biome check`.
+5. **Cross-workspace boundary rule under `noRestrictedImports`** (Rule 23). FIX: move to `scripts/check-boundaries.ts`.

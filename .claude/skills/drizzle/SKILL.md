@@ -220,3 +220,59 @@ WHY wrong: violates Rule 19. Using `db` opens a second connection outside the tr
 - `references/prepared-statements.md` — `.prepare()` + `db.placeholder()`, when prepared statements help, lifecycle.
 - `references/soft-delete.md` — `deletedAt` column convention, read-path filters, FK behavior, restore.
 - `references/relations.md` — `one` vs `many`, junction tables, `with: {}` nesting, `findFirst` pitfalls.
+
+## Builder protocol
+
+Contract per `verification-gates §R6`. Runs **after edits, before `task.verification`**. Idempotent.
+
+```sh
+# When a schema.ts is touched, the migration set must move with it.
+# Rule 24 requires committing the generated .sql AND the meta/ snapshot
+# in the same commit — this protocol detects the drift and fails fast.
+if printf '%s\n' ${TARGET_FILES} | grep -qE '(^|/)schema\.ts$'; then
+  if ! git status --short apps/api/src/db/migrations | grep -q '^'; then
+    echo "[drizzle builder protocol] schema.ts changed but no migration files staged. Run 'pnpm --filter api drizzle-kit generate' and commit both the .sql and meta/_journal.json." >&2
+    exit 1
+  fi
+fi
+
+# Forbid raw string column refs in repo.ts edits — Rule 16.
+if [ -n "${TARGET_FILES}" ]; then
+  repo_files=$(printf '%s\n' ${TARGET_FILES} | grep -E '(^|/)repo\.ts$' || true)
+  if [ -n "${repo_files}" ]; then
+    if printf '%s\n' ${repo_files} | xargs rg --line-number --no-heading \
+        "\b(eq|and|or|inArray|isNull|gte|lte)\(\s*['\"][^'\"]+['\"]" 2>/dev/null; then
+      echo "[drizzle builder protocol] Drizzle operator called with a string literal; use column references (e.g. eq(table.id, ...))." >&2
+      exit 1
+    fi
+  fi
+fi
+```
+
+## Verification recipe
+
+Gates the **planner** may append for tasks touching the DB layer.
+
+```json
+{
+  "custom": [
+    { "cmd": "rg --quiet --type ts \"drizzle\\(pool, \\{ schema \\}\\)\" apps/api/src/shared/db.ts", "expect_exit": 0 }
+  ],
+  "files_exist": [
+    "apps/api/src/db/schema.ts"
+  ]
+}
+```
+
+Recipe rules:
+- A schema-touching task must verify the barrel re-exports the new module (`apps/api/src/db/schema.ts`). The recipe emits a `files_exist` gate on the barrel and a `custom` gate (rg `export \* from "../modules/<name>/schema.js"`) when planner-derived.
+- Never emit a runtime DB gate (`drizzle-kit migrate`) — that mutates external state. Migration application is part of the integration-test suite, not a per-task gate.
+
+## Common pitfalls
+
+1. **Schema change without migration files** (Rule 24). FIX: Builder protocol detects it; run `drizzle-kit generate` and commit both `.sql` and `meta/`.
+2. **Eager-singleton `db` evaluated at module top-level** that test code cannot substitute. Repeats across 6+ waves in sprint-001 history. FIX: export a factory `makeDb(pool)`; production wires once at `main.ts`, tests wire their own pool. Cross-ref `typescript/Common pitfalls §3`.
+3. **Auto-migrate on `api` boot** (Rule 25). FIX: migrations run in the `api-migrate` one-shot container; the long-running service NEVER calls `migrate()`.
+4. **Using `db` instead of `tx` inside a transaction** (Rule 19). Opens a second connection that commits independently. FIX: pass `tx` through every repo call.
+5. **Raw string column ref in a Drizzle operator** (Rule 16). FIX: use the typed column reference (`eq(appointment.id, id)`).
+6. **`repo` layer missing for a feature requiring DB access**, leading to `service.ts` reaching for `db.select` directly (Rule 14 violation; this was the `task-auth-service` wave-7 block in sprint-001). FIX: every DB-touching task's `target_files.create` MUST include a `repo.ts` when one does not exist — `sprint-planning §R4b` enforces this at plan time.

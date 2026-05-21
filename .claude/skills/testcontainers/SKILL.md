@@ -163,3 +163,51 @@ WHY wrong: violates Rule 9. A second migration set diverges from production and 
 - `references/lifecycle.md` — full lifecycle diagram, timeout tuning, error taxonomy from `@testcontainers/postgresql`, Docker socket configuration.
 - `references/ci.md` — GitHub Actions runner configuration, parallelism tuning, troubleshooting `Could not connect to Docker`.
 - `references/migrations-in-tests.md` — why programmatic `migrate()` is used in tests despite the drizzle skill's "NEVER auto-migrate on boot" rule, and how the two contexts differ.
+
+## Builder protocol
+
+Contract per `verification-gates §R6`. Runs **after edits, before `task.verification`**. Idempotent. Scope: integration-test files.
+
+```sh
+# Pin postgres:17-alpine (Rule 2) and require afterAll teardown (Rule 4)
+# in every integration test that constructs a PostgreSqlContainer.
+if [ -n "${TARGET_FILES}" ]; then
+  int_files=$(printf '%s\n' ${TARGET_FILES} | grep -E 'test/integration/.*\.test\.tsx?$' || true)
+  for f in ${int_files}; do
+    if rg --quiet 'new PostgreSqlContainer' "$f"; then
+      if ! rg --quiet "withImage\(['\"]postgres:17-alpine['\"]\)" "$f"; then
+        echo "[testcontainers builder protocol] ${f}: PostgreSqlContainer constructed without .withImage('postgres:17-alpine')." >&2
+        exit 1
+      fi
+      if ! rg --quiet 'afterAll\(' "$f"; then
+        echo "[testcontainers builder protocol] ${f}: PostgreSqlContainer used without afterAll teardown." >&2
+        exit 1
+      fi
+    fi
+  done
+fi
+```
+
+## Verification recipe
+
+Gates the **planner** may append for tasks creating integration tests.
+
+```json
+{
+  "tests": [
+    "pnpm --filter apps/api test:integration"
+  ]
+}
+```
+
+Recipe rules:
+- Always emit alongside `vitest`'s integration-test recipe when target files include `apps/api/test/integration/**`.
+- Never widen scope to `pnpm -r test:integration` — only `apps/api` runs integration tests in this repo.
+
+## Common pitfalls
+
+1. **Container image left floating** (no `.withImage('postgres:17-alpine')`) — production drift. FIX: Builder protocol catches it.
+2. **Missing `afterAll` teardown** — leaks containers across CI runs. FIX: Builder protocol catches it.
+3. **Separate migrations folder for tests** (Rule 9) — masks migration bugs. FIX: always use the production `apps/api/src/db/migrations` path.
+4. **Sharing one container across test files** (Rule 13). FIX: one container per file; cross-file sharing requires `globalSetup` and is out of scope here.
+5. **Per-test container restart** (Rule 14). FIX: truncate tables in `beforeEach`; restart costs 3–5 s and is forbidden.

@@ -20,7 +20,12 @@ You never edit code yourself — every fix lands via a `Task` subagent.
      "commit_message": { "subject": "", "body": "" } }
    ```
 
-2. **Load findings.** Read the file at `review_outcome.findings_path`. Filter to entries where `severity` is `blocking` or `high`. Discard the rest (the retro handles them).
+2. **Load findings.** Read the file at `review_outcome.findings_path`. Apply this two-bucket selection (closes G3 of SPRINT_WORKFLOW_POSTMORTEM.md, per `verification-gates §R7`):
+
+   - **Severity bucket:** include every finding whose `severity` is `blocking` or `high`.
+   - **Auto-fix bucket (mandatory):** include every finding with `auto_fixable: true` REGARDLESS of severity (yes, even `medium`, `low`, and `info`). The old "only blocking + auto_fixable" rule is the OLD behavior — it produced 8/8 carry-forward in sprint-001. If the reviewer marked it `auto_fixable: true`, the reviewer promised a fixer Task can resolve it without judgment, so we always dispatch.
+
+   Discard everything else (the retro handles them). The two buckets union — a finding in both buckets is dispatched once.
 
 3. **Group findings by file.** Each finding has a primary `file`. Group findings sharing the same `file` into one dispatch. For findings whose `details` reference multiple files, assign the finding to the file with the most other findings (tie-break: lexicographic). One group = one fixer Task.
 
