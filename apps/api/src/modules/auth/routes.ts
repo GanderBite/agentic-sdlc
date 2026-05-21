@@ -14,7 +14,7 @@
 import { Hono } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 
-import { loginRequest, loginResponse, refreshResponse } from '@medbridge/contracts';
+import { loginRequest, loginResponse, meResponse, refreshResponse } from '@medbridge/contracts';
 import { ALLOW_PUBLIC_KEY, authn } from '../../middleware/authn.js';
 import { csrf } from '../../middleware/csrf.js';
 import { UnauthorizedError, ValidationError } from '../../shared/errors.js';
@@ -114,7 +114,11 @@ export function createAuthRouter(deps: AuthRouteDeps): Hono {
   // Requires CSRF + authn.
   // -------------------------------------------------------------------------
   router.post('auth.logout', csrf, authn, async (c) => {
-    const refreshRaw = getCookie(c, 'refresh') ?? '';
+    const refreshRaw = getCookie(c, 'refresh');
+    if (!refreshRaw) {
+      clearAuthCookies(c);
+      return c.json({}, 200);
+    }
     await service.logout(refreshRaw);
     clearAuthCookies(c);
     return c.json({}, 200);
@@ -130,7 +134,7 @@ export function createAuthRouter(deps: AuthRouteDeps): Hono {
       throw new UnauthorizedError('Not authenticated');
     }
     const result = await service.me(user.userId);
-    return c.json({ user: result.user }, 200);
+    return c.json(meResponse.parse({ user: result.user }), 200);
   });
 
   return router;

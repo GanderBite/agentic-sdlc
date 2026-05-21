@@ -7,6 +7,12 @@ dist/
 build/
 *.tsbuildinfo
 
+# Compiled test artifacts (tsc emits .js/.d.ts/.map alongside .ts sources in test tree)
+apps/api/test/**/*.js
+apps/api/test/**/*.d.ts
+apps/api/test/**/*.js.map
+apps/api/test/**/*.d.ts.map
+
 # Test + coverage
 coverage/
 *.lcov

@@ -8,7 +8,8 @@ RUN corepack enable && corepack prepare pnpm@10.11.0 --activate
 WORKDIR /app
 
 # ---------------------------------------------------------------------------
-# Stage 2 — deps: install all workspace dependencies (frozen lockfile)
+# Stage 2 — deps: install ALL workspace dependencies (frozen lockfile)
+# Used only by the build and migrate stages which need devDependencies.
 # ---------------------------------------------------------------------------
 FROM base AS deps
 
@@ -21,7 +22,18 @@ COPY packages/contracts/package.json ./packages/contracts/package.json
 RUN pnpm install --frozen-lockfile
 
 # ---------------------------------------------------------------------------
-# Stage 3 — build: compile contracts then api
+# Stage 3 — prod-deps: install production-only dependencies for the runtime
+# ---------------------------------------------------------------------------
+FROM base AS prod-deps
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json ./apps/api/package.json
+COPY packages/contracts/package.json ./packages/contracts/package.json
+
+RUN pnpm install --prod --frozen-lockfile
+
+# ---------------------------------------------------------------------------
+# Stage 4 — build: compile contracts then api
 # ---------------------------------------------------------------------------
 FROM deps AS build
 
@@ -34,9 +46,12 @@ RUN pnpm --filter @medbridge/contracts build && \
     pnpm --filter @medbridge/api build
 
 # ---------------------------------------------------------------------------
-# Stage 4 — migrate: one-shot drizzle-kit migrate + seed
+# Stage 5 — migrate: one-shot drizzle-kit migrate + seed
+# Needs devDependencies (drizzle-kit), so copies from deps (all deps).
 # ---------------------------------------------------------------------------
 FROM base AS migrate
+
+RUN addgroup -S app && adduser -S app -G app
 
 WORKDIR /app
 
@@ -58,18 +73,22 @@ COPY packages/contracts/package.json ./packages/contracts/package.json
 
 WORKDIR /app/apps/api
 
+USER app
+
 CMD ["sh", "-c", "pnpm drizzle-kit migrate && node dist/seed/main.js"]
 
 # ---------------------------------------------------------------------------
-# Stage 5 — runtime: minimal api server
+# Stage 6 — runtime: minimal api server (no devDependencies)
 # ---------------------------------------------------------------------------
 FROM base AS runtime
 
+RUN addgroup -S app && adduser -S app -G app
+
 WORKDIR /app
 
-# Copy node_modules
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+# Copy production-only node_modules from prod-deps stage
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=prod-deps /app/apps/api/node_modules ./apps/api/node_modules
 
 # Copy built dist
 COPY --from=build /app/apps/api/dist ./apps/api/dist
@@ -80,6 +99,8 @@ COPY apps/api/package.json ./apps/api/package.json
 COPY packages/contracts/package.json ./packages/contracts/package.json
 
 WORKDIR /app/apps/api
+
+USER app
 
 EXPOSE 3000
 

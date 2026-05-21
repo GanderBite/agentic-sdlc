@@ -10,8 +10,6 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
-import { authn } from './middleware/authn.js';
-import { csrf } from './middleware/csrf.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger as loggerMiddleware } from './middleware/logger.js';
 import { requestId as requestIdMiddleware } from './middleware/requestId.js';
@@ -41,10 +39,12 @@ export function buildApp(_env: Env): Hono {
   // ── Protected /api/* router ───────────────────────────────────────────────
   const apiRouter = new Hono();
 
-  // Apply csrf + authn on all /api/* routes.
-  // Individual auth routes that are public set ALLOW_PUBLIC_KEY before authn runs.
-  apiRouter.use('*', csrf);
-  apiRouter.use('*', authn);
+  // csrf and authn are NOT registered globally here.
+  // Per-route middleware is declared in routes.ts:
+  //   auth.logout  — csrf + authn
+  //   auth.me      — authn
+  //   auth.login   — public (no middleware)
+  //   auth.refresh — public (no middleware)
 
   // Wire the auth module.
   const authService = createAuthService({

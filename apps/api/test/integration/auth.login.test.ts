@@ -40,48 +40,11 @@ beforeAll(async () => {
   process.env.JWT_SECRET = 'test-jwt-secret-at-least-32-bytes-long!!';
   process.env.NODE_ENV = 'test';
 
-  // Dynamic imports after env is set so db/client.ts and env.ts see correct values.
-  const { Hono: HonoClass } = await import('hono');
-  const { cors } = await import('hono/cors');
-  const { errorHandler } = await import('../../src/middleware/errorHandler.js');
-  const { requestId } = await import('../../src/middleware/requestId.js');
-  const { logger: loggerMw } = await import('../../src/middleware/logger.js');
-  const { createAuthService, wireAuth } = await import('../../src/modules/auth/index.js');
-  const { defaultPasswordHasher } = await import('../../src/modules/auth/passwords.js');
-  const authRepo = await import('../../src/modules/auth/repo.js');
-  const { defaultClock } = await import('../../src/shared/time.js');
-  const { logger } = await import('../../src/shared/logger.js');
-
-  // Build the Hono app WITHOUT global csrf/authn middleware.
-  // auth.login and auth.refresh are public routes (no auth required) — they set
-  // ALLOW_PUBLIC_KEY inside the handler, which does NOT help global middleware.
-  // auth.logout and auth.me declare their own per-route middleware in routes.ts.
-  const app: Hono = new HonoClass();
-  app.use('*', requestId);
-  app.use('*', loggerMw);
-  app.use('*', cors({ origin: '*', credentials: false }));
-  app.get('/api/health', (c) => c.json({ ok: true }, 200));
-
-  const apiRouter = new HonoClass();
-  // No global csrf or authn — routes declare per-route middleware where needed.
-
-  const authService = createAuthService({
-    repo: {
-      findUserByEmail: authRepo.findUserByEmail,
-      findUserById: authRepo.findUserById,
-      insertRefreshToken: authRepo.insertRefreshToken,
-      rotateRefreshToken: authRepo.rotateRefreshToken,
-      findRefreshTokenAnywhere: authRepo.findRefreshTokenAnywhere,
-      revokeAllActiveForUser: authRepo.revokeAllActiveForUser,
-    },
-    hasher: defaultPasswordHasher,
-    clock: defaultClock,
-    logger: logger.child({ module: 'auth' }),
-  });
-
-  wireAuth(apiRouter, { service: authService });
-  app.route('/api', apiRouter);
-  app.onError(errorHandler);
+  // Dynamic import after env is set so db/client.ts and env.ts see correct values.
+  // buildTestApp() mirrors buildApp() from src/main.ts — exercises the
+  // real production middleware composition.
+  const { buildTestApp } = await import('../support/app.js');
+  const app: Hono = await buildTestApp();
 
   agent = createRequestAgent(app);
 }, 60_000);

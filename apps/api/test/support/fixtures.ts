@@ -26,6 +26,7 @@ import type { Pool } from 'pg';
 
 import { user } from '../../src/db/schema.js';
 import { defaultPasswordHasher } from '../../src/modules/auth/passwords.js';
+import { SEED_DOCTOR_EMAIL, SEED_PATIENT_EMAIL } from '../../src/seed/constants.js';
 import type { Db } from './db.js';
 import { SEED_PLAIN_PASSWORD } from './passwords.js';
 
@@ -58,12 +59,12 @@ export async function insertSeedUsers(db: Db): Promise<SeedUsers> {
     .insert(user)
     .values([
       {
-        email: 'patient@test.local',
+        email: SEED_PATIENT_EMAIL,
         role: 'patient',
         passwordHash: hash,
       },
       {
-        email: 'doctor@test.local',
+        email: SEED_DOCTOR_EMAIL,
         role: 'doctor',
         passwordHash: hash,
       },

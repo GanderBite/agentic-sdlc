@@ -18,6 +18,7 @@ import { z } from 'zod';
 
 import { defaultPasswordHasher } from '../modules/auth/passwords.js';
 import { user } from '../modules/auth/schema.js';
+import { SEED_DOCTOR_EMAIL, SEED_PATIENT_EMAIL } from './constants.js';
 
 // ---------------------------------------------------------------------------
 // Env — minimal schema for the seed; avoids importing shared/env.ts which
@@ -53,8 +54,8 @@ async function run(): Promise<void> {
   const passwordHash = await defaultPasswordHasher.hash(SEED_PASSWORD);
 
   const seeds = [
-    { email: 'patient@medbridge.test', role: 'patient' as const, passwordHash },
-    { email: 'doctor@medbridge.test', role: 'doctor' as const, passwordHash },
+    { email: SEED_PATIENT_EMAIL, role: 'patient' as const, passwordHash },
+    { email: SEED_DOCTOR_EMAIL, role: 'doctor' as const, passwordHash },
   ];
 
   const result = await db

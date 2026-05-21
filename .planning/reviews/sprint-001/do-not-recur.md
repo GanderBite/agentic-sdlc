@@ -52,3 +52,6 @@ One line per non-info finding. Pattern descriptions only — no tool-specific sy
 [high] biome files.ignore list omits planner-tool directory (.relay/**) and compiled test artifacts; lint gate fails on out-of-source manifests and emit byproducts — auto_fixable=true — first_seen=wave-smoke
 [medium] testcontainers pg-per-file harness with withReuse() races migrations across vitest workers, producing pg_extension/pg_type duplicate-key errors — auto_fixable=false — first_seen=wave-smoke
 [medium] verification-only smoke task with max_attempts:1 and no preceding hygiene wave; mechanical drift discovered at terminal gate has no auto-fix path — auto_fixable=false — first_seen=wave-smoke
+[blocking] auth.me handler returns service result without parsing through response contract schema; same defect class as wave-8 finding recurred at a new call site — auto_fixable=true — first_seen=review-iter-1
+[low] api shared error code literal union duplicates contracts AuthErrorCode enum instead of inferring from the contract — auto_fixable=true — first_seen=review-iter-1
+[low] logout handler invokes hash + rotate work even when refresh cookie is empty string instead of short-circuiting — auto_fixable=true — first_seen=review-iter-1

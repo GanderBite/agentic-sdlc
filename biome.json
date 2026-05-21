@@ -9,7 +9,13 @@
       "**/node_modules/**",
       "**/migrations/meta/**",
       "pnpm-lock.yaml",
-      ".turbo/**"
+      ".turbo/**",
+      ".relay/**",
+      "apps/api/test/**/*.js",
+      "apps/api/test/**/*.d.ts",
+      "apps/api/test/**/*.js.map",
+      "apps/api/test/**/*.d.ts.map",
+      "**/*.tsbuildinfo"
     ]
   },
   "vcs": {

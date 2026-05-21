@@ -4,7 +4,7 @@
  * Layering rule (ARCHITECTURE §2.3): routes → service → repo.
  * Only this file may import `db`.
  */
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 
 import { db } from '../../db/client.js';
 import { refreshToken, user } from './schema.js';
@@ -31,16 +31,15 @@ export type RotatedRow = {
  * Look up a user by email.
  * The `email` column is `citext` so Postgres performs the case-insensitive
  * comparison; we pass the value verbatim (no transform) and let the DB do it.
- * Filters out soft-deleted users (deletedAt IS NULL).
+ * Soft-deleted users (deletedAt IS NOT NULL) are excluded in the WHERE clause.
  */
 export async function findUserByEmail(email: string): Promise<User | undefined> {
-  const rows = await db.select().from(user).where(eq(user.email, email)).limit(1);
-  const first = rows[0];
-  // Apply soft-delete filter in application code (isNull cannot be composed
-  // with eq on a citext column without an extra `and`) — deletedAt nullable
-  // means NULL = not deleted.
-  if (first === undefined || first.deletedAt !== null) return undefined;
-  return first;
+  const rows = await db
+    .select()
+    .from(user)
+    .where(and(eq(user.email, email), isNull(user.deletedAt)))
+    .limit(1);
+  return rows[0];
 }
 
 /**
@@ -49,10 +48,12 @@ export async function findUserByEmail(email: string): Promise<User | undefined> 
  * Filters out soft-deleted users.
  */
 export async function findUserById(id: string): Promise<User | undefined> {
-  const rows = await db.select().from(user).where(eq(user.id, id)).limit(1);
-  const first = rows[0];
-  if (first === undefined || first.deletedAt !== null) return undefined;
-  return first;
+  const rows = await db
+    .select()
+    .from(user)
+    .where(and(eq(user.id, id), isNull(user.deletedAt)))
+    .limit(1);
+  return rows[0];
 }
 
 /**
