@@ -48,3 +48,7 @@ One line per non-info finding. Pattern descriptions only — no tool-specific sy
 [low] integration test factory accepts a logger parameter that is never read inside the function body — auto_fixable=true — first_seen=wave-10
 [low] adversarial-boot test exercises the env-validation helper directly instead of the app entrypoint named in the task spec — auto_fixable=false — first_seen=wave-10
 [low] per-file test repo factory duplicated verbatim across multiple integration test files instead of shared via support module — auto_fixable=false — first_seen=wave-10
+[blocking] stale compiled .js/.d.ts artifacts under test tree pollute lint discovery and vitest globs; root cause is composite tsconfig emitting test outputs that .gitignore does not cover — auto_fixable=true — first_seen=wave-smoke
+[high] biome files.ignore list omits planner-tool directory (.relay/**) and compiled test artifacts; lint gate fails on out-of-source manifests and emit byproducts — auto_fixable=true — first_seen=wave-smoke
+[medium] testcontainers pg-per-file harness with withReuse() races migrations across vitest workers, producing pg_extension/pg_type duplicate-key errors — auto_fixable=false — first_seen=wave-smoke
+[medium] verification-only smoke task with max_attempts:1 and no preceding hygiene wave; mechanical drift discovered at terminal gate has no auto-fix path — auto_fixable=false — first_seen=wave-smoke
