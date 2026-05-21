@@ -1,0 +1,119 @@
+{
+  "wave_id": "wave-2",
+  "tasks": [
+    {
+      "task_id": "task-contracts-pkg",
+      "gates": [
+        {
+          "kind": "build",
+          "cmd": "pnpm --filter @medbridge/contracts exec tsc -b",
+          "exit": 0,
+          "duration_ms": 577,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "packages/contracts/package.json",
+          "exit": 0,
+          "duration_ms": 1,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "packages/contracts/tsconfig.json",
+          "exit": 0,
+          "duration_ms": 1,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "packages/contracts/src/index.ts",
+          "exit": 0,
+          "duration_ms": 1,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "packages/contracts/vitest.config.ts",
+          "exit": 0,
+          "duration_ms": 1,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"@medbridge/contracts\" packages/contracts/package.json",
+          "exit": 0,
+          "duration_ms": 8,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"\\\"zod\\\"\" packages/contracts/package.json",
+          "exit": 0,
+          "duration_ms": 7,
+          "flake_retries": 0
+        }
+      ],
+      "verdict": "pass",
+      "flaky": false
+    },
+    {
+      "task_id": "task-api-pkg",
+      "gates": [
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/package.json",
+          "exit": 0,
+          "duration_ms": 1,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/tsconfig.json",
+          "exit": 0,
+          "duration_ms": 1,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/vitest.config.ts",
+          "exit": 0,
+          "duration_ms": 1,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"@medbridge/api\" apps/api/package.json",
+          "exit": 0,
+          "duration_ms": 7,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"\\\"hono\\\"\" apps/api/package.json",
+          "exit": 0,
+          "duration_ms": 7,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"@testcontainers/postgresql\" apps/api/package.json",
+          "exit": 0,
+          "duration_ms": 7,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"integration\" apps/api/vitest.config.ts",
+          "exit": 0,
+          "duration_ms": 6,
+          "flake_retries": 0
+        }
+      ],
+      "verdict": "pass",
+      "flaky": false
+    }
+  ],
+  "verdict": "pass",
+  "notes": "All five gate kinds across both tasks exit 0. Recurrence rechecks (per R7.3): (a) `pnpm install --frozen-lockfile` exit=0 — lockfile up to date, both workspace importers present; (b) `pnpm biome check apps/api/tsconfig.json` exit=0 — single-line references array now formats clean; (c) apps/api/vitest.config.ts integration project now declares `pool: 'forks'` + `poolOptions.forks.singleFork: true` per test-layout.md. All three prior-wave-2 blocking/medium findings resolved; no escalation triggered."
+}

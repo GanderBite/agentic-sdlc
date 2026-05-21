@@ -1,0 +1,60 @@
+{
+  "wave_id": "wave-2",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "info",
+      "category": "architecture",
+      "file": ".planning/sprints/sprint-001.tasks.json",
+      "line": 1,
+      "summary": "Mirror file modified outside any task.target_files; deterministic write by orchestration tooling (mark-tasks-in-progress.sh), not by builder edit",
+      "suggested_fix": "No action required for this wave; mirror writes are orchestration metadata, not builder scope. Consider excluding deterministic mirror writes from scope-drift accounting in a future planner change.",
+      "auto_fixable": false,
+      "first_seen_iteration": "wave-1"
+    },
+    {
+      "id": "F-002",
+      "severity": "info",
+      "category": "architecture",
+      "file": ".planning/sprints/sprint-001.waves.json",
+      "line": 1,
+      "summary": "Mirror file modified outside any task.target_files; written deterministically by mark-tasks-in-progress.sh, not by builder",
+      "suggested_fix": "No action required; wave-status mirror updated by tooling.",
+      "auto_fixable": false,
+      "first_seen_iteration": "wave-1"
+    },
+    {
+      "id": "F-003",
+      "severity": "info",
+      "category": "architecture",
+      "file": ".planning/sprints/sprint-001.json",
+      "line": 1,
+      "summary": "Mirror file modified outside any task.target_files; written deterministically by orchestration tooling",
+      "suggested_fix": "No action required; sprint status mirror updated by tooling.",
+      "auto_fixable": false,
+      "first_seen_iteration": "wave-1"
+    },
+    {
+      "id": "F-004",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/package.json",
+      "line": 11,
+      "summary": "lint script scope `biome check src test` includes `test/` directory while contracts uses `biome check src`; per-package lint scopes diverge without documented convention",
+      "suggested_fix": "Document the divergence in .planning/intel/build-graph.json conventions, OR align packages/contracts/package.json to also include a `test` glob if/when integration tests land there. Current divergence is intentional (api has test/integration/) — record it.",
+      "auto_fixable": false,
+      "first_seen_iteration": "wave-2"
+    },
+    {
+      "id": "F-005",
+      "severity": "low",
+      "category": "architecture",
+      "file": "apps/api/package.json",
+      "line": 14,
+      "summary": "Scripts reference `drizzle-kit migrate`, `dist/main.js`, `dist/seed/main.js` — forward references to files that downstream tasks will create; harmless at scaffold time but `pnpm start` and `pnpm seed` will fail until task-app-main + task-seed land",
+      "suggested_fix": "Acceptable for scaffold wave. Verify task-app-main and task-seed land in subsequent waves and that wave-smoke does not invoke `pnpm start` or `pnpm seed` (it does not — smoke runs typecheck/lint/test/build only).",
+      "auto_fixable": false,
+      "first_seen_iteration": "wave-2"
+    }
+  ]
+}

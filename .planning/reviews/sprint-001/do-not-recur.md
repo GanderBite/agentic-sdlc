@@ -11,3 +11,4 @@ One line per non-info finding. Pattern descriptions only — no tool-specific sy
 [medium] integration vitest project missing single-fork pool option that test-layout.md mandates for testcontainers reuse — auto_fixable=true — first_seen=wave-2
 [medium] vitest config has empty include glob without passWithNoTests option; recursive test command fails on package with no tests — auto_fixable=true — first_seen=wave-2
 [low] per-package lint script scopes diverge across workspace packages (src vs src+test) without documented convention — auto_fixable=false — first_seen=wave-2
+[low] manifest scripts reference forward-declared dist artifacts and tooling that downstream tasks will create — auto_fixable=false — first_seen=wave-2

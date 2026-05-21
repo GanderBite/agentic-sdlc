@@ -23,6 +23,8 @@ export default defineConfig({
           exclude: ['node_modules', 'dist'],
           testTimeout: 60000,
           hookTimeout: 60000,
+          pool: 'forks',
+          poolOptions: { forks: { singleFork: true } },
         },
       },
     ],
