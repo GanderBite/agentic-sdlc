@@ -17,8 +17,8 @@
     "wave-smoke"
   ],
   "orchestrator_token_budget": 150000,
-  "status": "done",
+  "status": "todo",
   "created_at": "2026-05-16T12:00:00Z",
-  "started_at": "2026-05-17T01:13:26Z",
-  "completed_at": "2026-05-17T12:35:49Z"
+  "started_at": null,
+  "completed_at": null
 }
