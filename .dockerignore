@@ -1,0 +1,49 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies (rebuilt inside Docker)
+node_modules
+**/node_modules
+
+# Build outputs (rebuilt inside Docker)
+dist
+build
+**/*.tsbuildinfo
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Test + coverage
+coverage
+*.lcov
+.nyc_output
+
+# Uploads (bind-mounted at runtime)
+uploads/
+
+# Development tooling
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Planning / relay workflow
+.planning/
+.relay/
+.claude/
+
+# Docs
+docs/
+
+# Scripts (not needed in container)
+scripts/
