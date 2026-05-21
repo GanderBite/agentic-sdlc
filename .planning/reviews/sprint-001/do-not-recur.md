@@ -14,3 +14,8 @@ One line per non-info finding. Pattern descriptions only — no tool-specific sy
 [low] manifest scripts reference forward-declared dist artifacts and tooling that downstream tasks will create — auto_fixable=false — first_seen=wave-2
 [medium] same-named branded identifier defined twice with incompatible brand strategies across contracts and api shared utils — auto_fixable=false — first_seen=wave-3
 [low] shared env module evaluates its parsing factory at module-load time, eagerly coupling every transitive importer to a fully-populated process environment — auto_fixable=false — first_seen=wave-3
+[medium] singleton-pool close helper does not accept the DI-injected pool, so factory-driven callers cannot dispose their own pool via the same lifecycle entrypoint — auto_fixable=false — first_seen=wave-4
+[low] JWT sign/verify accept arbitrary secret strings without re-checking the minimum-length invariant enforced only at env boundary — auto_fixable=false — first_seen=wave-4
+[medium] planner task verification.build is empty despite changes touching non-test source; TS compile errors surface only at terminal smoke wave — auto_fixable=false — first_seen=wave-4
+[low] drizzle-kit config silently falls back to empty connection URL when env var is unset instead of failing fast at CLI invocation — auto_fixable=false — first_seen=wave-4
+[low] crypto hash helper marked async but performs only synchronous work; Promise wrapper adds no value over synchronous return — auto_fixable=false — first_seen=wave-4

@@ -1,0 +1,109 @@
+{
+  "wave_id": "wave-4",
+  "tasks": [
+    {
+      "task_id": "task-db-setup",
+      "gates": [
+        {
+          "kind": "lint",
+          "cmd": "pnpm biome check apps/api/drizzle.config.ts apps/api/src/db",
+          "exit": 0,
+          "duration_ms": 343,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/drizzle.config.ts",
+          "exit": 0,
+          "duration_ms": 1,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/src/db/client.ts",
+          "exit": 0,
+          "duration_ms": 1,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/src/db/schema.ts",
+          "exit": 0,
+          "duration_ms": 1,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"src/db/schema.ts\" apps/api/drizzle.config.ts",
+          "exit": 0,
+          "duration_ms": 12,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"src/db/migrations\" apps/api/drizzle.config.ts",
+          "exit": 0,
+          "duration_ms": 11,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"dialect.*postgresql\" apps/api/drizzle.config.ts",
+          "exit": 0,
+          "duration_ms": 10,
+          "flake_retries": 0
+        }
+      ],
+      "verdict": "pass"
+    },
+    {
+      "task_id": "task-auth-tokens",
+      "gates": [
+        {
+          "kind": "lint",
+          "cmd": "pnpm biome check apps/api/src/modules/auth/tokens.ts",
+          "exit": 0,
+          "duration_ms": 394,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/src/modules/auth/tokens.ts",
+          "exit": 0,
+          "duration_ms": 1,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"HS256\" apps/api/src/modules/auth/tokens.ts",
+          "exit": 0,
+          "duration_ms": 10,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"createSessionToken\" apps/api/src/modules/auth/tokens.ts",
+          "exit": 0,
+          "duration_ms": 9,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"createRefreshTokenValue\" apps/api/src/modules/auth/tokens.ts",
+          "exit": 0,
+          "duration_ms": 9,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet \"hashRefreshToken\" apps/api/src/modules/auth/tokens.ts",
+          "exit": 0,
+          "duration_ms": 10,
+          "flake_retries": 0
+        }
+      ],
+      "verdict": "pass"
+    }
+  ],
+  "verdict": "pass"
+}

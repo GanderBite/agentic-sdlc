@@ -1,0 +1,65 @@
+{
+  "wave_id": "wave-4",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/src/db/client.ts",
+      "line": 34,
+      "summary": "closeDb only ends the singleton pool; tests using createDb(testPool) cannot dispose their own pool via this helper",
+      "suggested_fix": "Either drop closeDb and require callers to pass their pool to a closeDb(pool: Pool) form, or document closeDb as singleton-only and add a separate closePool(pool) helper for DI callers",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-002",
+      "severity": "low",
+      "category": "security",
+      "file": "apps/api/src/modules/auth/tokens.ts",
+      "line": 32,
+      "summary": "createSessionToken/verifySessionToken accept arbitrary secret strings; 32-byte minimum is only enforced at env boundary",
+      "suggested_fix": "Add a guard at the top of secretKey(): if (secret.length < 32) throw new Error('JWT secret must be at least 32 bytes') — defends against any caller bypassing env",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-003",
+      "severity": "medium",
+      "category": "architecture",
+      "file": ".planning/sprints/sprint-001.tasks.json",
+      "line": 1,
+      "summary": "task-db-setup and task-auth-tokens have empty verification.build despite touching non-test source; verification-gates §Schema requires non-empty build",
+      "suggested_fix": "Planner: add `pnpm --filter @medbridge/api build` (or tsc --noEmit) to both tasks' verification.build so TS compile errors surface at task time, not at wave-smoke",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-004",
+      "severity": "low",
+      "category": "architecture",
+      "file": "apps/api/drizzle.config.ts",
+      "line": 11,
+      "summary": "DATABASE_URL silently falls back to empty string; drizzle-kit will produce a less actionable connect-time error when the env is unset",
+      "suggested_fix": "Replace `process.env.DATABASE_URL ?? ''` with an explicit guard: if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL required for drizzle-kit'); — preserves CLI-time fail-fast without coupling to loadEnv()",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-005",
+      "severity": "low",
+      "category": "style",
+      "file": "apps/api/src/modules/auth/tokens.ts",
+      "line": 101,
+      "summary": "hashRefreshToken is async but performs only synchronous createHash work; Promise wrapper adds no value",
+      "suggested_fix": "Drop the async modifier — return createHash('sha256').update(raw).digest('hex') directly. If the Promise<string> signature is part of a frozen contract, leave a comment explaining why",
+      "auto_fixable": false
+    },
+    {
+      "id": "F-006",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/src/modules/auth/tokens.ts",
+      "line": 1,
+      "summary": "tokens.ts (alongside passwords.ts) sits outside the canonical module file set (routes/service/repo/schema/dto/index) per ARCHITECTURE.md §2.3",
+      "suggested_fix": "Acceptable as module-internal helpers; if precedent sticks, extend ARCHITECTURE.md §2.3 to permit named helper files alongside the canonical layered files",
+      "auto_fixable": false
+    }
+  ]
+}
