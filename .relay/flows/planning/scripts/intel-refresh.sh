@@ -1,13 +1,30 @@
 #!/usr/bin/env bash
-# intel-refresh.sh — invoke the intel-refresh Relay flow inline.
+# intel-refresh.sh — pre-planning freshness check for intel artifacts.
 #
 # Inputs:  none.
-# Outputs: rewrites .planning/intel/* and docs/INTEL.md as needed.
-# Exit:    0 if intel updated (or already up-to-date), 1 if nothing changed.
+# Outputs: a log line indicating whether intel is fresh or stale.
+# Exit:    1 if intel is fresh (signals "no-op continue" to the planning
+#            flow, matching the `onExit: { '1': 'continue' }` mapping in
+#            planning/flow.ts).
+#          0 if intel was stale and a refresh is recommended (also
+#            continues — staleness is a warning, not a blocker; the user
+#            can re-plan after running intel-refresh).
+#          Never aborts — planning proceeds on whatever intel is present.
 #
-# Used as a `step.script` at the head of the planning flow (and as an
-# optional standalone refresh). Idempotent — a clean working tree against
-# the snapshot is a no-op exit 1.
+# Why this is NOT `relay run intel-refresh`:
+#   Relay flows run in temp worktrees created via `git worktree add HEAD`.
+#   These worktrees do not contain gitignored paths like `dist/` and
+#   `node_modules/`, so a nested `relay run` cannot load any flow's
+#   compiled `dist/flow.js`. Even loading the flow code from the main
+#   repo via an absolute path doesn't work, because intel-refresh's own
+#   `branch.sh` does `git checkout -B sdlc/intel-refresh`, which would
+#   yank the planning worktree off the `sdlc/plan-<slug>` branch the
+#   outer flow committed to. Nesting relay flows is structurally
+#   incompatible with relay's worktree isolation.
+#
+#   The clean separation: intel-refresh is its own flow, invoked
+#   manually (`relay run intel-refresh`) when the user wants a fresh
+#   snapshot. The planning flow just checks freshness here and warns.
 
 SCRIPT_NAME="intel-refresh"
 # shellcheck source=_lib.sh
@@ -15,50 +32,37 @@ SCRIPT_NAME="intel-refresh"
 
 cd "$(project_root)"
 
-require_cmd relay
+require_cmd git
 
-# If the snapshot is missing, force a full rebuild via --full=true.
-snapshot=".planning/intel/.snapshot"
-input_args=()
-if [ ! -f "$snapshot" ]; then
-  log "no .snapshot — running full intel rebuild"
-  input_args+=("--input" '{"full":true}')
+snapshot_file=".planning/intel/.snapshot"
+head_sha="$(git rev-parse HEAD 2>/dev/null || echo "")"
+
+if [ ! -f "$snapshot_file" ]; then
+  log "no .planning/intel/.snapshot — intel has never been built"
+  log "RECOMMEND: run \`relay run intel-refresh\` before planning to populate intel"
+  log "continuing with empty intel; the planner will produce a thin plan"
+  exit 0
 fi
 
-# Run the intel-refresh flow. The flow's `patch` step writes
-# `noop: true` into its handoff when nothing changed — we surface that as
-# exit 1 so callers (e.g. planning) can decide whether to skip downstream
-# work.
-log "invoking relay run intel-refresh"
-# `--no-worktree` is load-bearing: intel-refresh writes to
-# .planning/intel/* and docs/INTEL.md, and subsequent planning steps
-# read those files in-place. If relay created an isolated worktree for
-# this nested run, the writes would land in a temp dir invisible to the
-# outer planning flow. Equally important: the fresh worktree would be a
-# `git worktree add HEAD` checkout, which excludes gitignored files —
-# the intel-refresh flow's own `dist/flow.js` (built artifact, in
-# .gitignore) wouldn't exist there, and relay would error with "Flow
-# module not found — build has not been run". Sharing the outer
-# worktree's cwd gives both visibility and access to the built flow.
-#
-# `"${input_args[@]+"${input_args[@]}"}"` is the bash 3.2-safe form: it
-# expands to nothing when the array is empty, sidestepping `set -u` which
-# would otherwise abort the script on macOS bash 3.2.
-run_dir=$(relay run intel-refresh --no-worktree "${input_args[@]+"${input_args[@]}"}" --print-run-dir 2>/dev/null \
-  || relay run intel-refresh --no-worktree "${input_args[@]+"${input_args[@]}"}" >&2 && true)
-
-# Locate the latest run dir if the CLI didn't print one.
-if [ -z "${run_dir:-}" ] || [ ! -d "$run_dir" ]; then
-  run_dir=$(ls -1dt .relay/runs/*/ 2>/dev/null | head -n1 | sed 's:/$::')
+snapshot_sha="$(tr -d '[:space:]' <"$snapshot_file")"
+if [ -z "$snapshot_sha" ]; then
+  log ".snapshot exists but is empty — treating as missing"
+  log "RECOMMEND: run \`relay run intel-refresh\` before planning"
+  exit 0
 fi
 
-patched_handoff="${run_dir}/handoffs/patched.json"
-if [ -f "$patched_handoff" ]; then
-  if jq -e '.noop == true' "$patched_handoff" >/dev/null 2>&1; then
-    log "intel snapshot already up-to-date — no patches written"
-    exit 1
-  fi
+if [ "$snapshot_sha" = "$head_sha" ] || [ "$snapshot_sha" = "INIT" ]; then
+  log "intel snapshot matches HEAD ($snapshot_sha) — fresh"
+  exit 1
 fi
 
-log "intel refreshed"
+# Compute how far ahead HEAD is from the snapshot, just for the warning.
+ahead="?"
+if git rev-parse --verify --quiet "$snapshot_sha" >/dev/null 2>&1; then
+  ahead="$(git rev-list --count "${snapshot_sha}..HEAD" 2>/dev/null || echo "?")"
+fi
+
+log "intel is STALE — snapshot at $snapshot_sha, HEAD at $head_sha (${ahead} commit(s) ahead)"
+log "RECOMMEND: \`relay run intel-refresh\` (separately) then re-run planning for accurate task verification commands"
+log "continuing with stale intel; planning may emit gates that don't reflect recent code changes"
 exit 0
