@@ -20,3 +20,8 @@
 [medium] seed/main.ts does direct drizzle insert into accounts schema instead of calling accounts repo layer per ARCHITECTURE §2.2 — auto_fixable=false — first_seen=wave-6
 [low] expired-refresh-token revoke runs inside tx then throws; rollback undoes the intended revoke — auto_fixable=false — first_seen=wave-6
 [low] DUMMY_HASH argon2id parameters hard-coded in auth/service.ts; drift from shared/password.ts hash() silently breaks B7 constant-time — auto_fixable=false — first_seen=wave-6
+[blocking] auth/routes.ts adopts wrong /v1/auth/{login,refresh,logout,me} prefix matching wave-5 csrf bug instead of contract-mandated /api/auth.{login,refresh,logout,me} (B3/B4/B5) — auto_fixable=true — first_seen=wave-7
+[medium] auth/dto.ts decodes JWT payload it just signed to populate response user; service.login/refresh should return user object alongside tokens to avoid the unsafe-decode pattern — auto_fixable=false — first_seen=wave-7
+[medium] await c.req.json() in route handlers throws SyntaxError on malformed body, surfaces as 500 INTERNAL via errorHandler instead of 422 VALIDATION per ARCHITECTURE §5.2 — auto_fixable=true — first_seen=wave-7
+[low] dto.ts buildMeResponse re-validates user.role against {patient,doctor} that authn middleware already narrowed; same guard appears in 3 places — auto_fixable=false — first_seen=wave-7
+[low] apps/api/README.md documents `pnpm -F @medbridge/api db:seed` but apps/api/package.json defines no db:seed script — auto_fixable=false — first_seen=wave-7
