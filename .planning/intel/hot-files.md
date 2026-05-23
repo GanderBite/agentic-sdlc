@@ -1,8 +1,8 @@
 # Hot files (top files touched in last 200 commits)
 
-Snapshot: `1c1ea6393c49b62e98fdc61a77c743b222a459bc`.
+Snapshot: `e8740f615565b92f5218e9e6b5858d8a026e5ded`.
 
-> **Status: FRESH REPO.** Sprint-001 was reset on commit `1c1ea63`. Every product file produced by the prior run has been deleted from the working tree; only docs, planning artefacts, workflow tooling, and `pnpm-workspace.yaml` survive on disk. There are no `apps/` or `packages/` files left to count against the >10% threshold.
+> **Status: FRESH REPO.** Sprint-001 was reset on commit `1c1ea63`; commits up through `e8740f6` only touch `.relay/flows/**`, `.planning/**`, scripts, and root markdown — no product code has been re-added. Only docs, planning artefacts, workflow tooling, and `pnpm-workspace.yaml` exist on disk. There are no `apps/` or `packages/` files to count against the >10% threshold.
 
 ## Result: n/a
 

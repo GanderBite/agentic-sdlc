@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/ganderbite/relay-core/main/schemas/intel/build-graph.schema.json",
-  "snapshot_sha": "1c1ea6393c49b62e98fdc61a77c743b222a459bc",
+  "snapshot_sha": "e8740f615565b92f5218e9e6b5858d8a026e5ded",
   "fresh_repo": true,
   "tools": {
     "package_manager": null,
@@ -14,5 +14,5 @@
   "per_module": {},
   "migrations": null,
   "smoke": [],
-  "planner_guidance": "Sprint-001 was reset (commit 1c1ea63); no `package.json`, no workspace manifests beyond the preserved `pnpm-workspace.yaml`, no scripts to derive commands from. Do NOT invent commands here — the `tech-stack` step picks the runner/linter/builder, and the next sprint will land actual `package.json` scripts. Re-run `intel-refresh` once they do."
+  "planner_guidance": "Repo is still fresh (last product reset at 1c1ea63; subsequent commits up through e8740f6 only touch `.relay/flows/**`, `.planning/**`, scripts, and root markdown). No `package.json`, no workspace manifests beyond the preserved `pnpm-workspace.yaml`, no scripts to derive commands from. Do NOT invent commands here — the `tech-stack` step picks the runner/linter/builder, and the next sprint that lands real code will populate this file. Re-run `intel-refresh` once `apps/**` or `packages/**` contain manifests."
 }
