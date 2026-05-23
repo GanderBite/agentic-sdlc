@@ -125,7 +125,7 @@
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
-      "status": "todo",
+      "status": "in_progress",
       "attempts": [],
       "actuals": null
     },
@@ -291,7 +291,7 @@
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
-      "status": "todo",
+      "status": "in_progress",
       "attempts": [],
       "actuals": null
     },
@@ -400,7 +400,7 @@
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
-      "status": "in_progress",
+      "status": "done",
       "attempts": [],
       "actuals": null
     },
@@ -920,7 +920,7 @@
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
-      "status": "in_progress",
+      "status": "done",
       "attempts": [],
       "actuals": null
     },
