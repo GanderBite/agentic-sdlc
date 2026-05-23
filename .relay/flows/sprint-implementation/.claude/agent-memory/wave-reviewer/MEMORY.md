@@ -1,0 +1,2 @@
+- [TS builder skill skips biome quote-style format](sprint002_biome_quote_recurrence.md) — every wave in sprint-002 has shipped TS sources with double quotes despite biome single-quote rule; skill builder protocol is not running biome format --write on TARGET_FILES.
+- [Auth route prefix is dotted RPC under /api](sprint002_auth_route_prefix.md) — wave-5 csrf middleware shipped /v1/auth/* exempt paths but real routes are /api/auth.login,/api/auth.refresh; watch for similar prefix-style drift in routes/tests.
