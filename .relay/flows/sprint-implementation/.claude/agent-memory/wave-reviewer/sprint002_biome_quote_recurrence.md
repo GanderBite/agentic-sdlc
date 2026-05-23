@@ -1,12 +1,14 @@
 ---
 name: sprint002-biome-quote-recurrence
-description: Every wave AND the iter-1 fix commit in sprint-002 has shipped TS sources with double quotes despite biome quoteStyle=single; review-iter-2 confirms 104 lint errors persisted after the dedicated fix iteration.
+description: TS-builder skill never ran biome format --write throughout sprint-002 implementation; finally repaired by iter-2 fix commit via repo-wide format pass.
 metadata:
   type: project
 ---
 
-In sprint-002 the typescript-builder skill's builder protocol is NOT running `biome format --write` on TARGET_FILES before returning. This produces a recurring `[low]` (escalated to `[high]` since wave-4, and to `[blocking]` in review-iter-2 per verification-gates R7.3) finding tagged `auto_fixable: true` on every wave that creates TS sources.
+**Status as of review-iter-2 (HEAD 97a66c1):** RESOLVED for sprint-002. The iter-2 fix commit ran `pnpm format` (biome format --write) repo-wide as part of the 72-file reformatting sweep. `pnpm -w lint` now exits 0.
 
-**Why:** Per `verification-gates §R6`, each tool skill is supposed to ship a `## Builder protocol` section that mutates target files into a canonical state pre-verification. The TS skill either lacks a biome-format step or it is failing to fire on the actual TARGET_FILES paths. **Crucially, this also held during review-iter-1's fix dispatch**: F-024 was marked `auto_fixable: true` AND the fix iteration produced commit a86fa66 — yet `pnpm -w lint` still exits 1 with 104 errors at HEAD. The fixer Task itself is not running `biome format --write` after applying edits.
+**History:** Every wave 2-10 AND the iter-1 fix commit shipped TS sources with double quotes despite biome quoteStyle=single. The recurrence pattern was a [low] finding on each wave, marked auto_fixable=true. Even the dedicated review-iter-1 fix iteration (commit a86fa66) did NOT clear it — because the fixer Task itself did not run biome format. Only when the implementer manually ran format in iter-2 did the lint pass.
 
-**How to apply:** On any wave that creates `.ts`/`.tsx` files in sprint-002 (or successors using the same skill), expect double-quote drift; emit ONE consolidated finding (don't spam per-file). If this is the second+ occurrence with auto_fixable=true, ESCALATE to `blocking` per R7.3. Suggested_fix should always be the single command `pnpm format` (root-level `biome format --write .`), and the retro should flag BOTH the typescript-builder skill AND the review-fix-loop's fixer dispatcher prompt as needing a mandatory format pass.
+**Why:** Per `verification-gates §R6`, each tool skill is supposed to ship a `## Builder protocol` section that mutates target files into a canonical state pre-verification. The TS-builder skill either lacks a biome-format step or it does not target the right paths.
+
+**How to apply:** Going into sprint-003+, this pattern will RE-EMERGE on the first TS-creating wave unless the TS-builder skill is updated. Expect double-quote drift on every wave that creates `.ts`/`.tsx`. Emit ONE consolidated finding (don't spam per-file) and ESCALATE to `blocking` per R7.3 on the second+ recurrence. Suggested_fix is always `pnpm format`. Flag in the sprint retro that the typescript-builder skill's Builder protocol section needs auditing AND the review-fix-loop fixer prompt needs an explicit "after edits, run formatter" step.

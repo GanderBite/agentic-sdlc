@@ -214,50 +214,67 @@ export function createAuthService(deps: AuthServiceDeps): AuthService {
     // refreshes both succeeding (the update-where-not-revoked guard in
     // revokeRefreshToken means only one concurrent caller can update the row;
     // the losing request will re-read the row and find it already revoked).
-    return db.transaction(async (tx: Tx) => {
-      const tokenRow = await findRefreshTokenByHash(tx, tokenHash);
+    //
+    // F-209: expired-token revoke must NOT run inside the transaction — the
+    // subsequent throw would roll back the UPDATE, leaving the token usable.
+    // Instead we record the expired token id outside the tx scope and revoke
+    // it against `db` directly after the transaction aborts.
+    let expiredTokenId: string | undefined;
 
-      if (tokenRow === undefined) {
-        // Fabricated or already-deleted token — treat as replay
-        log.warn({ requestId }, 'refresh_token replay detected');
-        throw new UnauthorizedError('Invalid or expired refresh token');
+    try {
+      return await db.transaction(async (tx: Tx) => {
+        const tokenRow = await findRefreshTokenByHash(tx, tokenHash);
+
+        if (tokenRow === undefined) {
+          // Fabricated or already-deleted token — treat as replay
+          log.warn({ requestId }, 'refresh_token replay detected');
+          throw new UnauthorizedError('Invalid or expired refresh token');
+        }
+
+        if (tokenRow.revokedAt !== null) {
+          // Row exists but was already revoked: replay attack on this specific hash.
+          // The revoked_at is already set; we only warn and reject.
+          log.warn({ userId: tokenRow.userId, requestId }, 'refresh_token replay detected');
+          throw new UnauthorizedError('Invalid or expired refresh token');
+        }
+
+        // Check wall-clock expiry — do NOT revoke inside the tx (F-209).
+        // Queue the id for out-of-tx revocation in the catch block below.
+        if (tokenRow.expiresAt < now()) {
+          expiredTokenId = tokenRow.id;
+          throw new UnauthorizedError('Refresh token has expired');
+        }
+
+        // Revoke THIS row (update-where-not-revoked guard: zero rows returned means
+        // another concurrent request already claimed this token between the SELECT
+        // above and this UPDATE — enforce single-use by rejecting the race loser).
+        const revokedRows = await revokeRefreshToken(tx, tokenRow.id, now());
+        if (revokedRows.length === 0) {
+          throw new UnauthorizedError('refresh token already used');
+        }
+
+        // Resolve user record to build fresh JWT claims
+        const userRow = await findUserById(tx, tokenRow.userId);
+
+        if (userRow === undefined || userRow.deletedAt !== null) {
+          throw new UnauthorizedError('User account is no longer active');
+        }
+
+        // Issue NEW refresh token + session JWT + CSRF token in the same tx
+        const newRawToken = generateSecureToken();
+        const newCsrfToken = generateSecureToken();
+
+        return issueTokens(tx, userRow, newRawToken, newCsrfToken);
+      });
+    } catch (e) {
+      // F-209: if the transaction aborted due to an expired token, commit the
+      // revoke now (outside any transaction) so the token cannot be reused until
+      // physical TTL cleanup.
+      if (expiredTokenId !== undefined) {
+        await revokeRefreshToken(db, expiredTokenId, now());
       }
-
-      if (tokenRow.revokedAt !== null) {
-        // Row exists but was already revoked: replay attack on this specific hash.
-        // The revoked_at is already set; we only warn and reject.
-        log.warn({ userId: tokenRow.userId, requestId }, 'refresh_token replay detected');
-        throw new UnauthorizedError('Invalid or expired refresh token');
-      }
-
-      // Check wall-clock expiry
-      if (tokenRow.expiresAt < now()) {
-        // Revoke the expired token and reject
-        await revokeRefreshToken(tx, tokenRow.id, now());
-        throw new UnauthorizedError('Refresh token has expired');
-      }
-
-      // Revoke THIS row (update-where-not-revoked guard: zero rows returned means
-      // another concurrent request already claimed this token between the SELECT
-      // above and this UPDATE — enforce single-use by rejecting the race loser).
-      const revokedRows = await revokeRefreshToken(tx, tokenRow.id, now());
-      if (revokedRows.length === 0) {
-        throw new UnauthorizedError('refresh token already used');
-      }
-
-      // Resolve user record to build fresh JWT claims
-      const userRow = await findUserById(tx, tokenRow.userId);
-
-      if (userRow === undefined || userRow.deletedAt !== null) {
-        throw new UnauthorizedError('User account is no longer active');
-      }
-
-      // Issue NEW refresh token + session JWT + CSRF token in the same tx
-      const newRawToken = generateSecureToken();
-      const newCsrfToken = generateSecureToken();
-
-      return issueTokens(tx, userRow, newRawToken, newCsrfToken);
-    });
+      throw e;
+    }
   }
 
   // -------------------------------------------------------------------------

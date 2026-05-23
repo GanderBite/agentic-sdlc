@@ -60,6 +60,9 @@ async function seed(): Promise<void> {
 
   await db.transaction(async (tx) => {
     for (const fixture of fixtures) {
+      // TODO(F-208): replace with accounts.findUserByEmail(tx, fixture.email) once
+      // accounts/repo.ts exposes findUserByEmail and accounts/index.ts re-exports it.
+      // Direct schema access here duplicates query knowledge; see ARCHITECTURE §2.2.
       const existing = await tx
         .select({ id: user.id })
         .from(user)
@@ -74,6 +77,9 @@ async function seed(): Promise<void> {
 
       const passwordHash = await hash(fixture.password);
 
+      // TODO(F-208): replace with accounts.createUser(tx, { email, role, passwordHash }) once
+      // accounts/repo.ts exposes createUser and accounts/index.ts re-exports it.
+      // Direct schema access here duplicates query knowledge; see ARCHITECTURE §2.2.
       await tx.insert(user).values({
         email: fixture.email,
         role: fixture.role,

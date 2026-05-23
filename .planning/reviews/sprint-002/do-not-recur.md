@@ -48,3 +48,6 @@
 [medium] app.ts middleware-chain comment claims requestId→logger→csrf→authn→authz but only first three wired globally; misleading for downstream sprints — auto_fixable=false — first_seen=review-iter-2
 [low] routes.ts docstring still says 'Mount at /v1/auth' though app.ts mounts at /api; documentation half of the csrf-path fix — auto_fixable=false — first_seen=review-iter-2
 [low] authn middleware reads JWT_SECRET via process.env on every request; bad test-file isolation in single vitest worker — auto_fixable=false — first_seen=review-iter-2
+[medium] log-redaction integration test still wraps drizzle(pool,{schema:{} as any}) after src/shared/db.ts fix; per-test drift not caught by src-only audit — auto_fixable=true — first_seen=review-iter-2
+[low] stale block comments in integration test files document the now-fixed /v1/auth-vs-/api csrf bug as expected behaviour; documentation half of csrf-path fix not scrubbed — auto_fixable=true — first_seen=review-iter-2
+[info] shared/db.ts now passes the schema barrel into drizzle() but no downstream code uses db.query.*; risk of regression to `schema:{} as any` because the barrel appears load-bearing only by convention — auto_fixable=false — first_seen=review-iter-2

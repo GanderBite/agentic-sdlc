@@ -7,22 +7,15 @@
  *   POST /logout   — auth.logout  (CSRF required; protected after login)
  *   GET  /me       — auth.me      (requires authn middleware)
  *
- * The router is designed to be mounted at `/v1/auth` by app.ts so that the
- * full paths become `/v1/auth/login`, `/v1/auth/refresh`, etc., which matches
- * the EXEMPT_PATHS set in middleware/csrf.ts exactly.
+ * Mount at /api in app.ts so paths become POST /api/login, POST /api/refresh,
+ * POST /api/logout, GET /api/me — matches EXEMPT_PATHS in middleware/csrf.ts.
  *
  * Factory pattern: `createAuthRoutes({ service, authn })` so app.ts can inject
  * the live auth service + authn middleware without coupling this file to
  * singleton imports.
  */
 
-import {
-  loginRequest,
-  loginResponse,
-  logoutResponse,
-  meResponse,
-  refreshResponse,
-} from '@medbridge/contracts';
+import { type Role, loginRequest, loginResponse, logoutResponse, meResponse, refreshResponse } from '@medbridge/contracts';
 import type { MiddlewareHandler } from 'hono';
 import { Hono } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
@@ -35,6 +28,17 @@ import {
   buildRefreshResponse,
 } from './dto.js';
 import type { AuthService } from './service.js';
+
+// ---------------------------------------------------------------------------
+// Local Hono environment type — typed Variables for c.get/c.set in this router.
+// ---------------------------------------------------------------------------
+
+type AppEnv = {
+  Variables: {
+    requestId: string;
+    user: { id: string; email: string; role: Role };
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Cookie configuration helpers
@@ -107,11 +111,11 @@ export type CreateAuthRoutesDeps = {
 /**
  * Creates and returns a Hono router containing all four auth routes.
  *
- * Mount at `/v1/auth` in app.ts:
- *   `app.route("/v1/auth", createAuthRoutes({ service, authn }))`
+ * Mount at `/api` in app.ts:
+ *   `app.route("/api", createAuthRoutes({ service, authn }))`
  */
-export function createAuthRoutes({ service, authn }: CreateAuthRoutesDeps): Hono {
-  const router = new Hono();
+export function createAuthRoutes({ service, authn }: CreateAuthRoutesDeps): Hono<AppEnv> {
+  const router = new Hono<AppEnv>();
 
   // -------------------------------------------------------------------------
   // POST /login — auth.login
@@ -158,7 +162,7 @@ export function createAuthRoutes({ service, authn }: CreateAuthRoutesDeps): Hono
       throw new UnauthorizedError('Refresh token cookie missing');
     }
 
-    const requestId = (c.get('requestId') as string | undefined) ?? 'unknown';
+    const requestId = c.get('requestId');
 
     const tokens = await service.refresh({ rawToken, requestId });
 
@@ -196,16 +200,12 @@ export function createAuthRoutes({ service, authn }: CreateAuthRoutesDeps): Hono
   // middleware, which exempts GET requests, does not interfere).
   // -------------------------------------------------------------------------
   router.get('/me', authn, async (c) => {
-    const user = c.get('user') as { id: string; email: string; role: string } | undefined;
-
-    if (user === undefined) {
-      throw new UnauthorizedError('Authentication required');
-    }
+    const user = c.get('user');
 
     const result = service.me({
       userId: user.id,
       email: user.email,
-      role: user.role as 'patient' | 'doctor',
+      role: user.role,
     });
 
     const responseBody = buildMeResponse({

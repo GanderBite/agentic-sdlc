@@ -12,6 +12,12 @@ const UNSAFE_METHODS = new Set(['POST', 'PATCH', 'DELETE']);
  * Routes that are exempt from CSRF validation even when using unsafe methods.
  * These are endpoints that issue session cookies and therefore cannot yet carry
  * a CSRF token (login, token refresh).
+ *
+ * NOTE (architecture drift — F-202): These paths use the plain-slash form
+ * (`/api/login`, `/api/refresh`) instead of the `/api/auth.<verb>` form
+ * prescribed by ARCHITECTURE.md §6.1. The deviation is pending a contract
+ * reconciliation in the sprint-002 retro; do not propagate this style to new
+ * modules without that decision.
  */
 const EXEMPT_PATHS = new Set(['/api/login', '/api/refresh']);
 
