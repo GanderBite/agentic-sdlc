@@ -63,6 +63,13 @@ function buildCollectingStream(records: LogRecord[]): DestinationStream {
 /**
  * Create an in-memory log capture handle.
  *
+ * WARNING (F-207): captureLogs() ONLY captures logs from pino instances
+ * directly piped into the returned stream. The production shared logger at
+ * src/shared/logger.ts writes to stdout and is NOT redirected here — tests
+ * that need to assert on production logger output (e.g. B14 redaction checks)
+ * must either spy on process.stdout.write or migrate to a destination-swap
+ * entrypoint on shared/logger.ts (sprint-003 follow-up, see F-207).
+ *
  * This builds a pino logger instance that writes to an in-memory array instead
  * of stdout. Consumers can call `restore()` to stop capturing — though for
  * simple test assertions where no restore is needed, `restore` is a no-op.
