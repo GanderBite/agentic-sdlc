@@ -10,7 +10,7 @@
  *   await client.loginAs("patient@medbridge.test", "patientpass123!");
  *   const res = await client.csrfPost("/api/logout", {});
  */
-import type { Hono } from "hono";
+import type { Hono } from 'hono';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,9 +57,9 @@ export type RequestClient = {
 
 /** Parse a raw `Set-Cookie` header value into { name, value }. */
 function parseCookiePair(raw: string): { name: string; value: string } | undefined {
-  const semi = raw.indexOf(";");
+  const semi = raw.indexOf(';');
   const segment = semi === -1 ? raw : raw.slice(0, semi);
-  const eq = segment.indexOf("=");
+  const eq = segment.indexOf('=');
   if (eq === -1) {
     return undefined;
   }
@@ -73,11 +73,11 @@ function collectSetCookies(headers: Headers): string[] {
   const values: string[] = [];
   // `headers.getSetCookie()` is the standard Web API method in Node 18+.
   // Fall back to iterating `headers` if it is not available.
-  if (typeof (headers as { getSetCookie?: () => string[] }).getSetCookie === "function") {
+  if (typeof (headers as { getSetCookie?: () => string[] }).getSetCookie === 'function') {
     return (headers as unknown as { getSetCookie: () => string[] }).getSetCookie();
   }
   headers.forEach((value, key) => {
-    if (key.toLowerCase() === "set-cookie") {
+    if (key.toLowerCase() === 'set-cookie') {
       values.push(value);
     }
   });
@@ -88,7 +88,7 @@ function collectSetCookies(headers: Headers): string[] {
 function serialiseJar(jar: CookieJar): string {
   return Array.from(jar.entries())
     .map(([k, v]) => `${k}=${v}`)
-    .join("; ");
+    .join('; ');
 }
 
 // ---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ export function buildClient(app: Hono): RequestClient {
 
     const cookieHeader = serialiseJar(jar);
     if (cookieHeader.length > 0) {
-      headers.set("Cookie", cookieHeader);
+      headers.set('Cookie', cookieHeader);
     }
 
     // Merge any extra headers (Authorization, x-forwarded-for, etc.).
@@ -138,7 +138,7 @@ export function buildClient(app: Hono): RequestClient {
       if (pair !== undefined) {
         // Deletions are signalled by Max-Age=0 or expires in the past;
         // treat an empty value as a deletion.
-        if (pair.value === "" || raw.toLowerCase().includes("max-age=0")) {
+        if (pair.value === '' || raw.toLowerCase().includes('max-age=0')) {
           jar.delete(pair.name);
         } else {
           jar.set(pair.name, pair.value);
@@ -149,38 +149,33 @@ export function buildClient(app: Hono): RequestClient {
     return res;
   }
 
-  function csrfPost(
-    path: string,
-    body: unknown,
-    extraHeaders?: ExtraHeaders,
-  ): Promise<Response> {
-    const csrfToken = jar.get("csrf_token");
+  function csrfPost(path: string, body: unknown, extraHeaders?: ExtraHeaders): Promise<Response> {
+    const csrfToken = jar.get('csrf_token');
 
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     };
 
     if (csrfToken !== undefined) {
       // The literal string "X-CSRF-Token" matches csrf middleware's expected header.
-      headers["X-CSRF-Token"] = csrfToken;
+      headers['X-CSRF-Token'] = csrfToken;
     }
 
-    const merged: ExtraHeaders = extraHeaders !== undefined
-      ? { ...headers, ...extraHeaders }
-      : headers;
+    const merged: ExtraHeaders =
+      extraHeaders !== undefined ? { ...headers, ...extraHeaders } : headers;
 
     return doFetch(path, {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify(body),
       extraHeaders: merged,
     });
   }
 
   async function loginAs(email: string, password: string): Promise<Response> {
-    return doFetch("/api/login", {
-      method: "POST",
+    return doFetch('/api/login', {
+      method: 'POST',
       extraHeaders: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ email, password }),
     });

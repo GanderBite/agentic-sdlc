@@ -57,9 +57,7 @@ export const ReviewOutcomeSchema = z.object({
       'Union of files changed across all sprint commits — output of ' +
         '`git diff <base_sha>..<head_sha> --name-only`, excluding `.planning/state/**`.',
     ),
-  base_sha: z
-    .string()
-    .describe('SHA the diff was taken against (sprint branch fork point).'),
+  base_sha: z.string().describe('SHA the diff was taken against (sprint branch fork point).'),
   head_sha: z.string().describe('HEAD at review time.'),
 });
 

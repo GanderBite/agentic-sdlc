@@ -1,11 +1,11 @@
 import { defineFlow, step, z } from '@ganderbite/relay-core';
-import { IntelSchema } from './schemas/intel.js';
+import { ArchitectureSchema } from './schemas/architecture.js';
 import { BriefSchema } from './schemas/brief.js';
 import { BriefQuestionsSchema } from './schemas/brief-questions.js';
-import { ArchitectureSchema } from './schemas/architecture.js';
-import { TechStackSchema } from './schemas/tech-stack.js';
-import { SkillsIndexSchema } from './schemas/skills-index.js';
+import { IntelSchema } from './schemas/intel.js';
 import { PrdSchema } from './schemas/prd.js';
+import { SkillsIndexSchema } from './schemas/skills-index.js';
+import { TechStackSchema } from './schemas/tech-stack.js';
 
 /**
  * sdlc-init — bootstrap a project per AGENTIC_SDLC.md §7.1.

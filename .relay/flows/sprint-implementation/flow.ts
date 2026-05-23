@@ -1,10 +1,10 @@
-import { defineFlow, step, z } from "@ganderbite/relay-core";
-import { WaveOutcomeSchema } from "./schemas/wave-outcome.js";
-import { ExecutionPlanSchema } from "./schemas/execution-plan.js";
-import { RetroSchema } from "./schemas/retro.js";
-import { BuilderAgentsSchema } from "./schemas/builder-agents.js";
-import { ReviewOutcomeSchema } from "./schemas/review-outcome.js";
-import { FixOutcomeSchema } from "./schemas/fix-outcome.js";
+import { defineFlow, step, z } from '@ganderbite/relay-core';
+import { BuilderAgentsSchema } from './schemas/builder-agents.js';
+import { ExecutionPlanSchema } from './schemas/execution-plan.js';
+import { FixOutcomeSchema } from './schemas/fix-outcome.js';
+import { RetroSchema } from './schemas/retro.js';
+import { ReviewOutcomeSchema } from './schemas/review-outcome.js';
+import { WaveOutcomeSchema } from './schemas/wave-outcome.js';
 
 /**
  * sprint-implementation — execute one sprint per AGENTIC_SDLC.md §7.3.
@@ -33,94 +33,90 @@ import { FixOutcomeSchema } from "./schemas/fix-outcome.js";
  * named env var.
  */
 export default defineFlow({
-  name: "sprint-implementation",
-  version: "0.1.0",
+  name: 'sprint-implementation',
+  version: '0.1.0',
   description:
-    "Execute a sprint: branch, run waves with parallel builders + reviewer, commit per wave, retro, open PR.",
+    'Execute a sprint: branch, run waves with parallel builders + reviewer, commit per wave, retro, open PR.',
   input: z.object({
-    sprintId: z
-      .string()
-      .describe(
-        "The sprint to execute, matching `.planning/sprints/<id>.json`.",
-      ),
-    repo: z.string().describe("GitHub `owner/name` the PR opens against."),
+    sprintId: z.string().describe('The sprint to execute, matching `.planning/sprints/<id>.json`.'),
+    repo: z.string().describe('GitHub `owner/name` the PR opens against.'),
     dryRun: z
       .boolean()
       .default(false)
       .describe(
-        "Bootstrap mode (§21.1): wave-loop runs the first wave only, restricted to the first task; smoke wave skipped; PR opens as draft.",
+        'Bootstrap mode (§21.1): wave-loop runs the first wave only, restricted to the first task; smoke wave skipped; PR opens as draft.',
       ),
   }),
-  start: "preflight",
+  start: 'preflight',
   steps: {
     preflight: step.script({
-      run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/preflight.sh\""],
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/preflight.sh"'],
       env: {
-        SPRINT_ID: { from: "input.sprintId", required: true },
+        SPRINT_ID: { from: 'input.sprintId', required: true },
       },
-      onFail: "abort",
+      onFail: 'abort',
     }),
 
     branch: step.script({
-      run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/sprint-branch.sh\""],
-      dependsOn: ["preflight"],
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/sprint-branch.sh"'],
+      dependsOn: ['preflight'],
       env: {
-        SPRINT_ID: { from: "input.sprintId", required: true },
+        SPRINT_ID: { from: 'input.sprintId', required: true },
       },
-      onFail: "abort",
+      onFail: 'abort',
     }),
 
-    "load-state": step.script({
-      run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/load-state.sh\""],
-      dependsOn: ["branch"],
+    'load-state': step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/load-state.sh"'],
+      dependsOn: ['branch'],
       env: {
-        SPRINT_ID: { from: "input.sprintId", required: true },
+        SPRINT_ID: { from: 'input.sprintId', required: true },
       },
-      output: { artifact: "state.json" },
-      onFail: "abort",
+      output: { artifact: 'state.json' },
+      onFail: 'abort',
     }),
 
-    "plan-execution": step.prompt({
-      promptFile: "prompts/01_plan_execution.md",
-      dependsOn: ["load-state"],
-      tools: ["Read", "Glob", "Grep"],
-      output: { handoff: "execution_plan", schema: ExecutionPlanSchema },
+    'plan-execution': step.prompt({
+      promptFile: 'prompts/01_plan_execution.md',
+      dependsOn: ['load-state'],
+      tools: ['Read', 'Glob', 'Grep'],
+      output: { handoff: 'execution_plan', schema: ExecutionPlanSchema },
     }),
 
-    "derive-builders": step.prompt({
-      promptFile: "prompts/00_derive_builders.md",
-      dependsOn: ["plan-execution"],
-      tools: ["Read", "Write", "Bash", "Glob"],
-      model: "sonnet",
-      output: { handoff: "builder_agents", schema: BuilderAgentsSchema },
+    'derive-builders': step.prompt({
+      promptFile: 'prompts/00_derive_builders.md',
+      dependsOn: ['plan-execution'],
+      tools: ['Read', 'Write', 'Bash', 'Glob'],
+      model: 'sonnet',
+      output: { handoff: 'builder_agents', schema: BuilderAgentsSchema },
     }),
 
-    "wave-loop": step.loop({
-      dependsOn: ["derive-builders"],
+    'wave-loop': step.loop({
+      dependsOn: ['derive-builders'],
       body: {
         // Deterministic state update BEFORE the wave-runner runs:
         // picks the next non-done wave, flips its tasks → "in_progress".
         // Removes that responsibility from the wave-runner LLM (which
         // previously hallucinated state writes — see the run 45ae1f
         // post-mortem). Pairs with `mark-tasks-done` below.
-        "mark-tasks-in-progress": step.script({
-          run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/mark-tasks-in-progress.sh\""],
+        'mark-tasks-in-progress': step.script({
+          run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/mark-tasks-in-progress.sh"'],
           env: {
-            SPRINT_ID: { from: "input.sprintId", required: true },
+            SPRINT_ID: { from: 'input.sprintId', required: true },
           },
-          onFail: "abort",
+          onFail: 'abort',
         }),
 
         wave: step.prompt({
-          promptFile: "prompts/02_wave.md",
-          dependsOn: ["mark-tasks-in-progress"],
-          tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Task"],
-          model: "opus",
-          agents: { from: "handoff.builder_agents", required: true },
-          output: { handoff: "wave_outcome", schema: WaveOutcomeSchema },
+          promptFile: 'prompts/02_wave.md',
+          dependsOn: ['mark-tasks-in-progress'],
+          tools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'Task'],
+          model: 'opus',
+          agents: { from: 'handoff.builder_agents', required: true },
+          output: { handoff: 'wave_outcome', schema: WaveOutcomeSchema },
         }),
 
-        "wave-commit": step.script({
+        'wave-commit': step.script({
           // Inline shell — reads the unified `wave_outcome` handoff and runs
           // `git commit -m subject -m body`. Idempotent: exits 0 without
           // committing when the wave produced no changes (e.g. a no-op
@@ -129,10 +125,10 @@ export default defineFlow({
           // wave-runner reports a phantom or default-`builder` persona, so
           // we catch agent-utilization regressions immediately.
           run: [
-            "bash",
-            "-c",
+            'bash',
+            '-c',
             [
-              "set -e",
+              'set -e',
               'outcome="$RELAY_HANDOFFS_DIR/wave-loop/wave_outcome.json"',
               'agents="$RELAY_HANDOFFS_DIR/builder_agents.json"',
               '[ -f "$outcome" ] || { echo "[wave-commit] missing handoff: $outcome" >&2; exit 1; }',
@@ -146,10 +142,10 @@ export default defineFlow({
               'body=$(jq -r .commit_message.body "$outcome")',
               'git add -A',
               'if [ -n "$body" ]; then git commit -m "$subject" -m "$body"; else git commit -m "$subject"; fi',
-            ].join("; "),
+            ].join('; '),
           ],
-          dependsOn: ["wave"],
-          onFail: "abort",
+          dependsOn: ['wave'],
+          onFail: 'abort',
         }),
 
         // Pre-smoke (R7 / verification-gates §R10). After the wave commits
@@ -163,13 +159,13 @@ export default defineFlow({
         // re-enters mark-tasks-in-progress, which resets the wave's tasks
         // to retry. `onFail: "abort"` here is correct — we want the loop
         // to surface the problem immediately, not silently continue.
-        "wave-smoke": step.script({
-          run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/wave-smoke.sh\""],
-          dependsOn: ["wave-commit"],
+        'wave-smoke': step.script({
+          run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/wave-smoke.sh"'],
+          dependsOn: ['wave-commit'],
           env: {
-            SPRINT_ID: { from: "input.sprintId", required: true },
+            SPRINT_ID: { from: 'input.sprintId', required: true },
           },
-          onFail: "abort",
+          onFail: 'abort',
         }),
 
         // Deterministic state update AFTER the commit lands. Reads the
@@ -177,16 +173,16 @@ export default defineFlow({
         // and if every task in the wave is now terminal, marks the wave
         // itself "done". Pairs with `mark-tasks-in-progress` — together
         // they remove all state-write responsibility from the LLM.
-        "mark-tasks-done": step.script({
-          run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/mark-tasks-done.sh\""],
-          dependsOn: ["wave-smoke"],
+        'mark-tasks-done': step.script({
+          run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/mark-tasks-done.sh"'],
+          dependsOn: ['wave-smoke'],
           env: {
-            SPRINT_ID: { from: "input.sprintId", required: true },
+            SPRINT_ID: { from: 'input.sprintId', required: true },
           },
-          onFail: "abort",
+          onFail: 'abort',
         }),
       },
-      until: { from: "wave_outcome", when: { all_waves_done: true } },
+      until: { from: 'wave_outcome', when: { all_waves_done: true } },
       maxIterations: 20,
     }),
 
@@ -213,30 +209,30 @@ export default defineFlow({
     // Loop exits as soon as review_outcome.clean === true, or after at most
     // 3 iterations. `onFail: "continue"` so an unclean exhaust still flows
     // into retro (which surfaces the unclean state in its narrative).
-    "review-fix-loop": step.loop({
-      dependsOn: ["wave-loop"],
+    'review-fix-loop': step.loop({
+      dependsOn: ['wave-loop'],
       body: {
         review: step.prompt({
-          promptFile: "prompts/04_review.md",
-          tools: ["Read", "Glob", "Grep", "Bash", "Task", "Write"],
-          model: "opus",
-          agents: { from: "handoff.builder_agents", required: true },
-          output: { handoff: "review_outcome", schema: ReviewOutcomeSchema },
+          promptFile: 'prompts/04_review.md',
+          tools: ['Read', 'Glob', 'Grep', 'Bash', 'Task', 'Write'],
+          model: 'opus',
+          agents: { from: 'handoff.builder_agents', required: true },
+          output: { handoff: 'review_outcome', schema: ReviewOutcomeSchema },
         }),
 
-        "fix-findings": step.prompt({
-          promptFile: "prompts/05_fix_findings.md",
-          dependsOn: ["review"],
-          tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Task"],
-          model: "opus",
-          agents: { from: "handoff.builder_agents", required: true },
-          output: { handoff: "fix_outcome", schema: FixOutcomeSchema },
+        'fix-findings': step.prompt({
+          promptFile: 'prompts/05_fix_findings.md',
+          dependsOn: ['review'],
+          tools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'Task'],
+          model: 'opus',
+          agents: { from: 'handoff.builder_agents', required: true },
+          output: { handoff: 'fix_outcome', schema: FixOutcomeSchema },
         }),
 
-        "fix-commit": step.script({
-          run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/fix-commit.sh\""],
-          dependsOn: ["fix-findings"],
-          onFail: "abort",
+        'fix-commit': step.script({
+          run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/fix-commit.sh"'],
+          dependsOn: ['fix-findings'],
+          onFail: 'abort',
         }),
 
         // Gate replay (verification-gates §R8). Runs the union of every
@@ -245,49 +241,45 @@ export default defineFlow({
         // Exits 0 even on gate failure — the next `review` iteration
         // converts red gates into synthetic blocking findings, which the
         // loop's `until` condition (`clean: true`) honors.
-        "gate-replay": step.script({
-          run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/gate-replay.sh\""],
-          dependsOn: ["fix-commit"],
+        'gate-replay': step.script({
+          run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/gate-replay.sh"'],
+          dependsOn: ['fix-commit'],
           env: {
-            SPRINT_ID: { from: "input.sprintId", required: true },
+            SPRINT_ID: { from: 'input.sprintId', required: true },
           },
-          onFail: "continue",
+          onFail: 'continue',
         }),
       },
-      until: { from: "review_outcome", when: { clean: true } },
+      until: { from: 'review_outcome', when: { clean: true } },
       maxIterations: 3,
-      onFail: "continue",
+      onFail: 'continue',
     }),
 
     retro: step.prompt({
-      promptFile: "prompts/03_retro.md",
-      dependsOn: ["review-fix-loop"],
-      contextFrom: [
-        "execution_plan",
-        "wave-loop.wave_outcome",
-        "review-fix-loop.review_outcome",
-      ],
-      tools: ["Read", "Write", "Bash"],
-      model: "opus",
-      output: { handoff: "retro", schema: RetroSchema },
+      promptFile: 'prompts/03_retro.md',
+      dependsOn: ['review-fix-loop'],
+      contextFrom: ['execution_plan', 'wave-loop.wave_outcome', 'review-fix-loop.review_outcome'],
+      tools: ['Read', 'Write', 'Bash'],
+      model: 'opus',
+      output: { handoff: 'retro', schema: RetroSchema },
     }),
 
     report: step.script({
-      run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/build-report.sh\""],
-      dependsOn: ["retro"],
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/build-report.sh"'],
+      dependsOn: ['retro'],
       env: {
-        SPRINT_ID: { from: "input.sprintId", required: true },
+        SPRINT_ID: { from: 'input.sprintId', required: true },
       },
-      output: { artifact: "report.html" },
+      output: { artifact: 'report.html' },
     }),
 
     pr: step.script({
-      run: ["bash", "-c", "\"$RELAY_FLOW_DIR/scripts/open-pr.sh\""],
-      dependsOn: ["report"],
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/open-pr.sh"'],
+      dependsOn: ['report'],
       env: {
-        SPRINT_ID: { from: "input.sprintId", required: true },
-        REPO: { from: "input.repo", required: true },
-        DRY_RUN: { from: "input.dryRun" },
+        SPRINT_ID: { from: 'input.sprintId', required: true },
+        REPO: { from: 'input.repo', required: true },
+        DRY_RUN: { from: 'input.dryRun' },
       },
     }),
   },

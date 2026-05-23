@@ -15,15 +15,26 @@
  * the live auth service + authn middleware without coupling this file to
  * singleton imports.
  */
-import { Hono } from "hono";
-import { setCookie, deleteCookie, getCookie } from "hono/cookie";
-import type { MiddlewareHandler } from "hono";
 
-import { loginRequest, loginResponse, refreshResponse, meResponse, logoutResponse } from "@medbridge/contracts";
+import {
+  loginRequest,
+  loginResponse,
+  logoutResponse,
+  meResponse,
+  refreshResponse,
+} from '@medbridge/contracts';
+import type { MiddlewareHandler } from 'hono';
+import { Hono } from 'hono';
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 
-import { UnauthorizedError, ValidationError } from "../../shared/errors.js";
-import type { AuthService } from "./service.js";
-import { buildLoginResponse, buildRefreshResponse, buildMeResponse, buildLogoutResponse } from "./dto.js";
+import { UnauthorizedError, ValidationError } from '../../shared/errors.js';
+import {
+  buildLoginResponse,
+  buildLogoutResponse,
+  buildMeResponse,
+  buildRefreshResponse,
+} from './dto.js';
+import type { AuthService } from './service.js';
 
 // ---------------------------------------------------------------------------
 // Cookie configuration helpers
@@ -39,16 +50,16 @@ const REFRESH_MAX_AGE = 7 * 24 * 60 * 60;
 const HTTP_ONLY_COOKIE_OPTS = {
   httpOnly: true,
   secure: true,
-  sameSite: "Lax",
-  path: "/",
+  sameSite: 'Lax',
+  path: '/',
 } as const;
 
 /** Options for the non-HttpOnly CSRF cookie (readable by browser JS). */
 const CSRF_COOKIE_OPTS = {
   httpOnly: false,
   secure: true,
-  sameSite: "Lax",
-  path: "/",
+  sameSite: 'Lax',
+  path: '/',
 } as const;
 
 /** Sets the three auth cookies on the response. */
@@ -58,15 +69,15 @@ function setAuthCookies(
   refreshTokenValue: string,
   csrfToken: string,
 ): void {
-  setCookie(c, "session", sessionJwt, {
+  setCookie(c, 'session', sessionJwt, {
     ...HTTP_ONLY_COOKIE_OPTS,
     maxAge: SESSION_MAX_AGE,
   });
-  setCookie(c, "refresh_token", refreshTokenValue, {
+  setCookie(c, 'refresh_token', refreshTokenValue, {
     ...HTTP_ONLY_COOKIE_OPTS,
     maxAge: REFRESH_MAX_AGE,
   });
-  setCookie(c, "csrf_token", csrfToken, {
+  setCookie(c, 'csrf_token', csrfToken, {
     ...CSRF_COOKIE_OPTS,
     maxAge: REFRESH_MAX_AGE,
   });
@@ -74,9 +85,9 @@ function setAuthCookies(
 
 /** Clears all three auth cookies by setting maxAge to 0. */
 function clearAuthCookies(c: Parameters<MiddlewareHandler>[0]): void {
-  deleteCookie(c, "session", { path: "/" });
-  deleteCookie(c, "refresh_token", { path: "/" });
-  deleteCookie(c, "csrf_token", { path: "/" });
+  deleteCookie(c, 'session', { path: '/' });
+  deleteCookie(c, 'refresh_token', { path: '/' });
+  deleteCookie(c, 'csrf_token', { path: '/' });
 }
 
 // ---------------------------------------------------------------------------
@@ -107,18 +118,22 @@ export function createAuthRoutes({ service, authn }: CreateAuthRoutesDeps): Hono
   // CSRF exempt: this route issues the first session cookie, so no CSRF token
   // can be present yet (ARCHITECTURE §6.1).
   // -------------------------------------------------------------------------
-  router.post("/login", async (c) => {
-    const body: unknown = await c.req.json();
+  router.post('/login', async (c) => {
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      throw new ValidationError('Body must be valid JSON');
+    }
 
     const parsed = loginRequest.safeParse(body);
     if (!parsed.success) {
-      throw new ValidationError("Invalid login request", parsed.error.flatten());
+      throw new ValidationError('Invalid login request', parsed.error.flatten());
     }
 
     const { email, password } = parsed.data;
 
-    const ip =
-      c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
 
     // service.login runs throttle.check internally before argon2 verify
     const tokens = await service.login({ ip, email, password });
@@ -136,14 +151,14 @@ export function createAuthRoutes({ service, authn }: CreateAuthRoutesDeps): Hono
   // CSRF exempt: the caller may not yet have a fresh CSRF token (ARCHITECTURE §6.1).
   // Rotates ALL THREE cookies on success; throws 401 on replay.
   // -------------------------------------------------------------------------
-  router.post("/refresh", async (c) => {
-    const rawToken = getCookie(c, "refresh_token");
+  router.post('/refresh', async (c) => {
+    const rawToken = getCookie(c, 'refresh_token');
 
-    if (rawToken === undefined || rawToken === "") {
-      throw new UnauthorizedError("Refresh token cookie missing");
+    if (rawToken === undefined || rawToken === '') {
+      throw new UnauthorizedError('Refresh token cookie missing');
     }
 
-    const requestId = (c.get("requestId") as string | undefined) ?? "unknown";
+    const requestId = (c.get('requestId') as string | undefined) ?? 'unknown';
 
     const tokens = await service.refresh({ rawToken, requestId });
 
@@ -161,8 +176,8 @@ export function createAuthRoutes({ service, authn }: CreateAuthRoutesDeps): Hono
   // Reads the refresh_token cookie, revokes it, and clears all three cookies.
   // Idempotent: succeeds even if the token is already revoked or absent.
   // -------------------------------------------------------------------------
-  router.post("/logout", async (c) => {
-    const rawToken = getCookie(c, "refresh_token") ?? "";
+  router.post('/logout', async (c) => {
+    const rawToken = getCookie(c, 'refresh_token') ?? '';
 
     // service.logout is idempotent — silently no-ops on missing/revoked token
     await service.logout({ rawToken });
@@ -180,20 +195,24 @@ export function createAuthRoutes({ service, authn }: CreateAuthRoutesDeps): Hono
   // Protected by authn middleware (applied per-route here so that the csrf
   // middleware, which exempts GET requests, does not interfere).
   // -------------------------------------------------------------------------
-  router.get("/me", authn, async (c) => {
-    const user = c.get("user") as { id: string; email: string; role: string } | undefined;
+  router.get('/me', authn, async (c) => {
+    const user = c.get('user') as { id: string; email: string; role: string } | undefined;
 
     if (user === undefined) {
-      throw new UnauthorizedError("Authentication required");
+      throw new UnauthorizedError('Authentication required');
     }
 
     const result = service.me({
       userId: user.id,
       email: user.email,
-      role: user.role as "patient" | "doctor",
+      role: user.role as 'patient' | 'doctor',
     });
 
-    const responseBody = buildMeResponse({ id: result.userId, email: result.email, role: result.role });
+    const responseBody = buildMeResponse({
+      id: result.userId,
+      email: result.email,
+      role: result.role,
+    });
     const validated = meResponse.parse(responseBody);
 
     return c.json(validated, 200);

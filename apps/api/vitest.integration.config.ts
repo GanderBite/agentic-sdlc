@@ -7,6 +7,7 @@ export default defineConfig({
     clearMocks: true,
     include: ['test/integration/**/*.test.ts'],
     exclude: ['node_modules', 'dist'],
+    fileParallelism: false,
     sequence: {
       concurrent: false,
     },

@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from "hono";
+import type { MiddlewareHandler } from 'hono';
 
 /**
  * requestId middleware
@@ -9,7 +9,7 @@ import type { MiddlewareHandler } from "hono";
  */
 export const requestId: MiddlewareHandler = async (c, next): Promise<void> => {
   const id = crypto.randomUUID();
-  c.set("requestId", id);
+  c.set('requestId', id);
   await next();
-  c.header("X-Request-Id", id);
+  c.header('X-Request-Id', id);
 };

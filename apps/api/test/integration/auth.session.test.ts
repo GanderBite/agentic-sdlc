@@ -20,23 +20,22 @@
 import { createHash, createSecretKey } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-import { SignJWT } from 'jose';
-import { Pool } from 'pg';
+import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { eq } from 'drizzle-orm';
+import { SignJWT } from 'jose';
+import { Pool } from 'pg';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 
 import { createApp } from '../../src/app.js';
-import { createAuthService } from '../../src/modules/auth/index.js';
-import { createLoginThrottle } from '../../src/modules/auth/throttle.js';
 import { authn } from '../../src/middleware/authn.js';
+import { createAuthService } from '../../src/modules/auth/index.js';
 import { refreshToken as refreshTokenTable } from '../../src/modules/auth/schema.js';
-import { seedFixtures } from '../support/fixtures.js';
-import { expectAppError } from '../support/assertions.js';
+import { createLoginThrottle } from '../../src/modules/auth/throttle.js';
 import type { Db } from '../../src/shared/db.js';
+import { expectAppError } from '../support/assertions.js';
+import { seedFixtures } from '../support/fixtures.js';
 
 // ---------------------------------------------------------------------------
 // Module-level paths
@@ -169,10 +168,7 @@ function hashRefreshToken(rawToken: string): string {
 async function insertRefreshTokenRow(userId: string, rawToken: string): Promise<void> {
   const tokenHash = hashRefreshToken(rawToken);
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await db
-    .insert(refreshTokenTable)
-    .values({ userId, tokenHash, expiresAt })
-    .returning();
+  await db.insert(refreshTokenTable).values({ userId, tokenHash, expiresAt }).returning();
 }
 
 // ---------------------------------------------------------------------------

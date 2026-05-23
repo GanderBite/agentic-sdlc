@@ -1,53 +1,56 @@
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { eq } from "drizzle-orm";
-
-import { db, pool } from "../shared/db.js";
-import { hash } from "../shared/password.js";
-import { user } from "../modules/accounts/schema.js";
+import { eq } from 'drizzle-orm';
+import { user } from '../modules/accounts/schema.js';
+import { db, pool } from '../shared/db.js';
+import { hash } from '../shared/password.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 type Fixture = {
   email: string;
   password: string;
-  role: "patient" | "doctor";
+  role: 'patient' | 'doctor';
 };
 
 function loadFixtures(): readonly Fixture[] {
-  const fixturePath = resolve(__dirname, "fixtures/users.json");
-  const raw = readFileSync(fixturePath, "utf8");
+  const fixturePath = resolve(__dirname, 'fixtures/users.json');
+  const raw = readFileSync(fixturePath, 'utf8');
   const parsed: unknown = JSON.parse(raw);
 
   if (!Array.isArray(parsed)) {
-    throw new Error("fixtures/users.json must be a JSON array");
+    throw new Error('fixtures/users.json must be a JSON array');
   }
 
   return parsed.map((item: unknown, index: number): Fixture => {
     if (
-      typeof item !== "object" ||
+      typeof item !== 'object' ||
       item === null ||
-      !("email" in item) ||
-      !("password" in item) ||
-      !("role" in item) ||
-      typeof (item as Record<string, unknown>)["email"] !== "string" ||
-      typeof (item as Record<string, unknown>)["password"] !== "string" ||
-      typeof (item as Record<string, unknown>)["role"] !== "string"
+      !('email' in item) ||
+      !('password' in item) ||
+      !('role' in item) ||
+      typeof (item as Record<string, unknown>)['email'] !== 'string' ||
+      typeof (item as Record<string, unknown>)['password'] !== 'string' ||
+      typeof (item as Record<string, unknown>)['role'] !== 'string'
     ) {
-      throw new Error(`Fixture at index ${index} is missing required string fields: email, password, role`);
+      throw new Error(
+        `Fixture at index ${index} is missing required string fields: email, password, role`,
+      );
     }
 
-    const role = (item as Record<string, unknown>)["role"] as string;
-    if (role !== "patient" && role !== "doctor") {
-      throw new Error(`Fixture at index ${index} has invalid role "${role}"; must be "patient" or "doctor"`);
+    const role = (item as Record<string, unknown>)['role'] as string;
+    if (role !== 'patient' && role !== 'doctor') {
+      throw new Error(
+        `Fixture at index ${index} has invalid role "${role}"; must be "patient" or "doctor"`,
+      );
     }
 
     return {
-      email: (item as Record<string, unknown>)["email"] as string,
-      password: (item as Record<string, unknown>)["password"] as string,
-      role: role as "patient" | "doctor",
+      email: (item as Record<string, unknown>)['email'] as string,
+      password: (item as Record<string, unknown>)['password'] as string,
+      role: role as 'patient' | 'doctor',
     };
   });
 }
@@ -81,7 +84,7 @@ async function seed(): Promise<void> {
     }
   });
 
-  console.log("[seed] done");
+  console.log('[seed] done');
 }
 
 seed()
@@ -89,6 +92,6 @@ seed()
     void pool.end().then(() => process.exit(0));
   })
   .catch((err: unknown) => {
-    console.error("[seed] fatal error:", err);
+    console.error('[seed] fatal error:', err);
     void pool.end().then(() => process.exit(1));
   });

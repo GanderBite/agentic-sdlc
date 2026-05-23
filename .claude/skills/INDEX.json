@@ -12,9 +12,7 @@
         "docs/ARCHITECTURE.md",
         "docs/PRD.md"
       ],
-      "produces": [
-        "enriched_brief.md"
-      ],
+      "produces": ["enriched_brief.md"],
       "size_tokens": 2605
     },
     {
@@ -23,13 +21,7 @@
       "domain": "process",
       "subdomain": "intel",
       "description": "How to derive docs/INTEL.md and .planning/intel/ files; fresh and diff runs.",
-      "consumes": [
-        "package.json",
-        "pnpm-workspace.yaml",
-        "Cargo.toml",
-        "pyproject.toml",
-        "go.mod"
-      ],
+      "consumes": ["package.json", "pnpm-workspace.yaml", "Cargo.toml", "pyproject.toml", "go.mod"],
       "produces": [
         "docs/INTEL.md",
         ".planning/intel/modules.json",
@@ -75,10 +67,7 @@
         ".planning/estimation_priors.json",
         "docs/ARCHITECTURE.md"
       ],
-      "produces": [
-        "review-{wave_id}.json",
-        "findings-{wave_id}.json"
-      ],
+      "produces": ["review-{wave_id}.json", "findings-{wave_id}.json"],
       "size_tokens": 2725
     },
     {
@@ -87,13 +76,8 @@
       "domain": "process",
       "subdomain": "authoring",
       "description": "How to write skills the linter accepts and pipeline agents can consume; structure, rules, anti-patterns.",
-      "consumes": [
-        ".claude/skills/INDEX.json"
-      ],
-      "produces": [
-        ".claude/skills/<name>/SKILL.md",
-        ".claude/skills/<name>/references/*.md"
-      ],
+      "consumes": [".claude/skills/INDEX.json"],
+      "produces": [".claude/skills/<name>/SKILL.md", ".claude/skills/<name>/references/*.md"],
       "size_tokens": 2613
     },
     {
@@ -107,10 +91,7 @@
         ".planning/state/<sprint_id>.json",
         ".planning/intel/modules.json"
       ],
-      "produces": [
-        "git commits",
-        "GitHub PRs"
-      ],
+      "produces": ["git commits", "GitHub PRs"],
       "size_tokens": 3130
     },
     {
@@ -119,14 +100,8 @@
       "domain": "process",
       "subdomain": "gates",
       "description": "Gate schema, execution semantics, flake-retry policy, provenance from build-graph.json.",
-      "consumes": [
-        ".planning/intel/build-graph.json",
-        ".planning/estimation_priors.json"
-      ],
-      "produces": [
-        "task.verification block entries",
-        "review-{wave_id}.json gates[] rows"
-      ],
+      "consumes": [".planning/intel/build-graph.json", ".planning/estimation_priors.json"],
+      "produces": ["task.verification block entries", "review-{wave_id}.json gates[] rows"],
       "size_tokens": 2789
     },
     {
@@ -142,11 +117,7 @@
         "apps/*/tsconfig.json",
         "packages/*/tsconfig.json"
       ],
-      "produces": [
-        "*.ts",
-        "*.tsx",
-        "*.d.ts"
-      ],
+      "produces": ["*.ts", "*.tsx", "*.d.ts"],
       "size_tokens": 2200
     },
     {
@@ -160,9 +131,7 @@
         "apps/api/src/modules/*/routes.ts",
         "apps/ui/src/**/*.tsx"
       ],
-      "produces": [
-        "packages/contracts/src/**/*.ts"
-      ],
+      "produces": ["packages/contracts/src/**/*.ts"],
       "size_tokens": 2550
     },
     {
@@ -171,11 +140,7 @@
       "domain": "framework",
       "subdomain": "react",
       "description": "React 19 idioms for apps/ui: hooks rules, suspense/error boundaries, RHF+Zod forms, TanStack Router/Query.",
-      "consumes": [
-        "apps/ui/src/**/*.tsx",
-        "apps/ui/src/**/*.ts",
-        "packages/contracts/src/**/*.ts"
-      ],
+      "consumes": ["apps/ui/src/**/*.tsx", "apps/ui/src/**/*.ts", "packages/contracts/src/**/*.ts"],
       "produces": [
         "apps/ui/src/**/*.tsx",
         "apps/ui/src/components/**",
@@ -230,16 +195,8 @@
       "domain": "infra",
       "subdomain": "package-manager",
       "description": "pnpm 10.x workspaces: workspace:* protocol, -r/--filter, --frozen-lockfile, dep placement, .npmrc.",
-      "consumes": [
-        "package.json",
-        "pnpm-workspace.yaml",
-        "pnpm-lock.yaml",
-        ".npmrc"
-      ],
-      "produces": [
-        "package.json",
-        "pnpm-lock.yaml"
-      ],
+      "consumes": ["package.json", "pnpm-workspace.yaml", "pnpm-lock.yaml", ".npmrc"],
+      "produces": ["package.json", "pnpm-lock.yaml"],
       "size_tokens": 2467
     },
     {
@@ -255,11 +212,7 @@
         "apps/ui/src/routeTree.gen.ts",
         "packages/contracts/src/**/*.ts"
       ],
-      "produces": [
-        "apps/ui/src/routes/**/*.tsx",
-        "apps/ui/src/main.tsx",
-        "apps/ui/src/router.ts"
-      ],
+      "produces": ["apps/ui/src/routes/**/*.tsx", "apps/ui/src/main.tsx", "apps/ui/src/router.ts"],
       "size_tokens": 3052
     },
     {
@@ -295,11 +248,7 @@
         "apps/ui/.env*",
         "apps/ui/src/vite-env.d.ts"
       ],
-      "produces": [
-        "apps/ui/vite.config.ts",
-        "apps/ui/dist/**",
-        "apps/ui/src/vite-env.d.ts"
-      ],
+      "produces": ["apps/ui/vite.config.ts", "apps/ui/dist/**", "apps/ui/src/vite-env.d.ts"],
       "size_tokens": 2574
     },
     {
@@ -376,9 +325,7 @@
         "apps/api/src/db/migrations/**",
         "apps/api/src/db/schema.ts"
       ],
-      "produces": [
-        "apps/api/test/integration/*.test.ts"
-      ],
+      "produces": ["apps/api/test/integration/*.test.ts"],
       "size_tokens": 2485
     },
     {
@@ -435,10 +382,7 @@
         "apps/api/src/test/factories.ts",
         "packages/contracts/src/**/*.ts"
       ],
-      "produces": [
-        "apps/api/src/modules/*/*.test.ts",
-        "apps/api/src/test/factories.ts"
-      ],
+      "produces": ["apps/api/src/modules/*/*.test.ts", "apps/api/src/test/factories.ts"],
       "size_tokens": 3213
     },
     {

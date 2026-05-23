@@ -20,11 +20,15 @@ export const WaveSchema = z.object({
     .describe('Stable id of the form `wave-<n>` or a labelled id like `wave-smoke`.'),
   kind: z
     .enum(['build', 'contract', 'review', 'integration'])
-    .describe('Wave kind. `contract` waves emit shared interface stubs; `review` waves run the reviewer.'),
+    .describe(
+      'Wave kind. `contract` waves emit shared interface stubs; `review` waves run the reviewer.',
+    ),
   tasks: z
     .array(z.string())
     .min(1)
-    .describe('Task ids assigned to this wave. References must resolve in the parent `tasks` handoff.'),
+    .describe(
+      'Task ids assigned to this wave. References must resolve in the parent `tasks` handoff.',
+    ),
   token_budget: z
     .number()
     .int()

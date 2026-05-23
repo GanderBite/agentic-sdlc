@@ -1,4 +1,4 @@
-import argon2 from "argon2";
+import argon2 from 'argon2';
 
 export async function hash(plaintext: string): Promise<string> {
   return argon2.hash(plaintext, { type: argon2.argon2id });

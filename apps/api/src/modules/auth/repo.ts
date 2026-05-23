@@ -1,8 +1,8 @@
-import { eq, and, isNull } from "drizzle-orm";
+import { and, eq, isNull } from 'drizzle-orm';
 
-import type { Db, Tx } from "../../shared/db.js";
-import { user } from "../accounts/schema.js";
-import { refreshToken } from "./schema.js";
+import type { Db, Tx } from '../../shared/db.js';
+import { user } from '../accounts/schema.js';
+import { refreshToken } from './schema.js';
 
 // ---------------------------------------------------------------------------
 // User queries
@@ -53,7 +53,7 @@ export async function insertRefreshToken(
 
   const row = rows[0];
   if (row === undefined) {
-    throw new Error("insertRefreshToken: insert returned no rows");
+    throw new Error('insertRefreshToken: insert returned no rows');
   }
   return row;
 }
@@ -78,14 +78,19 @@ export async function findRefreshTokenByHash(
 /**
  * Revokes a single refresh_token row by id (sets revoked_at = now()).
  * Scoped to the single row — does NOT revoke sibling tokens for the same user.
+ *
+ * Returns the array of affected rows. An empty array means the row was already
+ * revoked (WHERE revokedAt IS NULL matched nothing), which the caller can use
+ * to detect a concurrent-use / replay attempt.
  */
 export async function revokeRefreshToken(
   db: Db | Tx,
   id: string,
   now: Date,
-): Promise<void> {
-  await db
+): Promise<Array<{ id: string }>> {
+  return db
     .update(refreshToken)
     .set({ revokedAt: now })
-    .where(and(eq(refreshToken.id, id), isNull(refreshToken.revokedAt)));
+    .where(and(eq(refreshToken.id, id), isNull(refreshToken.revokedAt)))
+    .returning({ id: refreshToken.id });
 }

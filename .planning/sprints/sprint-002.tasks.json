@@ -57,18 +57,10 @@
           }
         ]
       },
-      "skills": [
-        "pnpm",
-        "typescript",
-        "vitest",
-        "drizzle"
-      ],
+      "skills": ["pnpm", "typescript", "vitest", "drizzle"],
       "model": "sonnet",
       "estimate_tokens": 11000,
-      "depends_on": [
-        "task-workspace",
-        "task-contracts"
-      ],
+      "depends_on": ["task-workspace", "task-contracts"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -83,13 +75,9 @@
       "context": [
         "Acceptance bullet B11 — seed credentials documented in apps/api/README.md under 'Seed credentials' heading"
       ],
-      "references": [
-        "apps/api/src/seed/fixtures/users.json"
-      ],
+      "references": ["apps/api/src/seed/fixtures/users.json"],
       "target_files": {
-        "create": [
-          "apps/api/README.md"
-        ],
+        "create": ["apps/api/README.md"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -98,9 +86,7 @@
         "tests": [],
         "lint": [],
         "build": [],
-        "files_exist": [
-          "apps/api/README.md"
-        ],
+        "files_exist": ["apps/api/README.md"],
         "custom": [
           {
             "cmd": "rg --quiet 'Seed credentials' apps/api/README.md",
@@ -119,9 +105,7 @@
       "skills": [],
       "model": "haiku",
       "estimate_tokens": 5000,
-      "depends_on": [
-        "task-seed"
-      ],
+      "depends_on": ["task-seed"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -146,10 +130,7 @@
         ".claude/skills/hono/SKILL.md"
       ],
       "target_files": {
-        "create": [
-          "apps/api/src/app.ts",
-          "apps/api/src/main.ts"
-        ],
+        "create": ["apps/api/src/app.ts", "apps/api/src/main.ts"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -158,10 +139,7 @@
         "tests": [],
         "lint": [],
         "build": [],
-        "files_exist": [
-          "apps/api/src/app.ts",
-          "apps/api/src/main.ts"
-        ],
+        "files_exist": ["apps/api/src/app.ts", "apps/api/src/main.ts"],
         "custom": [
           {
             "cmd": "rg --quiet 'createApp' apps/api/src/app.ts",
@@ -193,16 +171,10 @@
           }
         ]
       },
-      "skills": [
-        "typescript",
-        "hono"
-      ],
+      "skills": ["typescript", "hono"],
       "model": "sonnet",
       "estimate_tokens": 12000,
-      "depends_on": [
-        "task-middleware",
-        "task-auth-routes"
-      ],
+      "depends_on": ["task-middleware", "task-auth-routes"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -228,10 +200,7 @@
         ".claude/skills/hono/SKILL.md"
       ],
       "target_files": {
-        "create": [
-          "apps/api/src/modules/auth/routes.ts",
-          "apps/api/src/modules/auth/dto.ts"
-        ],
+        "create": ["apps/api/src/modules/auth/routes.ts", "apps/api/src/modules/auth/dto.ts"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -240,10 +209,7 @@
         "tests": [],
         "lint": [],
         "build": [],
-        "files_exist": [
-          "apps/api/src/modules/auth/routes.ts",
-          "apps/api/src/modules/auth/dto.ts"
-        ],
+        "files_exist": ["apps/api/src/modules/auth/routes.ts", "apps/api/src/modules/auth/dto.ts"],
         "custom": [
           {
             "cmd": "rg --quiet 'auth\\.login' apps/api/src/modules/auth/routes.ts",
@@ -275,11 +241,7 @@
           }
         ]
       },
-      "skills": [
-        "typescript",
-        "hono",
-        "zod"
-      ],
+      "skills": ["typescript", "hono", "zod"],
       "model": "sonnet",
       "estimate_tokens": 17000,
       "depends_on": [
@@ -384,19 +346,10 @@
           }
         ]
       },
-      "skills": [
-        "typescript",
-        "drizzle",
-        "hono"
-      ],
+      "skills": ["typescript", "drizzle", "hono"],
       "model": "opus",
       "estimate_tokens": 27000,
-      "depends_on": [
-        "task-shared",
-        "task-db-schema",
-        "task-contracts",
-        "task-auth-throttle"
-      ],
+      "depends_on": ["task-shared", "task-db-schema", "task-contracts", "task-auth-throttle"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -413,14 +366,9 @@
         "Coverage gap — rolling window keyed by ${ip}|${email.toLowerCase()} pair; wired through service",
         "ARCHITECTURE.md §5.2 — TooManyRequestsError → 429"
       ],
-      "references": [
-        "apps/api/src/shared/errors.ts",
-        ".claude/skills/hono/SKILL.md"
-      ],
+      "references": ["apps/api/src/shared/errors.ts", ".claude/skills/hono/SKILL.md"],
       "target_files": {
-        "create": [
-          "apps/api/src/modules/auth/throttle.ts"
-        ],
+        "create": ["apps/api/src/modules/auth/throttle.ts"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -429,9 +377,7 @@
         "tests": [],
         "lint": [],
         "build": [],
-        "files_exist": [
-          "apps/api/src/modules/auth/throttle.ts"
-        ],
+        "files_exist": ["apps/api/src/modules/auth/throttle.ts"],
         "custom": [
           {
             "cmd": "rg --quiet 'createLoginThrottle' apps/api/src/modules/auth/throttle.ts",
@@ -455,15 +401,10 @@
           }
         ]
       },
-      "skills": [
-        "typescript",
-        "hono"
-      ],
+      "skills": ["typescript", "hono"],
       "model": "sonnet",
       "estimate_tokens": 10000,
-      "depends_on": [
-        "task-shared"
-      ],
+      "depends_on": ["task-shared"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -535,15 +476,10 @@
           }
         ]
       },
-      "skills": [
-        "typescript",
-        "zod"
-      ],
+      "skills": ["typescript", "zod"],
       "model": "sonnet",
       "estimate_tokens": 14000,
-      "depends_on": [
-        "task-workspace"
-      ],
+      "depends_on": ["task-workspace"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -651,16 +587,10 @@
           }
         ]
       },
-      "skills": [
-        "typescript",
-        "drizzle"
-      ],
+      "skills": ["typescript", "drizzle"],
       "model": "sonnet",
       "estimate_tokens": 22000,
-      "depends_on": [
-        "task-api-pkg",
-        "task-shared"
-      ],
+      "depends_on": ["task-api-pkg", "task-shared"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -677,17 +607,9 @@
         "ARCHITECTURE.md §4.3 — api-migrate one-shot before api boots; api does NOT auto-migrate",
         "Acceptance bullet B2 — docker compose up postgres api-migrate api → api healthy on /api/health, api-migrate exits 0 before api starts"
       ],
-      "references": [
-        "docs/ARCHITECTURE.md",
-        ".claude/skills/docker-compose/SKILL.md"
-      ],
+      "references": ["docs/ARCHITECTURE.md", ".claude/skills/docker-compose/SKILL.md"],
       "target_files": {
-        "create": [
-          "docker-compose.yml",
-          "apps/api/Dockerfile",
-          ".env.example",
-          ".dockerignore"
-        ],
+        "create": ["docker-compose.yml", "apps/api/Dockerfile", ".env.example", ".dockerignore"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -733,9 +655,7 @@
           }
         ]
       },
-      "skills": [
-        "docker-compose"
-      ],
+      "skills": ["docker-compose"],
       "model": "sonnet",
       "estimate_tokens": 14000,
       "depends_on": [],
@@ -835,17 +755,10 @@
           }
         ]
       },
-      "skills": [
-        "typescript",
-        "hono",
-        "zod"
-      ],
+      "skills": ["typescript", "hono", "zod"],
       "model": "opus",
       "estimate_tokens": 26000,
-      "depends_on": [
-        "task-shared",
-        "task-contracts"
-      ],
+      "depends_on": ["task-shared", "task-contracts"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -868,10 +781,7 @@
         "apps/api/src/shared/password.ts"
       ],
       "target_files": {
-        "create": [
-          "apps/api/src/seed/fixtures/users.json",
-          "apps/api/src/seed/main.ts"
-        ],
+        "create": ["apps/api/src/seed/fixtures/users.json", "apps/api/src/seed/main.ts"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -880,10 +790,7 @@
         "tests": [],
         "lint": [],
         "build": [],
-        "files_exist": [
-          "apps/api/src/seed/fixtures/users.json",
-          "apps/api/src/seed/main.ts"
-        ],
+        "files_exist": ["apps/api/src/seed/fixtures/users.json", "apps/api/src/seed/main.ts"],
         "custom": [
           {
             "cmd": "node -e \"const fs=require('fs'); const a=JSON.parse(fs.readFileSync('apps/api/src/seed/fixtures/users.json','utf8')); const ok = Array.isArray(a) && a.some(u=>u.role==='patient') && a.some(u=>u.role==='doctor') && a.every(u=>u.email && u.password); process.exit(ok?0:1)\"",
@@ -907,16 +814,10 @@
           }
         ]
       },
-      "skills": [
-        "typescript",
-        "drizzle"
-      ],
+      "skills": ["typescript", "drizzle"],
       "model": "sonnet",
       "estimate_tokens": 13000,
-      "depends_on": [
-        "task-db-schema",
-        "task-shared"
-      ],
+      "depends_on": ["task-db-schema", "task-shared"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -934,10 +835,7 @@
         "Acceptance bullet B13 — argon2 verify must be injectable (factory/constructor dep)",
         "Acceptance bullet B14 — pino redact paths configured verbatim incl req.headers.authorization"
       ],
-      "references": [
-        "docs/ARCHITECTURE.md",
-        ".claude/skills/typescript/SKILL.md"
-      ],
+      "references": ["docs/ARCHITECTURE.md", ".claude/skills/typescript/SKILL.md"],
       "target_files": {
         "create": [
           "apps/api/src/shared/errors.ts",
@@ -1018,15 +916,10 @@
           }
         ]
       },
-      "skills": [
-        "typescript"
-      ],
+      "skills": ["typescript"],
       "model": "sonnet",
       "estimate_tokens": 22000,
-      "depends_on": [
-        "task-api-pkg",
-        "task-contracts"
-      ],
+      "depends_on": ["task-api-pkg", "task-contracts"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -1042,9 +935,7 @@
         ".planning/intel/build-graph.json — fresh_repo: true, smoke: []",
         "sprint-planning skill rule 21 — smoke commands flow only from build-graph.smoke verbatim"
       ],
-      "references": [
-        ".planning/intel/build-graph.json"
-      ],
+      "references": [".planning/intel/build-graph.json"],
       "target_files": {
         "create": [],
         "update": [],
@@ -1111,9 +1002,7 @@
         ".claude/skills/security-testing/SKILL.md"
       ],
       "target_files": {
-        "create": [
-          "apps/api/test/integration/auth.login.test.ts"
-        ],
+        "create": ["apps/api/test/integration/auth.login.test.ts"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -1122,9 +1011,7 @@
         "tests": [],
         "lint": [],
         "build": [],
-        "files_exist": [
-          "apps/api/test/integration/auth.login.test.ts"
-        ],
+        "files_exist": ["apps/api/test/integration/auth.login.test.ts"],
         "custom": [
           {
             "cmd": "rg --quiet 'auth\\.login' apps/api/test/integration/auth.login.test.ts",
@@ -1160,18 +1047,10 @@
           }
         ]
       },
-      "skills": [
-        "vitest",
-        "testcontainers",
-        "api-integration-testing",
-        "security-testing"
-      ],
+      "skills": ["vitest", "testcontainers", "api-integration-testing", "security-testing"],
       "model": "sonnet",
       "estimate_tokens": 22000,
-      "depends_on": [
-        "task-test-support",
-        "task-auth-routes"
-      ],
+      "depends_on": ["task-test-support", "task-auth-routes"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -1196,9 +1075,7 @@
         ".claude/skills/security-testing/SKILL.md"
       ],
       "target_files": {
-        "create": [
-          "apps/api/test/integration/auth.refresh.test.ts"
-        ],
+        "create": ["apps/api/test/integration/auth.refresh.test.ts"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -1207,9 +1084,7 @@
         "tests": [],
         "lint": [],
         "build": [],
-        "files_exist": [
-          "apps/api/test/integration/auth.refresh.test.ts"
-        ],
+        "files_exist": ["apps/api/test/integration/auth.refresh.test.ts"],
         "custom": [
           {
             "cmd": "rg --quiet 'auth\\.refresh' apps/api/test/integration/auth.refresh.test.ts",
@@ -1241,18 +1116,10 @@
           }
         ]
       },
-      "skills": [
-        "vitest",
-        "testcontainers",
-        "api-integration-testing",
-        "security-testing"
-      ],
+      "skills": ["vitest", "testcontainers", "api-integration-testing", "security-testing"],
       "model": "sonnet",
       "estimate_tokens": 24000,
-      "depends_on": [
-        "task-test-support",
-        "task-auth-routes"
-      ],
+      "depends_on": ["task-test-support", "task-auth-routes"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -1276,9 +1143,7 @@
         ".claude/skills/api-integration-testing/SKILL.md"
       ],
       "target_files": {
-        "create": [
-          "apps/api/test/integration/auth.session.test.ts"
-        ],
+        "create": ["apps/api/test/integration/auth.session.test.ts"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -1287,9 +1152,7 @@
         "tests": [],
         "lint": [],
         "build": [],
-        "files_exist": [
-          "apps/api/test/integration/auth.session.test.ts"
-        ],
+        "files_exist": ["apps/api/test/integration/auth.session.test.ts"],
         "custom": [
           {
             "cmd": "rg --quiet 'auth\\.me' apps/api/test/integration/auth.session.test.ts",
@@ -1317,18 +1180,10 @@
           }
         ]
       },
-      "skills": [
-        "vitest",
-        "testcontainers",
-        "api-integration-testing",
-        "security-testing"
-      ],
+      "skills": ["vitest", "testcontainers", "api-integration-testing", "security-testing"],
       "model": "sonnet",
       "estimate_tokens": 19000,
-      "depends_on": [
-        "task-test-support",
-        "task-auth-routes"
-      ],
+      "depends_on": ["task-test-support", "task-auth-routes"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -1352,9 +1207,7 @@
         ".claude/skills/security-testing/SKILL.md"
       ],
       "target_files": {
-        "create": [
-          "apps/api/test/integration/csrf.test.ts"
-        ],
+        "create": ["apps/api/test/integration/csrf.test.ts"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -1363,9 +1216,7 @@
         "tests": [],
         "lint": [],
         "build": [],
-        "files_exist": [
-          "apps/api/test/integration/csrf.test.ts"
-        ],
+        "files_exist": ["apps/api/test/integration/csrf.test.ts"],
         "custom": [
           {
             "cmd": "rg --quiet 'X-CSRF-Token' apps/api/test/integration/csrf.test.ts",
@@ -1381,18 +1232,10 @@
           }
         ]
       },
-      "skills": [
-        "vitest",
-        "testcontainers",
-        "api-integration-testing",
-        "security-testing"
-      ],
+      "skills": ["vitest", "testcontainers", "api-integration-testing", "security-testing"],
       "model": "sonnet",
       "estimate_tokens": 13000,
-      "depends_on": [
-        "task-test-support",
-        "task-app"
-      ],
+      "depends_on": ["task-test-support", "task-app"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -1417,9 +1260,7 @@
         ".claude/skills/security-testing/SKILL.md"
       ],
       "target_files": {
-        "create": [
-          "apps/api/test/integration/log-redaction.test.ts"
-        ],
+        "create": ["apps/api/test/integration/log-redaction.test.ts"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -1428,9 +1269,7 @@
         "tests": [],
         "lint": [],
         "build": [],
-        "files_exist": [
-          "apps/api/test/integration/log-redaction.test.ts"
-        ],
+        "files_exist": ["apps/api/test/integration/log-redaction.test.ts"],
         "custom": [
           {
             "cmd": "rg --quiet 'REDACTED' apps/api/test/integration/log-redaction.test.ts",
@@ -1458,18 +1297,10 @@
           }
         ]
       },
-      "skills": [
-        "vitest",
-        "testcontainers",
-        "api-integration-testing",
-        "security-testing"
-      ],
+      "skills": ["vitest", "testcontainers", "api-integration-testing", "security-testing"],
       "model": "sonnet",
       "estimate_tokens": 16000,
-      "depends_on": [
-        "task-test-support",
-        "task-app"
-      ],
+      "depends_on": ["task-test-support", "task-app"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -1491,9 +1322,7 @@
         ".claude/skills/api-integration-testing/SKILL.md"
       ],
       "target_files": {
-        "create": [
-          "apps/api/test/integration/seed.test.ts"
-        ],
+        "create": ["apps/api/test/integration/seed.test.ts"],
         "update": [],
         "remove": [],
         "may_also_touch": []
@@ -1502,9 +1331,7 @@
         "tests": [],
         "lint": [],
         "build": [],
-        "files_exist": [
-          "apps/api/test/integration/seed.test.ts"
-        ],
+        "files_exist": ["apps/api/test/integration/seed.test.ts"],
         "custom": [
           {
             "cmd": "rg --quiet 'idempotent|twice' apps/api/test/integration/seed.test.ts",
@@ -1520,17 +1347,10 @@
           }
         ]
       },
-      "skills": [
-        "vitest",
-        "testcontainers",
-        "api-integration-testing"
-      ],
+      "skills": ["vitest", "testcontainers", "api-integration-testing"],
       "model": "sonnet",
       "estimate_tokens": 11000,
-      "depends_on": [
-        "task-test-support",
-        "task-seed"
-      ],
+      "depends_on": ["task-test-support", "task-seed"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -1605,20 +1425,10 @@
           }
         ]
       },
-      "skills": [
-        "typescript",
-        "vitest",
-        "testcontainers",
-        "api-integration-testing"
-      ],
+      "skills": ["typescript", "vitest", "testcontainers", "api-integration-testing"],
       "model": "sonnet",
       "estimate_tokens": 19000,
-      "depends_on": [
-        "task-app",
-        "task-db-schema",
-        "task-shared",
-        "task-seed"
-      ],
+      "depends_on": ["task-app", "task-db-schema", "task-shared", "task-seed"],
       "depends_on_contracts": [],
       "max_attempts": 2,
       "on_fail": "escalate",
@@ -1643,19 +1453,10 @@
         ".claude/skills/biome/SKILL.md"
       ],
       "target_files": {
-        "create": [
-          "package.json",
-          "biome.json",
-          "tsconfig.base.json",
-          ".npmrc"
-        ],
-        "update": [
-          ".gitignore"
-        ],
+        "create": ["package.json", "biome.json", "tsconfig.base.json", ".npmrc"],
+        "update": [".gitignore"],
         "remove": [],
-        "may_also_touch": [
-          "pnpm-workspace.yaml"
-        ]
+        "may_also_touch": ["pnpm-workspace.yaml"]
       },
       "verification": {
         "tests": [],
@@ -1687,11 +1488,7 @@
           }
         ]
       },
-      "skills": [
-        "pnpm",
-        "biome",
-        "typescript"
-      ],
+      "skills": ["pnpm", "biome", "typescript"],
       "model": "sonnet",
       "estimate_tokens": 12000,
       "depends_on": [],

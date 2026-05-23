@@ -10,8 +10,8 @@
 // Exit: 0 ok, 1 invalid. Errors are emitted to stderr as one JSON object
 // per line so the LLM can machine-read them.
 
-import { readFileSync, existsSync } from 'node:fs';
-import { join, dirname, basename, resolve } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 
 const args = process.argv.slice(2);
 if (args.length === 0) {
@@ -55,14 +55,18 @@ if (!sprint) finish();
 
 // --- Sprint-level checks ---------------------------------------------------
 if (!sprint.id || !/^sprint-[a-z0-9-]+$/i.test(sprint.id)) {
-  emit('blocking', 'sprint_id_invalid', `sprint.id must match /^sprint-[a-z0-9-]+$/, got ${JSON.stringify(sprint.id)}`);
+  emit(
+    'blocking',
+    'sprint_id_invalid',
+    `sprint.id must match /^sprint-[a-z0-9-]+$/, got ${JSON.stringify(sprint.id)}`,
+  );
 }
 if (!Array.isArray(sprint.waves) || sprint.waves.length === 0) {
   emit('blocking', 'sprint_waves_empty', 'sprint.waves must be a non-empty array of wave ids');
 }
 
 // --- Tasks-level checks ----------------------------------------------------
-const tasks = (tasksDoc && Array.isArray(tasksDoc.tasks)) ? tasksDoc.tasks : [];
+const tasks = tasksDoc && Array.isArray(tasksDoc.tasks) ? tasksDoc.tasks : [];
 const taskById = new Map();
 const seenIds = new Set();
 for (const t of tasks) {
@@ -112,7 +116,10 @@ for (const t of tasks) {
   if (Array.isArray(t.skills) && skillNames) {
     for (const s of t.skills) {
       if (!skillNames.has(s)) {
-        emit('blocking', 'skill_not_in_index', `task ${t.id} references unknown skill: ${s}`, { task_id: t.id, skill: s });
+        emit('blocking', 'skill_not_in_index', `task ${t.id} references unknown skill: ${s}`, {
+          task_id: t.id,
+          skill: s,
+        });
       }
     }
   }
@@ -126,7 +133,12 @@ for (const t of tasks) {
       if (buildGraphCmds && !buildGraphCmds.has(cmd)) {
         const head = cmd.split(/\s+/)[0];
         if (!builtinTokens.has(head)) {
-          emit('high', 'verification_cmd_unknown', `task ${t.id} references command not in build-graph.json: ${cmd}`, { task_id: t.id, cmd });
+          emit(
+            'high',
+            'verification_cmd_unknown',
+            `task ${t.id} references command not in build-graph.json: ${cmd}`,
+            { task_id: t.id, cmd },
+          );
         }
       }
     }
@@ -136,7 +148,7 @@ for (const t of tasks) {
 // Dependency cycles (Tarjan-ish quick version).
 const adj = new Map();
 for (const t of tasks) {
-  if (!t || !t.id) continue;
+  if (!t?.id) continue;
   adj.set(t.id, Array.isArray(t.depends_on) ? t.depends_on.filter((d) => taskById.has(d)) : []);
 }
 const cycle = findCycle(adj);
@@ -145,21 +157,23 @@ if (cycle) {
 }
 
 // --- Waves-level checks ----------------------------------------------------
-const waves = (wavesDoc && Array.isArray(wavesDoc.waves)) ? wavesDoc.waves : [];
+const waves = wavesDoc && Array.isArray(wavesDoc.waves) ? wavesDoc.waves : [];
 const waveById = new Map(waves.map((w) => [w?.id, w]));
 
 // Sprint references waves that exist.
 if (Array.isArray(sprint.waves)) {
   for (const wid of sprint.waves) {
     if (!waveById.has(wid)) {
-      emit('blocking', 'sprint_wave_missing', `sprint.waves references unknown wave: ${wid}`, { wave_id: wid });
+      emit('blocking', 'sprint_wave_missing', `sprint.waves references unknown wave: ${wid}`, {
+        wave_id: wid,
+      });
     }
   }
 }
 
 // Per-wave invariants (§5.2).
 for (const w of waves) {
-  if (!w || !w.id) continue;
+  if (!w?.id) continue;
   if (!Array.isArray(w.tasks) || w.tasks.length === 0) {
     emit('blocking', 'wave_tasks_empty', `wave ${w.id} has no tasks`, { wave_id: w.id });
     continue;
@@ -169,12 +183,20 @@ for (const w of waves) {
   for (const tid of w.tasks) {
     const t = taskById.get(tid);
     if (!t) {
-      emit('blocking', 'wave_task_missing', `wave ${w.id} references unknown task: ${tid}`, { wave_id: w.id, task_id: tid });
+      emit('blocking', 'wave_task_missing', `wave ${w.id} references unknown task: ${tid}`, {
+        wave_id: w.id,
+        task_id: tid,
+      });
       continue;
     }
     for (const d of t.depends_on ?? []) {
       if (inWave.has(d)) {
-        emit('blocking', 'wave_internal_dependency', `wave ${w.id}: task ${tid} depends on ${d} in the same wave`, { wave_id: w.id, task_id: tid, depends_on: d });
+        emit(
+          'blocking',
+          'wave_internal_dependency',
+          `wave ${w.id}: task ${tid} depends on ${d} in the same wave`,
+          { wave_id: w.id, task_id: tid, depends_on: d },
+        );
       }
     }
   }
@@ -184,14 +206,15 @@ for (const w of waves) {
     const t = taskById.get(tid);
     if (!t) continue;
     const tf = t.target_files ?? {};
-    const owned = [
-      ...(tf.create ?? []),
-      ...(tf.update ?? []),
-      ...(tf.remove ?? []),
-    ];
+    const owned = [...(tf.create ?? []), ...(tf.update ?? []), ...(tf.remove ?? [])];
     for (const f of owned) {
       if (seenFiles.has(f)) {
-        emit('blocking', 'wave_target_files_overlap', `wave ${w.id}: file ${f} claimed by both ${seenFiles.get(f)} and ${tid}`, { wave_id: w.id, file: f, tasks: [seenFiles.get(f), tid] });
+        emit(
+          'blocking',
+          'wave_target_files_overlap',
+          `wave ${w.id}: file ${f} claimed by both ${seenFiles.get(f)} and ${tid}`,
+          { wave_id: w.id, file: f, tasks: [seenFiles.get(f), tid] },
+        );
       } else {
         seenFiles.set(f, tid);
       }
@@ -201,18 +224,31 @@ for (const w of waves) {
   if (typeof w.token_budget === 'number') {
     const sum = w.tasks.reduce((acc, tid) => acc + (taskById.get(tid)?.estimate_tokens ?? 0), 0);
     if (sum > w.token_budget) {
-      emit('high', 'wave_token_budget_exceeded', `wave ${w.id}: estimate sum ${sum} > budget ${w.token_budget}`, { wave_id: w.id, sum, budget: w.token_budget });
+      emit(
+        'high',
+        'wave_token_budget_exceeded',
+        `wave ${w.id}: estimate sum ${sum} > budget ${w.token_budget}`,
+        { wave_id: w.id, sum, budget: w.token_budget },
+      );
     }
   }
   // 4. Parallelism cap.
   if (typeof w.max_parallelism === 'number' && (w.max_parallelism < 1 || w.max_parallelism > 8)) {
-    emit('medium', 'wave_parallelism_out_of_range', `wave ${w.id}: max_parallelism=${w.max_parallelism} outside [1,8]`, { wave_id: w.id });
+    emit(
+      'medium',
+      'wave_parallelism_out_of_range',
+      `wave ${w.id}: max_parallelism=${w.max_parallelism} outside [1,8]`,
+      { wave_id: w.id },
+    );
   }
   // 5. Contracts satisfied earlier.
   // The position of this wave in the sprint:
   const idx = (sprint.waves ?? []).indexOf(w.id);
   if (idx >= 0) {
-    const earlierWaves = (sprint.waves ?? []).slice(0, idx).map((id) => waveById.get(id)).filter(Boolean);
+    const earlierWaves = (sprint.waves ?? [])
+      .slice(0, idx)
+      .map((id) => waveById.get(id))
+      .filter(Boolean);
     const satisfiedContracts = new Set(
       earlierWaves
         .filter((ew) => ew.kind === 'contract')
@@ -225,7 +261,12 @@ for (const w of waves) {
       if (!t) continue;
       for (const c of t.depends_on_contracts ?? []) {
         if (!satisfiedContracts.has(c)) {
-          emit('high', 'wave_contract_unsatisfied', `wave ${w.id}: task ${tid} depends_on_contracts ${c} not produced by an earlier wave`, { wave_id: w.id, task_id: tid, contract: c });
+          emit(
+            'high',
+            'wave_contract_unsatisfied',
+            `wave ${w.id}: task ${tid} depends_on_contracts ${c} not produced by an earlier wave`,
+            { wave_id: w.id, task_id: tid, contract: c },
+          );
         }
       }
     }
@@ -237,7 +278,9 @@ if (Array.isArray(sprint.waves) && sprint.waves.length > 0) {
   const last = sprint.waves[sprint.waves.length - 1];
   const lastWave = waveById.get(last);
   if (!lastWave || lastWave.kind !== 'review') {
-    emit('blocking', 'smoke_wave_missing', `last wave (${last}) must have kind="review" (smoke)`, { wave_id: last });
+    emit('blocking', 'smoke_wave_missing', `last wave (${last}) must have kind="review" (smoke)`, {
+      wave_id: last,
+    });
   }
 }
 
@@ -250,7 +293,7 @@ for (const w of waves) {
   const nextWave = nextId ? waveById.get(nextId) : null;
   if (!nextWave) continue;
   const consumers = new Set();
-  for (const tid of (nextWave.tasks ?? [])) {
+  for (const tid of nextWave.tasks ?? []) {
     const t = taskById.get(tid);
     if (!t) continue;
     for (const c of t.depends_on_contracts ?? []) {
@@ -258,7 +301,12 @@ for (const w of waves) {
     }
   }
   if (consumers.size < 3) {
-    emit('medium', 'contract_underused', `contract wave ${w.id}: only ${consumers.size} dependent tasks in the next wave (§5.4 guideline ≥3)`, { wave_id: w.id, consumers: [...consumers] });
+    emit(
+      'medium',
+      'contract_underused',
+      `contract wave ${w.id}: only ${consumers.size} dependent tasks in the next wave (§5.4 guideline ≥3)`,
+      { wave_id: w.id, consumers: [...consumers] },
+    );
   }
 }
 
@@ -267,7 +315,12 @@ const coveragePath = join(projectRoot, '.planning/sprints/_last_coverage.json');
 if (existsSync(coveragePath)) {
   const cov = readJson(coveragePath);
   if (cov?.verdict === 'fail') {
-    emit('blocking', 'coverage_fail', `_last_coverage.json reports verdict=fail with ${cov.gaps?.length ?? 0} gap(s)`, { gaps: cov.gaps });
+    emit(
+      'blocking',
+      'coverage_fail',
+      `_last_coverage.json reports verdict=fail with ${cov.gaps?.length ?? 0} gap(s)`,
+      { gaps: cov.gaps },
+    );
   }
 }
 
@@ -278,10 +331,14 @@ if (existsSync(priorsPath)) {
   const hints = (priors?.wave_invariant_hints ?? []).filter((h) => h.enforced);
   for (const hint of hints) {
     let re;
-    try { re = new RegExp(hint.pattern); } catch { continue; }
+    try {
+      re = new RegExp(hint.pattern);
+    } catch {
+      continue;
+    }
     for (const w of waves) {
       const fileSet = new Set();
-      for (const tid of (w.tasks ?? [])) {
+      for (const tid of w.tasks ?? []) {
         const t = taskById.get(tid);
         if (!t) continue;
         const tf = t.target_files ?? {};
@@ -290,7 +347,12 @@ if (existsSync(priorsPath)) {
         }
       }
       if (fileSet.size > 1) {
-        emit('blocking', 'enforced_hint_violated', `wave ${w.id}: hint "${hint.advice ?? hint.pattern}" violated by ${[...fileSet].join(', ')}`, { wave_id: w.id, hint });
+        emit(
+          'blocking',
+          'enforced_hint_violated',
+          `wave ${w.id}: hint "${hint.advice ?? hint.pattern}" violated by ${[...fileSet].join(', ')}`,
+          { wave_id: w.id, hint },
+        );
       }
     }
   }
@@ -300,18 +362,22 @@ finish();
 
 function finish() {
   for (const e of errors) {
-    process.stderr.write(JSON.stringify(e) + '\n');
+    process.stderr.write(`${JSON.stringify(e)}\n`);
   }
   const blocking = errors.filter((e) => e.severity === 'blocking').length;
   if (blocking > 0) {
-    process.stderr.write(`validate-plan: ${blocking} blocking error(s); ${errors.length - blocking} other\n`);
+    process.stderr.write(
+      `validate-plan: ${blocking} blocking error(s); ${errors.length - blocking} other\n`,
+    );
     process.exit(1);
   }
   process.exit(0);
 }
 
 function findCycle(adj) {
-  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const WHITE = 0,
+    GRAY = 1,
+    BLACK = 2;
   const color = new Map();
   for (const k of adj.keys()) color.set(k, WHITE);
   const stack = [];

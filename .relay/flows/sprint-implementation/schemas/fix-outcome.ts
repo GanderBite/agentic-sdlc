@@ -16,12 +16,7 @@ import { z } from '@ganderbite/relay-core';
  * (`prompts/02_wave.md` §4), with pseudo-skills derived from file paths.
  */
 export const FixOutcomeSchema = z.object({
-  iteration: z
-    .number()
-    .int()
-    .min(1)
-    .max(3)
-    .describe('Echoes review_outcome.iteration.'),
+  iteration: z.number().int().min(1).max(3).describe('Echoes review_outcome.iteration.'),
   no_op: z
     .boolean()
     .describe(
@@ -52,9 +47,7 @@ export const FixOutcomeSchema = z.object({
             'Files this fixer wrote/edited. MUST be a subset of the union of ' +
               "the assigned findings' `file` fields (file-scoped invariant).",
           ),
-        notes: z
-          .string()
-          .describe('One-line summary of what the fixer did or why it skipped.'),
+        notes: z.string().describe('One-line summary of what the fixer did or why it skipped.'),
       }),
     )
     .describe('One entry per fixer Task dispatched. Empty when no_op is true.'),

@@ -1,12 +1,10 @@
-import { createSecretKey } from "node:crypto";
+import { createSecretKey } from 'node:crypto';
+import type { Role } from '@medbridge/contracts';
+import type { MiddlewareHandler } from 'hono';
+import { getCookie } from 'hono/cookie';
+import { jwtVerify } from 'jose';
 
-import { jwtVerify } from "jose";
-import { getCookie } from "hono/cookie";
-import type { MiddlewareHandler } from "hono";
-
-import type { Role } from "@medbridge/contracts";
-
-import { UnauthorizedError } from "../shared/errors.js";
+import { UnauthorizedError } from '../shared/errors.js';
 
 /**
  * authn middleware
@@ -24,40 +22,40 @@ import { UnauthorizedError } from "../shared/errors.js";
  * On a verification failure, throws UnauthorizedError (401).
  */
 export const authn: MiddlewareHandler = async (c, next): Promise<void> => {
-  const sessionCookie = getCookie(c, "session");
+  const sessionCookie = getCookie(c, 'session');
 
-  if (sessionCookie === undefined || sessionCookie === "") {
-    throw new UnauthorizedError("Session cookie missing");
+  if (sessionCookie === undefined || sessionCookie === '') {
+    throw new UnauthorizedError('Session cookie missing');
   }
 
-  const secret = process.env["JWT_SECRET"];
+  const secret = process.env['JWT_SECRET'];
 
-  if (secret === undefined || secret === "") {
-    throw new UnauthorizedError("Server misconfiguration: JWT_SECRET not set");
+  if (secret === undefined || secret === '') {
+    throw new UnauthorizedError('Server misconfiguration: JWT_SECRET not set');
   }
 
-  const secretKey = createSecretKey(Buffer.from(secret, "utf8"));
+  const secretKey = createSecretKey(Buffer.from(secret, 'utf8'));
 
   try {
     const { payload } = await jwtVerify(sessionCookie, secretKey, {
-      algorithms: ["HS256"],
+      algorithms: ['HS256'],
       clockTolerance: 5,
     });
 
-    const id = payload["sub"];
-    const email = payload["email"];
-    const role = payload["role"] as Role | undefined;
+    const id = payload['sub'];
+    const email = payload['email'];
+    const role = payload['role'] as Role | undefined;
 
-    if (typeof id !== "string" || typeof email !== "string" || typeof role !== "string") {
-      throw new UnauthorizedError("Invalid JWT payload");
+    if (typeof id !== 'string' || typeof email !== 'string' || typeof role !== 'string') {
+      throw new UnauthorizedError('Invalid JWT payload');
     }
 
-    c.set("user", { id, email, role });
+    c.set('user', { id, email, role });
   } catch (e) {
     if (e instanceof UnauthorizedError) {
       throw e;
     }
-    throw new UnauthorizedError("Invalid or expired session");
+    throw new UnauthorizedError('Invalid or expired session');
   }
 
   await next();

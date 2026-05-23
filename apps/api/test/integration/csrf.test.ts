@@ -20,22 +20,21 @@
  * Requires Docker to be running (testcontainers — one container per file).
  */
 import { createHash, createSecretKey } from 'node:crypto';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { SignJWT } from 'jose';
 import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
-
-import { startPostgres } from '../support/container.js';
-import { seedFixtures } from '../support/fixtures.js';
-import { buildClient } from '../support/request.js';
-import { expectAppError } from '../support/assertions.js';
-import { createAuthService } from '../../src/modules/auth/index.js';
-import { createLoginThrottle } from '../../src/modules/auth/throttle.js';
-import { createPasswordVerifier } from '../../src/shared/password.js';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../../src/app.js';
 import { authn } from '../../src/middleware/authn.js';
 import type { UserClaims } from '../../src/modules/auth/index.js';
+import { createAuthService } from '../../src/modules/auth/index.js';
+import { createLoginThrottle } from '../../src/modules/auth/throttle.js';
 import type { Db } from '../../src/shared/db.js';
+import { createPasswordVerifier } from '../../src/shared/password.js';
+import { expectAppError } from '../support/assertions.js';
+import { startPostgres } from '../support/container.js';
+import { seedFixtures } from '../support/fixtures.js';
+import { buildClient } from '../support/request.js';
 
 // ---------------------------------------------------------------------------
 // Module-level state (one container per file)

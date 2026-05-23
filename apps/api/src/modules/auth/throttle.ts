@@ -1,4 +1,4 @@
-import { TooManyRequestsError } from "../../shared/errors.js";
+import { TooManyRequestsError } from '../../shared/errors.js';
 
 export type LoginThrottleOptions = {
   readonly limit?: number;
@@ -37,8 +37,12 @@ export function createLoginThrottle({
       const pruned = timestamps.filter((ts) => ts > cutoff);
 
       if (pruned.length >= limit) {
-        // Update the store with pruned state before throwing
-        store.set(key, pruned);
+        // Update the store with pruned state before throwing; delete if empty (belt-and-braces)
+        if (pruned.length === 0) {
+          store.delete(key);
+        } else {
+          store.set(key, pruned);
+        }
         throw new TooManyRequestsError(
           `Too many login attempts. Please try again after ${Math.ceil(windowMs / 60_000)} minutes.`,
         );
@@ -46,6 +50,15 @@ export function createLoginThrottle({
 
       // Record this attempt
       pruned.push(currentTime);
+
+      // LRU cap: evict the oldest-inserted key when the store exceeds 10 000 unique entries
+      if (!store.has(key) && store.size >= 10_000) {
+        const oldest = store.keys().next().value;
+        if (oldest !== undefined) {
+          store.delete(oldest);
+        }
+      }
+
       store.set(key, pruned);
     },
   };
