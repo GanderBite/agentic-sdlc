@@ -1,0 +1,49 @@
+{
+  "wave_id": "wave-3",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/vitest.integration.config.ts",
+      "line": 10,
+      "summary": "sequence.concurrent:false only disables in-file concurrency; integration files still run in parallel workers, risking testcontainer host-port collisions",
+      "suggested_fix": "Add `fileParallelism: false` (or `poolOptions: { threads: { singleThread: true } }`) at the same level as sequence so testcontainer-per-file integration tests serialize across files as the task brief intends.",
+      "auto_fixable": true,
+      "first_seen_iteration": 1
+    },
+    {
+      "id": "F-002",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "apps/api/package.json",
+      "line": 11,
+      "summary": "lint script `biome check src` excludes apps/api/test, drizzle.config.ts, and vitest configs from workspace-scoped lint",
+      "suggested_fix": "Broaden to `biome check src test *.ts` (or `biome check .`) so wave-10 test files and root-level configs are linted by `pnpm --filter @medbridge/api lint`.",
+      "auto_fixable": true,
+      "first_seen_iteration": 1
+    },
+    {
+      "id": "F-003",
+      "severity": "low",
+      "category": "architecture",
+      "file": "apps/api/tsconfig.json",
+      "line": 9,
+      "summary": "include `src/**/*.ts` and rootDir `src` mean drizzle.config.ts, vitest.config.ts, vitest.integration.config.ts are not type-checked by `pnpm typecheck`",
+      "suggested_fix": "Either add an `include` entry for the root-level config files or add a separate `tsconfig.tools.json` and reference it from `typecheck` so config drift surfaces at typecheck time, not at tool invocation.",
+      "auto_fixable": false,
+      "first_seen_iteration": 1
+    },
+    {
+      "id": "F-004",
+      "severity": "info",
+      "category": "architecture",
+      "file": "apps/api/package.json",
+      "line": 37,
+      "summary": "devDependency `tsx` added; not in task description's enumerated devDeps but justified by the required `dev: tsx watch src/main.ts` script",
+      "suggested_fix": "Acknowledge in task brief that `tsx` is required to run `dev`. No code change needed.",
+      "auto_fixable": false,
+      "first_seen_iteration": 1
+    }
+  ]
+}
