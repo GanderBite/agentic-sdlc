@@ -41,29 +41,29 @@ Bootstraps the pnpm workspace, packages/contracts, docker-compose, Drizzle migra
 - Any state-changing route invoked without a matching `X-CSRF-Token` header to the `csrf_token` cookie returns HTTP 403 with `{ error: { code: "FORBIDDEN" } }`.
 - An integration test attempting login with an unknown email still incurs an argon2id verify (constant-time path) — asserted by measuring that unknown-email and wrong-password code paths both branch through the hashing call.
 - A log-capture integration test asserts no API log line emitted during auth flows contains a password, JWT, refresh token, or CSRF token value.
-- Refresh rotation is **strict single-use with token-family revocation**: when two requests present the same refresh cookie, exactly one wins with a new pair (HTTP 200) and the other returns HTTP 401; replaying a previously-rotated refresh cookie returns HTTP 401 AND sets `revoked_at = now()` on every still-active `refresh_token` row for the affected user, with a single `level=warn` log line carrying `userId` and `requestId`. Integration tests assert (a) the concurrent-refresh race produces exactly one 200 and one 401, (b) the replay path leaves zero `revoked_at IS NULL` rows for that user, and (c) the captured log holds exactly one matching `warn` entry.
-- `auth.login` is protected by a **per-IP fixed-window throttle of 10 attempts / 15 minutes**, held in an in-memory map keyed by `ctx.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? remoteAddr`; the 11th attempt within the window returns HTTP 429 with `{ error: { code: "TOO_MANY_REQUESTS" } }` regardless of credential validity, and the counter resets at the next window boundary. An integration test fires 11 requests from a single simulated IP and asserts the first 10 reach the password-verify path while the 11th short-circuits to 429 without invoking the argon2 verify spy.
-- The seed source lives at `apps/api/src/seed/fixtures.ts` as **hardcoded fixtures**: deterministic emails (e.g. `patient@medbridge.test`, `doctor@medbridge.test`) and deterministic plaintext passwords hashed at seed time; both the email/password pairs are documented in `apps/api/README.md` under a "Seed credentials" heading. The seeder is idempotent — re-running on a populated DB inserts zero rows and exits 0 — asserted by an integration test that runs the seed twice against the same testcontainer.
-- JWT verification uses **`jose`'s default 5-second clock skew tolerance** (no override of `clockTolerance`). An integration test mints a token with `exp` set 4 seconds in the past and asserts authn passes; a token with `exp` 6 seconds in the past asserts authn fails with HTTP 401.
-- The argon2id `verify` function is exposed as an injectable dependency of the auth service (constructor / factory parameter) so a Vitest spy can replace it; the unknown-email and wrong-password integration tests each assert the spy was invoked **exactly once** per login attempt — closing the constant-time-verify property without relying on wall-clock timing.
-- pino is configured with `redact: { paths: ["req.headers.cookie", "req.headers[\"x-csrf-token\"]", "req.body.password", "res.headers[\"set-cookie\"]"], remove: false, censor: "[REDACTED]" }`; a log-capture integration test exercises `auth.login`, `auth.refresh`, and a CSRF-failing POST, and asserts every captured line whose redaction-target field is present renders the literal `[REDACTED]` (and never a plaintext password, JWT, refresh token, CSRF token, or `Set-Cookie` header value).
+- Session JWTs are signed and verified with **HS256** using a single shared secret read from the `JWT_SECRET` env var; the API refuses to boot when `JWT_SECRET` is missing or shorter than 32 characters, and an integration test mints a token with HS384 and asserts authn rejects it with HTTP 401.
+- Refresh-token reuse detection is **scoped to the replayed hash only**: when a refresh cookie whose hash is already `revoked_at IS NOT NULL` (or absent) is presented, the route returns HTTP 401 and ensures the offending row is `revoked_at = now()`, but every other still-active `refresh_token` row for the same user remains untouched. An integration test creates two active refresh tokens for one user, replays the first (already-rotated) one, and asserts the second token still authenticates a subsequent `auth.refresh` successfully.
+- The `accounts` schema in this feature ships **only the `user` table** with columns `id uuid pk default gen_random_uuid()`, `email citext unique not null`, `role` (enum `'patient' | 'doctor'`), `password_hash text not null`, `created_at timestamptz not null default now()`, `deleted_at timestamptz null`; `patient_profile` / `doctor_profile` / `specialization` / `doctor_specialization` tables are explicitly deferred to later features and MUST NOT appear in this migration.
+- `auth.login` is protected by an **in-memory IP+email throttle** wired through the auth service: 10 attempts per rolling 15-minute window per `(remoteIp, lowercased(email))` pair; the 11th attempt within the window returns HTTP 429 with `{ error: { code: "TOO_MANY_REQUESTS" } }` regardless of credential validity, and the counter naturally drains as old timestamps fall out of the window. An integration test fires 11 same-IP, same-email login requests against `auth.service` and asserts exactly the first 10 reach the argon2 verify spy while the 11th short-circuits to 429.
+- Seed credentials are sourced from a **JSON fixture file at `apps/api/src/seed/fixtures/users.json`** consumed by `apps/api/src/seed/main.ts`; the fixture lists at least one patient and one doctor with plaintext passwords that the seeder hashes via the production argon2id util before insert. The seeder is idempotent — re-running on a populated DB inserts zero rows and exits 0 — asserted by an integration test that runs the seed twice against the same testcontainer.
+- pino is configured with a `redact` paths config covering at minimum `req.headers.cookie`, `req.headers.authorization`, `req.headers["x-csrf-token"]`, `req.body.password`, and `res.headers["set-cookie"]`; an integration test captures stdout while exercising `auth.login`, `auth.refresh`, and a CSRF-failing POST, then greps the captured lines and asserts the literal values of the seeded password, the issued JWT, the issued refresh token, and the issued CSRF token do **not** appear in any captured byte.
 
 ## Clarifications
 
-- **Q: How are two concurrent refresh attempts with the same cookie handled — first wins, retry window, or token-family revoke?**
-  A: Strict single-use: first wins, second returns HTTP 401 and revokes the whole refresh-token family for that user (recommended).
+- **Q: Which JWT signing algorithm and key material does the auth module use?**
+  A: HS256 with a single shared secret from `JWT_SECRET` env (recommended).
+
+- **Q: When a refresh-token reuse is detected, which sessions are revoked?**
+  A: Revoke only the replayed hash; leave any other active sessions alone.
+
+- **Q: What is the accounts schema scope for this feature?**
+  A: `user` table only (id, email, role enum, password_hash); patient_profile/doctor_profile deferred to later features (recommended).
 
 - **Q: How is login throttled to defend against credential-stuffing?**
-  A: Per-IP fixed-window limiter (10 attempts / 15 min), held in-memory in the `auth` module.
+  A: Minimal in-memory IP+email throttle (e.g. 10 attempts / 15 min) wired through the auth service.
 
 - **Q: Where do seed credentials come from?**
-  A: Hardcoded fixtures in `apps/api/src/seed` with deterministic emails + plaintext passwords, documented in `apps/api/README.md` (recommended).
-
-- **Q: What JWT clock-skew tolerance does authn apply when verifying the session token?**
-  A: 5 seconds — the `jose` library default, not overridden (recommended).
-
-- **Q: How is the "argon2 verify runs on every login attempt, even unknown emails" property asserted in tests?**
-  A: Spy on the password-hash module's `verify` function and assert call count `== 1` for both the unknown-email and wrong-password test cases (recommended).
+  A: JSON fixture file under `apps/api/src/seed/fixtures/` consumed by the seeder.
 
 - **Q: How is pino configured to keep secrets out of logs?**
-  A: Configure pino `redact` paths covering `req.headers.cookie`, `req.headers['x-csrf-token']`, `req.body.password`, and `res.headers['set-cookie']` (recommended).
+  A: pino `redact` paths config (cookies, authorization, body.password, etc.) + integration test capturing stdout and grep-asserting absence of literal secret values (recommended).
