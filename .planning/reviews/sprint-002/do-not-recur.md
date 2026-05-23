@@ -25,3 +25,5 @@
 [medium] await c.req.json() in route handlers throws SyntaxError on malformed body, surfaces as 500 INTERNAL via errorHandler instead of 422 VALIDATION per ARCHITECTURE §5.2 — auto_fixable=true — first_seen=wave-7
 [low] dto.ts buildMeResponse re-validates user.role against {patient,doctor} that authn middleware already narrowed; same guard appears in 3 places — auto_fixable=false — first_seen=wave-7
 [low] apps/api/README.md documents `pnpm -F @medbridge/api db:seed` but apps/api/package.json defines no db:seed script — auto_fixable=false — first_seen=wave-7
+[medium] main.ts PORT env coerced via Number() without isInteger/range validation; non-numeric values yield NaN and undefined serve() behavior — auto_fixable=true — first_seen=wave-8
+[low] graceful shutdown calls pool.end().then() without .catch; pool close rejection leaves server hung without exit — auto_fixable=false — first_seen=wave-8
