@@ -1,0 +1,12 @@
+[
+  {
+    "email": "patient@medbridge.test",
+    "password": "patientpass123!",
+    "role": "patient"
+  },
+  {
+    "email": "doctor@medbridge.test",
+    "password": "doctorpass123!",
+    "role": "doctor"
+  }
+]

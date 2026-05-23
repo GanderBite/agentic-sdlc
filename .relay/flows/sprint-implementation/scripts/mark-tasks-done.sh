@@ -82,3 +82,8 @@ mv -f "$tmp" "$state_file"
 # Surface what just happened — useful when tailing run.log.
 new_wave_status=$(jq -r --arg w "$wave_id" '.wave_status[$w] // "unknown"' "$state_file")
 log "wave $wave_id: status=$new_wave_status; task transitions applied (done=$(jq -r '.tasks_done | length' "$outcome"), blocked=$(jq -r '.tasks_blocked | length' "$outcome"), failed=$(jq -r '.tasks_failed | length' "$outcome"))"
+
+# Mirror the durable state into the sprint plan files. After the last wave
+# every wave_status value is terminal, so this is where sprint.json flips
+# to status="done" + completed_at.
+bash "$(dirname "$0")/sync-sprint-status.sh"

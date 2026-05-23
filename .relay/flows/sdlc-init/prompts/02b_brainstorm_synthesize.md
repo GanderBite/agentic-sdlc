@@ -40,6 +40,16 @@ and deployment shape.
   from it without further questions.
 </rules>
 
+<verification>
+MANDATORY before submitting the handoff. The downstream `verify-brainstorm` gate mechanically re-checks `brief_path` — a missing or stub file aborts the run.
+
+1. Call `Write docs/APPLICATION_BRIEF.md` with the full brief content. Do not "plan" the content — write it.
+2. Call `Read docs/APPLICATION_BRIEF.md` to confirm it landed. MUST be ≥ 1024 bytes (a real brief, not a stub).
+3. Only after Write + Read-back pass, submit the handoff.
+
+The handoff is a RECORD of work done, not a PLAN. Lying about the file's existence wastes the entire prompt's token budget when the gate catches it.
+</verification>
+
 <output_format>
 Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
 

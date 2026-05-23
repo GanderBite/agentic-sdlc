@@ -1,0 +1,1503 @@
+{
+  "tasks": [
+    {
+      "id": "task-api-pkg",
+      "title": "apps/api package skeleton: package.json, tsconfig, drizzle + vitest configs",
+      "description": "Create apps/api package: package.json (name @medbridge/api, type module, deps: hono, @hono/node-server, drizzle-orm, pg, zod, argon2, jose, pino, pino-http, @medbridge/contracts via workspace:*; devDeps: drizzle-kit, vitest, @vitest/coverage-v8, @testcontainers/postgresql, @types/node, @types/pg, typescript; scripts: dev, build, start, typecheck, lint, test = vitest run, test:integration = vitest run -c vitest.integration.config.ts, drizzle:generate, drizzle:migrate), tsconfig.json (extends base, outDir dist, rootDir src; resolveJsonModule true so seed can import users.json), drizzle.config.ts (schema apps/api/src/db/schema.ts, out apps/api/src/db/migrations, dialect postgresql, dbCredentials from DATABASE_URL), vitest.config.ts (unit, src/**/*.test.ts), vitest.integration.config.ts (test/integration/**/*.test.ts, sequential, testTimeout 60000).",
+      "context": [
+        "ARCHITECTURE.md §2.1 — apps/api topology",
+        "ARCHITECTURE.md §4.3 — drizzle-kit for migrations",
+        "Acceptance bullet B1 — pnpm -r typecheck must pass"
+      ],
+      "references": [
+        "docs/ARCHITECTURE.md",
+        ".claude/skills/pnpm/SKILL.md",
+        ".claude/skills/typescript/SKILL.md",
+        ".claude/skills/vitest/SKILL.md"
+      ],
+      "target_files": {
+        "create": [
+          "apps/api/package.json",
+          "apps/api/tsconfig.json",
+          "apps/api/drizzle.config.ts",
+          "apps/api/vitest.config.ts",
+          "apps/api/vitest.integration.config.ts"
+        ],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": [
+          "apps/api/package.json",
+          "apps/api/tsconfig.json",
+          "apps/api/drizzle.config.ts",
+          "apps/api/vitest.config.ts",
+          "apps/api/vitest.integration.config.ts"
+        ],
+        "custom": [
+          {
+            "cmd": "node -e \"const p=require('./apps/api/package.json'); const d={...p.dependencies,...p.devDependencies}; const need=['hono','drizzle-orm','pg','zod','argon2','jose','pino','drizzle-kit','vitest','@testcontainers/postgresql']; const miss=need.filter(n=>!d[n]); process.exit(miss.length===0?0:1)\"",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "node -e \"const p=require('./apps/api/package.json'); process.exit(p.dependencies && p.dependencies['@medbridge/contracts'] && p.dependencies['@medbridge/contracts'].startsWith('workspace:') ? 0 : 1)\"",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'postgresql' apps/api/drizzle.config.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'resolveJsonModule' apps/api/tsconfig.json",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["pnpm", "typescript", "vitest", "drizzle"],
+      "model": "sonnet",
+      "estimate_tokens": 11000,
+      "depends_on": ["task-workspace", "task-contracts"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-api-readme",
+      "title": "apps/api/README.md with 'Seed credentials' section",
+      "description": "Create apps/api/README.md documenting how to run the API locally (`pnpm -F @medbridge/api dev`), how migrations run (`pnpm -F @medbridge/api drizzle:migrate`), how integration tests run (`pnpm -F @medbridge/api test:integration`), and a 'Seed credentials' heading listing the deterministic email/plaintext pairs from apps/api/src/seed/fixtures/users.json verbatim so a developer can paste them into the login UI.",
+      "context": [
+        "Acceptance bullet B11 — seed credentials documented in apps/api/README.md under 'Seed credentials' heading"
+      ],
+      "references": ["apps/api/src/seed/fixtures/users.json"],
+      "target_files": {
+        "create": ["apps/api/README.md"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": ["apps/api/README.md"],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'Seed credentials' apps/api/README.md",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'patient@medbridge.test' apps/api/README.md",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'doctor@medbridge.test' apps/api/README.md",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": [],
+      "model": "haiku",
+      "estimate_tokens": 5000,
+      "depends_on": ["task-seed"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-app",
+      "title": "Hono app composition + server bootstrap + /api/health + JWT_SECRET env validation",
+      "description": "Create apps/api/src/app.ts: factory `createApp({ db, log, ... })` building a Hono instance, applying middleware in order (requestId → logger → csrf → authn → authz where applicable) — routes register `GET /api/health` returning `{ ok: true }` (no auth, no csrf), then registers the auth module's routes mounted at `/api`. Wires errorHandler via `app.onError`. apps/api/src/main.ts: BOOT-TIME ENV VALIDATION — read `process.env.JWT_SECRET`; if it is missing OR `JWT_SECRET.length < 32` throw an Error with a clear message (e.g. 'JWT_SECRET env var must be set and at least 32 characters') so the process exits non-zero before opening a port. Also validate DATABASE_URL is present. Then create pg pool + drizzle, build app via createApp, call `@hono/node-server` serve on PORT. Export createApp from app.ts so tests can build a request-handler instance without binding a real port.",
+      "context": [
+        "ARCHITECTURE.md §1 — single Hono server with the middleware chain",
+        "ARCHITECTURE.md §6.1 — /api/health is the unauth health route",
+        "Acceptance bullet B2 — /api/health responds healthy",
+        "Coverage gap — API refuses to boot when JWT_SECRET is missing or shorter than 32 characters"
+      ],
+      "references": [
+        "docs/ARCHITECTURE.md",
+        "apps/api/src/middleware/requestId.ts",
+        "apps/api/src/modules/auth/routes.ts",
+        ".claude/skills/hono/SKILL.md"
+      ],
+      "target_files": {
+        "create": ["apps/api/src/app.ts", "apps/api/src/main.ts"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": ["apps/api/src/app.ts", "apps/api/src/main.ts"],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'createApp' apps/api/src/app.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet '/api/health' apps/api/src/app.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'onError' apps/api/src/app.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet '@hono/node-server' apps/api/src/main.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'JWT_SECRET' apps/api/src/main.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet '32' apps/api/src/main.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'length' apps/api/src/main.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["typescript", "hono"],
+      "model": "sonnet",
+      "estimate_tokens": 12000,
+      "depends_on": ["task-middleware", "task-auth-routes"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-auth-routes",
+      "title": "auth/routes.ts: login/logout/refresh/me wired to service, contracts, cookies; throttle invoked inside service",
+      "description": "Create apps/api/src/modules/auth/routes.ts: register Hono routes `POST /api/auth.login` (zod-parses loginRequest, extracts client IP via `c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'`, calls `service.login({ ip, email, password })` — the service runs `throttle.check({ ip, email })` BEFORE password verify, so 429 short-circuits without touching argon2; sets HttpOnly+Secure+SameSite=Lax cookies `session` and `refresh_token` plus a non-HttpOnly `csrf_token` cookie, responds 200 with { user }); `POST /api/auth.refresh` (reads refresh_token cookie, calls service.refresh, rotates ALL THREE cookies, 401 on replay); `POST /api/auth.logout` (calls service.logout, clears `session`, `refresh_token`, `csrf_token` cookies with maxAge 0); `GET /api/auth.me` (requires authn middleware, returns { user }). All responses Zod-parsed via contracts schemas before send. Add apps/api/src/modules/auth/dto.ts if any local mapping helper is needed. Throttle and authn middleware ordering: csrf applies to all state-changing routes but the login route MUST still allow first-time login (csrf exempt for login + refresh per ARCH §6.1).",
+      "context": [
+        "ARCHITECTURE.md §2.3 — routes.ts parses with Zod, calls service",
+        "ARCHITECTURE.md §6.1 — health, auth.login, auth.refresh are the un-CSRF/un-authn routes",
+        "Acceptance bullets B3, B4, B5 — login/refresh/me/logout HTTP behavior, cookie shape"
+      ],
+      "references": [
+        "docs/ARCHITECTURE.md",
+        "packages/contracts/src/auth.ts",
+        "apps/api/src/modules/auth/service.ts",
+        "apps/api/src/modules/auth/throttle.ts",
+        "apps/api/src/middleware/authn.ts",
+        ".claude/skills/hono/SKILL.md"
+      ],
+      "target_files": {
+        "create": ["apps/api/src/modules/auth/routes.ts", "apps/api/src/modules/auth/dto.ts"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": ["apps/api/src/modules/auth/routes.ts", "apps/api/src/modules/auth/dto.ts"],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'auth\\.login' apps/api/src/modules/auth/routes.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'auth\\.refresh' apps/api/src/modules/auth/routes.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'auth\\.logout' apps/api/src/modules/auth/routes.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'auth\\.me' apps/api/src/modules/auth/routes.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'HttpOnly' apps/api/src/modules/auth/routes.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'csrf_token' apps/api/src/modules/auth/routes.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'x-forwarded-for' apps/api/src/modules/auth/routes.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["typescript", "hono", "zod"],
+      "model": "sonnet",
+      "estimate_tokens": 17000,
+      "depends_on": [
+        "task-contracts",
+        "task-auth-service",
+        "task-auth-throttle",
+        "task-middleware"
+      ],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-auth-service",
+      "title": "auth service + repo + index: login/logout/refresh/me with scoped-to-hash replay revoke and throttle wired in",
+      "description": "Author apps/api/src/modules/auth/{service.ts, repo.ts, index.ts}. repo.ts: drizzle queries — `findUserByEmail(email)` returning the user row INCLUDING password_hash (no separate credential table — password_hash lives inline on `user` per the schema change), `insertRefreshToken({ userId, tokenHash, expiresAt })`, `findRefreshTokenByHash(hash)`, `revokeRefreshToken(id)` (sets revoked_at=now() on that single row only). Do NOT export a `revokeAllActiveTokensForUser` family-sweep — replay revocation is scoped to the replayed hash. service.ts: export factory `createAuthService({ db, throttle, verifyPassword, signSessionJwt, hashRefreshToken, now, log })` returning `{ login, logout, refresh, me }`. login: first invoke `throttle.check({ ip, email })` (throws TooManyRequestsError on 11th+); then always call `verifyPassword(storedHash | dummyHash, plaintext)` exactly once even if user does not exist (constant-time per B7/B13); on failure → UnauthorizedError. refresh: SCOPED-TO-HASH SINGLE-USE — atomic transaction looks up the refresh_token row by hash; if missing OR revoked_at IS NOT NULL → mark THAT specific row revoked_at=now() (if it still exists and isn't already revoked), emit ONE `log.warn({ userId, requestId }, 'refresh_token replay detected')` line, throw UnauthorizedError. Other still-active refresh_token rows for that user remain untouched (so the user's other live sessions keep working). If valid, mark THIS row revoked_at=now() AND issue+insert a NEW refresh_token row with a fresh hash in the SAME transaction → returns new (session JWT, refresh cookie value, csrf cookie value). The transaction's update-where-not-revoked guard ensures two concurrent refreshes can't both succeed — the loser sees the row already revoked and falls into the replay branch. logout: revokes the active refresh_token row for the session. me: returns user record from ctx.user. index.ts: re-exports the factory + types only (the module's public surface).",
+      "context": [
+        "ARCHITECTURE.md §2.3 — module layering: routes → service → repo → schema; index.ts is the public surface",
+        "ARCHITECTURE.md §5.4 — JWT 15min, refresh 7d HttpOnly+Secure, refresh rotated on use",
+        "Acceptance bullet B3 — auth.login returns 200 with cookies + user; 401 on bad creds",
+        "Acceptance bullet B4 — auth.refresh rotates token; replay returns 401",
+        "Acceptance bullet B5 — auth.me returns user; auth.logout clears cookies + revokes refresh row",
+        "Acceptance bullet B7 — verifyPassword called once on every login attempt (constant-time)",
+        "Acceptance bullet B13 — injectable verify (factory parameter)",
+        "Coverage gap — refresh-replay revocation is SCOPED TO THE REPLAYED HASH ONLY; other active tokens for the user remain usable; throttle wired through the service (not as Hono middleware)"
+      ],
+      "references": [
+        "docs/ARCHITECTURE.md",
+        "apps/api/src/modules/auth/schema.ts",
+        "apps/api/src/modules/accounts/schema.ts",
+        "apps/api/src/shared/password.ts",
+        "apps/api/src/shared/errors.ts",
+        ".claude/skills/drizzle/SKILL.md",
+        ".claude/skills/hono/SKILL.md"
+      ],
+      "target_files": {
+        "create": [
+          "apps/api/src/modules/auth/service.ts",
+          "apps/api/src/modules/auth/repo.ts",
+          "apps/api/src/modules/auth/index.ts"
+        ],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": [
+          "apps/api/src/modules/auth/service.ts",
+          "apps/api/src/modules/auth/repo.ts",
+          "apps/api/src/modules/auth/index.ts"
+        ],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'createAuthService' apps/api/src/modules/auth/service.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'verifyPassword' apps/api/src/modules/auth/service.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'throttle' apps/api/src/modules/auth/service.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'findUserByEmail' apps/api/src/modules/auth/repo.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'password_hash|passwordHash' apps/api/src/modules/auth/repo.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'revokeAllActiveTokensForUser' apps/api/src/modules/auth/repo.ts",
+            "expect_exit": 1
+          },
+          {
+            "cmd": "rg --quiet 'revokeAllActiveTokensForUser' apps/api/src/modules/auth/service.ts",
+            "expect_exit": 1
+          },
+          {
+            "cmd": "rg --quiet 'findRefreshTokenByHash' apps/api/src/modules/auth/repo.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'replay' apps/api/src/modules/auth/service.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'warn' apps/api/src/modules/auth/service.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'createAuthService' apps/api/src/modules/auth/index.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["typescript", "drizzle", "hono"],
+      "model": "opus",
+      "estimate_tokens": 27000,
+      "depends_on": ["task-shared", "task-db-schema", "task-contracts", "task-auth-throttle"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-auth-throttle",
+      "title": "Per-(IP, lowercased-email) rolling-window login throttle (10 attempts / 15 minutes, in-memory)",
+      "description": "Create apps/api/src/modules/auth/throttle.ts: export a factory `createLoginThrottle({ limit = 10, windowMs = 15 * 60 * 1000, now = Date.now })` returning an object with a `check({ ip, email }): void` method (called from the auth SERVICE, not as Hono middleware — per coverage requirement 'wired through the auth service'). Internally it keeps a `Map<string, number[]>` where key = `${ip}|${email.toLowerCase()}` and value = an array of attempt timestamps. On each check, prune timestamps older than `now() - windowMs` (rolling window — timestamps naturally drain as they age out), then if the remaining count >= limit, throw `TooManyRequestsError` (code TOO_MANY_REQUESTS) BEFORE the service does any password verify; otherwise push the new timestamp. The factory MUST accept an injectable `now` clock so tests can drive deterministic windows. Distinct emails on the same IP MUST NOT share a counter — the key includes the lowercased email.",
+      "context": [
+        "Acceptance bullet B10 — login throttle: 11th attempt 429 without invoking argon2 verify spy",
+        "Coverage gap — rolling window keyed by ${ip}|${email.toLowerCase()} pair; wired through service",
+        "ARCHITECTURE.md §5.2 — TooManyRequestsError → 429"
+      ],
+      "references": ["apps/api/src/shared/errors.ts", ".claude/skills/hono/SKILL.md"],
+      "target_files": {
+        "create": ["apps/api/src/modules/auth/throttle.ts"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": ["apps/api/src/modules/auth/throttle.ts"],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'createLoginThrottle' apps/api/src/modules/auth/throttle.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'toLowerCase' apps/api/src/modules/auth/throttle.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'TooManyRequestsError' apps/api/src/modules/auth/throttle.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet '15' apps/api/src/modules/auth/throttle.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'windowMs|window' apps/api/src/modules/auth/throttle.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["typescript", "hono"],
+      "model": "sonnet",
+      "estimate_tokens": 10000,
+      "depends_on": ["task-shared"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-contracts",
+      "title": "packages/contracts: Zod v4 schemas for auth RPC + shared error envelope",
+      "description": "Create packages/contracts package: package.json (name @medbridge/contracts, exports field, type: module, zod ^4 dep), tsconfig.json (extends ../../tsconfig.base.json), src/common.ts (errorEnvelope schema = `{ error: { code, message?, details? } }` with codes UNAUTHORIZED|FORBIDDEN|TOO_MANY_REQUESTS|VALIDATION|NOT_FOUND|CONFLICT|UNSUPPORTED_MEDIA|PAYLOAD_TOO_LARGE), src/auth.ts (loginRequest = `{ email, password }`, loginResponse = `{ user: { id, email, role } }`, refreshResponse = same, meResponse = same, logoutResponse = `{ ok: true }`, role enum = `'patient'|'doctor'`), src/index.ts (re-exports). Export both schemas and z.infer types. All schemas must use safeParse-friendly shapes.",
+      "context": [
+        "ARCHITECTURE.md §2.1 — packages/contracts is the only code shared between api and ui",
+        "ARCHITECTURE.md §5.2 — error envelope { error: { code, message, details? } }",
+        "Acceptance bullets B3 / B4 / B5 — login/refresh/me/logout RPC contracts"
+      ],
+      "references": [
+        "docs/ARCHITECTURE.md",
+        ".claude/skills/zod/SKILL.md",
+        ".claude/skills/typescript/SKILL.md"
+      ],
+      "target_files": {
+        "create": [
+          "packages/contracts/package.json",
+          "packages/contracts/tsconfig.json",
+          "packages/contracts/src/index.ts",
+          "packages/contracts/src/common.ts",
+          "packages/contracts/src/auth.ts"
+        ],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": [
+          "packages/contracts/package.json",
+          "packages/contracts/tsconfig.json",
+          "packages/contracts/src/index.ts",
+          "packages/contracts/src/common.ts",
+          "packages/contracts/src/auth.ts"
+        ],
+        "custom": [
+          {
+            "cmd": "node -e \"const p=require('./packages/contracts/package.json'); process.exit(p.dependencies && p.dependencies.zod ? 0 : 1)\"",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'loginRequest' packages/contracts/src/auth.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'loginResponse' packages/contracts/src/auth.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'UNAUTHORIZED' packages/contracts/src/common.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'TOO_MANY_REQUESTS' packages/contracts/src/common.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'FORBIDDEN' packages/contracts/src/common.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["typescript", "zod"],
+      "model": "sonnet",
+      "estimate_tokens": 14000,
+      "depends_on": ["task-workspace"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-db-schema",
+      "title": "Drizzle schema: accounts.user (inline password_hash) + auth.refresh_token, barrel + initial migration with pgcrypto + citext",
+      "description": "Author Drizzle table definitions and the initial migration. apps/api/src/modules/accounts/schema.ts: `user` table with columns id (uuid PK default gen_random_uuid()), email (citext unique not null), role (PostgreSQL enum 'patient' | 'doctor' not null), password_hash (text not null — argon2id hash stored INLINE on the user row, NOT in a separate credential table), created_at (timestamptz not null default now()), deleted_at (timestamptz null). apps/api/src/modules/auth/schema.ts: ONLY the `refresh_token` table (id uuid PK default gen_random_uuid(), user_id FK → user.id, token_hash text not null unique, issued_at timestamptz not null default now(), expires_at timestamptz not null, revoked_at timestamptz nullable). DO NOT create `user_credential`, `patient_profile`, `doctor_profile`, `specialization`, or `doctor_specialization` tables — they are explicitly deferred to later features. apps/api/src/db/schema.ts: barrel re-exporting both modules' tables so drizzle-kit can introspect them in one import. Then run `pnpm drizzle:generate` against the schema to produce the FIRST migration in apps/api/src/db/migrations/0000_init.sql that (a) creates extensions pgcrypto AND citext, (b) creates the role enum, (c) creates user + refresh_token tables in dependency order, (d) emits the journal meta file. Commit the generated SQL + journal verbatim.",
+      "context": [
+        "ARCHITECTURE.md §4.2 — schema source = union of modules/*/schema.ts re-exported via db/schema.ts barrel",
+        "ARCHITECTURE.md §4.4 — uuid PK default gen_random_uuid() (pgcrypto), timestamptz, soft-delete columns",
+        "Acceptance bullet B1 — initial migration committed",
+        "Coverage gap — accounts.user carries password_hash INLINE; profile + credential tables explicitly absent from this migration"
+      ],
+      "references": [
+        "docs/ARCHITECTURE.md",
+        "apps/api/drizzle.config.ts",
+        ".claude/skills/drizzle/SKILL.md"
+      ],
+      "target_files": {
+        "create": [
+          "apps/api/src/modules/accounts/schema.ts",
+          "apps/api/src/modules/auth/schema.ts",
+          "apps/api/src/db/schema.ts",
+          "apps/api/src/db/migrations/0000_init.sql",
+          "apps/api/src/db/migrations/meta/_journal.json"
+        ],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": [
+          "apps/api/src/modules/accounts/schema.ts",
+          "apps/api/src/modules/auth/schema.ts",
+          "apps/api/src/db/schema.ts",
+          "apps/api/src/db/migrations/meta/_journal.json"
+        ],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'pgcrypto' apps/api/src/db/migrations/0000_init.sql",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'citext' apps/api/src/db/migrations/0000_init.sql",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'password_hash' apps/api/src/modules/accounts/schema.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'citext' apps/api/src/modules/accounts/schema.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'role' apps/api/src/modules/accounts/schema.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'deleted_at|deletedAt' apps/api/src/modules/accounts/schema.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'patient_profile' apps/api/src/db/migrations/0000_init.sql",
+            "expect_exit": 1
+          },
+          {
+            "cmd": "rg --quiet 'doctor_profile' apps/api/src/db/migrations/0000_init.sql",
+            "expect_exit": 1
+          },
+          {
+            "cmd": "rg --quiet 'doctor_specialization' apps/api/src/db/migrations/0000_init.sql",
+            "expect_exit": 1
+          },
+          {
+            "cmd": "rg --quiet 'user_credential' apps/api/src/db/migrations/0000_init.sql",
+            "expect_exit": 1
+          },
+          {
+            "cmd": "rg --quiet 'user_credential' apps/api/src/modules/auth/schema.ts",
+            "expect_exit": 1
+          },
+          {
+            "cmd": "rg --quiet 'refresh_token' apps/api/src/modules/auth/schema.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'revoked_at|revokedAt' apps/api/src/modules/auth/schema.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'token_hash|tokenHash' apps/api/src/modules/auth/schema.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'export' apps/api/src/db/schema.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["typescript", "drizzle"],
+      "model": "sonnet",
+      "estimate_tokens": 22000,
+      "depends_on": ["task-api-pkg", "task-shared"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-docker",
+      "title": "docker-compose stack: postgres + api-migrate (one-shot) + api with healthcheck",
+      "description": "Author docker-compose.yml with three services: `postgres` (postgres:17, named volume, healthcheck via pg_isready), `api-migrate` (builds apps/api Dockerfile, runs `pnpm --filter @medbridge/api drizzle:migrate`, depends_on postgres condition: service_healthy, exits 0 on success), `api` (same image, runs the Hono server, depends_on api-migrate condition: service_completed_successfully AND postgres condition: service_healthy, healthcheck hitting /api/health). Add apps/api/Dockerfile (Node 25-slim, pnpm via corepack, multi-stage build copying packages/contracts + apps/api), .env.example documenting DATABASE_URL, JWT_SECRET (must be ≥32 chars), REFRESH_SECRET, NODE_ENV, LOG_LEVEL, and .dockerignore excluding node_modules, .git, dist, coverage.",
+      "context": [
+        "ARCHITECTURE.md §1 — docker compose orchestration: ui · api · postgres · api-migrate · seed",
+        "ARCHITECTURE.md §4.3 — api-migrate one-shot before api boots; api does NOT auto-migrate",
+        "Acceptance bullet B2 — docker compose up postgres api-migrate api → api healthy on /api/health, api-migrate exits 0 before api starts"
+      ],
+      "references": ["docs/ARCHITECTURE.md", ".claude/skills/docker-compose/SKILL.md"],
+      "target_files": {
+        "create": ["docker-compose.yml", "apps/api/Dockerfile", ".env.example", ".dockerignore"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": [
+          "docker-compose.yml",
+          "apps/api/Dockerfile",
+          ".env.example",
+          ".dockerignore"
+        ],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'postgres:' docker-compose.yml",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'api-migrate:' docker-compose.yml",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'service_completed_successfully' docker-compose.yml",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'service_healthy' docker-compose.yml",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'healthcheck' docker-compose.yml",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'DATABASE_URL' .env.example",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'JWT_SECRET' .env.example",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["docker-compose"],
+      "model": "sonnet",
+      "estimate_tokens": 14000,
+      "depends_on": [],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-middleware",
+      "title": "Hono middleware chain: requestId, logger, csrf, authn (jose HS256 pinned, 5s default skew), authz, errorHandler",
+      "description": "Author the full apps/api/src/middleware/ stack. requestId.ts: assigns ctx.requestId via crypto.randomUUID(); echoes it as `X-Request-Id` response header. logger.ts: pino-http child logger bound to ctx.log; emits one line per request `{ requestId, method, path, status, durationMs, userId? }` on response close. csrf.ts: skip GET/HEAD/OPTIONS and skip routes flagged exempt (login, refresh); for other methods, compare cookie `csrf_token` to header `X-CSRF-Token` with `crypto.timingSafeEqual`; mismatch → throw ForbiddenError. authn.ts: read `session` cookie; if missing → on protected routes throw UnauthorizedError; verify JWT with `jose.jwtVerify` using algorithm PINNED via `algorithms: ['HS256']` (so HS384/HS512/etc. tokens signed with the same JWT_SECRET are rejected as UnauthorizedError); use JWT_SECRET; DO NOT override clockTolerance (jose's default of 5s applies — acceptance bullet B12); attach ctx.user = { id, email, role }. authz.ts: export `requireRole(...roles)` factory that throws ForbiddenError when ctx.user.role is not allowed. errorHandler.ts: top-level Hono onError handler — if err instanceof AppError, respond `{ error: { code, message?, details? } }` with err.statusCode; else log error and respond 500 with `{ error: { code: 'INTERNAL' } }`. Each file is one tight TypeScript module importing only from shared/ and contracts/.",
+      "context": [
+        "ARCHITECTURE.md §1 — middleware chain requestId → logger → cors → csrf → authn → authz",
+        "ARCHITECTURE.md §5.4 — JWT in HttpOnly+Secure cookie; CSRF double-submit with constant-time compare; argon2id passwords",
+        "Acceptance bullet B6 — CSRF mismatch returns 403 FORBIDDEN",
+        "Acceptance bullet B12 — JWT verify with jose's default 5s clockTolerance (no override)",
+        "Coverage gap — HS256 must be pinned via algorithms: ['HS256'] so HS384 tokens are rejected"
+      ],
+      "references": [
+        "docs/ARCHITECTURE.md",
+        "apps/api/src/shared/errors.ts",
+        "apps/api/src/shared/logger.ts",
+        ".claude/skills/hono/SKILL.md"
+      ],
+      "target_files": {
+        "create": [
+          "apps/api/src/middleware/requestId.ts",
+          "apps/api/src/middleware/logger.ts",
+          "apps/api/src/middleware/csrf.ts",
+          "apps/api/src/middleware/authn.ts",
+          "apps/api/src/middleware/authz.ts",
+          "apps/api/src/middleware/errorHandler.ts"
+        ],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": [
+          "apps/api/src/middleware/requestId.ts",
+          "apps/api/src/middleware/logger.ts",
+          "apps/api/src/middleware/csrf.ts",
+          "apps/api/src/middleware/authn.ts",
+          "apps/api/src/middleware/authz.ts",
+          "apps/api/src/middleware/errorHandler.ts"
+        ],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'jwtVerify' apps/api/src/middleware/authn.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'HS256' apps/api/src/middleware/authn.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'algorithms' apps/api/src/middleware/authn.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'clockTolerance' apps/api/src/middleware/authn.ts",
+            "expect_exit": 1
+          },
+          {
+            "cmd": "rg --quiet 'timingSafeEqual' apps/api/src/middleware/csrf.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'X-CSRF-Token' apps/api/src/middleware/csrf.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'csrf_token' apps/api/src/middleware/csrf.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'requireRole' apps/api/src/middleware/authz.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'AppError' apps/api/src/middleware/errorHandler.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'requestId' apps/api/src/middleware/requestId.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'durationMs' apps/api/src/middleware/logger.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["typescript", "hono", "zod"],
+      "model": "opus",
+      "estimate_tokens": 26000,
+      "depends_on": ["task-shared", "task-contracts"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-seed",
+      "title": "Idempotent seed: JSON fixtures at apps/api/src/seed/fixtures/users.json hashed with argon2id",
+      "description": "Create apps/api/src/seed/fixtures/users.json: a pure JSON array listing at least one patient and one doctor with deterministic emails and plaintext passwords, e.g. `[{\"email\":\"patient@medbridge.test\",\"password\":\"patientpass123!\",\"role\":\"patient\"},{\"email\":\"doctor@medbridge.test\",\"password\":\"doctorpass123!\",\"role\":\"doctor\"}]`. Create apps/api/src/seed/main.ts: import the JSON file (via JSON.parse(readFileSync(...)) or a JSON import assertion — whichever the tsconfig supports), connect to DATABASE_URL, open a transaction, for each fixture: skip insertion when a `user` row with that email already exists (idempotent), otherwise insert a `user` row whose `password_hash` column is the argon2id hash of the plaintext (using the shared password util — same parameters as the production hasher). Exit 0 on success. Re-running on a populated DB MUST insert zero rows and still exit 0.",
+      "context": [
+        "ARCHITECTURE.md §4.3 — seed is a one-shot container after api-migrate; idempotent",
+        "Acceptance bullet B11 — seed source lives at JSON fixture file consumed by seed/main.ts; deterministic emails/passwords; idempotent (zero inserts on second run)",
+        "Coverage gap — fixtures live at apps/api/src/seed/fixtures/users.json (JSON), NOT a .ts module"
+      ],
+      "references": [
+        "docs/ARCHITECTURE.md",
+        "apps/api/src/modules/accounts/schema.ts",
+        "apps/api/src/shared/password.ts"
+      ],
+      "target_files": {
+        "create": ["apps/api/src/seed/fixtures/users.json", "apps/api/src/seed/main.ts"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": ["apps/api/src/seed/fixtures/users.json", "apps/api/src/seed/main.ts"],
+        "custom": [
+          {
+            "cmd": "node -e \"const fs=require('fs'); const a=JSON.parse(fs.readFileSync('apps/api/src/seed/fixtures/users.json','utf8')); const ok = Array.isArray(a) && a.some(u=>u.role==='patient') && a.some(u=>u.role==='doctor') && a.every(u=>u.email && u.password); process.exit(ok?0:1)\"",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'patient@medbridge.test' apps/api/src/seed/fixtures/users.json",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'doctor@medbridge.test' apps/api/src/seed/fixtures/users.json",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'fixtures/users.json' apps/api/src/seed/main.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'argon2|hash|password_hash' apps/api/src/seed/main.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["typescript", "drizzle"],
+      "model": "sonnet",
+      "estimate_tokens": 13000,
+      "depends_on": ["task-db-schema", "task-shared"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-shared",
+      "title": "apps/api shared/: AppError taxonomy, pino logger with redact (incl authorization), argon2 password util (injectable verify), db client, ids, time",
+      "description": "Create apps/api/src/shared/: errors.ts (AppError base class with statusCode + code, subclasses ValidationError/NotFoundError/UnauthorizedError/ForbiddenError/ConflictError/UnsupportedMediaError/PayloadTooLargeError/TooManyRequestsError each setting their code from the contracts enum); logger.ts (export pino logger pre-configured with `redact: { paths: ['req.headers.cookie', 'req.headers.authorization', 'req.headers[\"x-csrf-token\"]', 'req.body.password', 'res.headers[\"set-cookie\"]'], remove: false, censor: '[REDACTED]' }` — note `req.headers.authorization` is included per acceptance bullet B14 minimum-redact list, level from LOG_LEVEL env); password.ts (export `hash(plaintext)` using argon2id and a default `verify(hash, plaintext)` wrapper; ALSO export a factory `createPasswordVerifier(impl?: typeof verify) => { verify }` so the auth service can receive an injectable verify dependency that Vitest spies can replace per acceptance bullet B13); db.ts (export pg Pool + drizzle instance configured from DATABASE_URL); ids.ts (uuidv7 helper); time.ts (now() returning Date, parseable for fake timers).",
+      "context": [
+        "ARCHITECTURE.md §5.2 — AppError taxonomy and HTTP status mapping",
+        "ARCHITECTURE.md §5.3 — pino structured JSON; never log passwords/tokens/CSRF",
+        "Acceptance bullet B13 — argon2 verify must be injectable (factory/constructor dep)",
+        "Acceptance bullet B14 — pino redact paths configured verbatim incl req.headers.authorization"
+      ],
+      "references": ["docs/ARCHITECTURE.md", ".claude/skills/typescript/SKILL.md"],
+      "target_files": {
+        "create": [
+          "apps/api/src/shared/errors.ts",
+          "apps/api/src/shared/logger.ts",
+          "apps/api/src/shared/password.ts",
+          "apps/api/src/shared/db.ts",
+          "apps/api/src/shared/ids.ts",
+          "apps/api/src/shared/time.ts"
+        ],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": [
+          "apps/api/src/shared/errors.ts",
+          "apps/api/src/shared/logger.ts",
+          "apps/api/src/shared/password.ts",
+          "apps/api/src/shared/db.ts",
+          "apps/api/src/shared/ids.ts",
+          "apps/api/src/shared/time.ts"
+        ],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'class AppError' apps/api/src/shared/errors.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'UnauthorizedError' apps/api/src/shared/errors.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'ForbiddenError' apps/api/src/shared/errors.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'TooManyRequestsError' apps/api/src/shared/errors.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'redact' apps/api/src/shared/logger.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'req.headers.cookie' apps/api/src/shared/logger.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'authorization' apps/api/src/shared/logger.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'x-csrf-token' apps/api/src/shared/logger.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'req.body.password' apps/api/src/shared/logger.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'set-cookie' apps/api/src/shared/logger.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'REDACTED' apps/api/src/shared/logger.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'argon2id' apps/api/src/shared/password.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'createPasswordVerifier' apps/api/src/shared/password.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["typescript"],
+      "model": "sonnet",
+      "estimate_tokens": 22000,
+      "depends_on": ["task-api-pkg", "task-contracts"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-smoke",
+      "title": "Smoke verification (bootstrap sprint — empty smoke array)",
+      "description": "Terminal smoke wave for the sprint. build-graph.smoke is empty because this sprint scaffolds the manifests (`fresh_repo: true`) — there are no package.json scripts to derive smoke commands from yet. Subsequent sprints get a real smoke array after intel-refresh re-runs on the landed code.",
+      "context": [
+        ".planning/intel/build-graph.json — fresh_repo: true, smoke: []",
+        "sprint-planning skill rule 21 — smoke commands flow only from build-graph.smoke verbatim"
+      ],
+      "references": [".planning/intel/build-graph.json"],
+      "target_files": {
+        "create": [],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": [],
+        "custom": []
+      },
+      "skills": [],
+      "model": "haiku",
+      "estimate_tokens": 3000,
+      "depends_on": [
+        "task-workspace",
+        "task-docker",
+        "task-contracts",
+        "task-api-pkg",
+        "task-shared",
+        "task-db-schema",
+        "task-middleware",
+        "task-auth-throttle",
+        "task-auth-service",
+        "task-auth-routes",
+        "task-app",
+        "task-seed",
+        "task-api-readme",
+        "task-test-support",
+        "task-test-auth-login",
+        "task-test-auth-refresh",
+        "task-test-auth-session",
+        "task-test-csrf",
+        "task-test-log-redaction",
+        "task-test-seed"
+      ],
+      "depends_on_contracts": [],
+      "max_attempts": 1,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-test-auth-login",
+      "title": "Integration: auth.login happy/sad path + (IP,email) rolling throttle + argon2 spy",
+      "description": "Create apps/api/test/integration/auth.login.test.ts (one testcontainer per file). Cases: (1) valid seeded creds → 200 + body { user: { id, email, role } } + Set-Cookie containing HttpOnly+Secure `session` AND `refresh_token` AND non-HttpOnly `csrf_token`; (2) wrong password → 401 with { error: { code: 'UNAUTHORIZED' } } and zero cookies; (3) unknown email → 401 same shape and ASSERT the argon2 verify spy was invoked exactly once (constant-time path per B7/B13); (4) wrong-password case ALSO asserts verify spy invocation count === 1 (per B13); (5) per-(IP, email) rolling throttle: fire 11 requests with the same simulated x-forwarded-for IP AND the same (lowercased) email — assert first 10 reach the verify path (spy call count === 10) and the 11th returns 429 with { error: { code: 'TOO_MANY_REQUESTS' } } and verify spy WAS NOT called the 11th time (count still === 10); (6) DIFFERENT-email-same-IP NOT throttled — after the 11th request in case (5) returns 429, send a 12th login from the same IP but with a different email, assert it reaches the verify spy (i.e. not 429) — proving the throttle key includes the lowercased email; (7) case-insensitive email throttle — verify that mixed-case repeats of the same email on the same IP share the counter (proves toLowerCase keying).",
+      "context": [
+        "Acceptance bullet B3 — happy/sad path + cookie shape",
+        "Acceptance bullet B7 — constant-time verify branch on unknown email",
+        "Acceptance bullet B10 — 11th request 429 without invoking argon2 verify",
+        "Acceptance bullet B13 — injectable verify; spy counts exactly == 1 on unknown-email and wrong-password each",
+        "Coverage gap — throttle is keyed by (IP, lowercased email) rolling window; same-IP-different-email is NOT throttled"
+      ],
+      "references": [
+        "apps/api/test/support/container.ts",
+        "apps/api/test/support/request.ts",
+        "apps/api/test/support/passwords.ts",
+        "apps/api/src/modules/auth/routes.ts",
+        "apps/api/src/modules/auth/throttle.ts",
+        ".claude/skills/api-integration-testing/SKILL.md",
+        ".claude/skills/security-testing/SKILL.md"
+      ],
+      "target_files": {
+        "create": ["apps/api/test/integration/auth.login.test.ts"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": ["apps/api/test/integration/auth.login.test.ts"],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'auth\\.login' apps/api/test/integration/auth.login.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'TOO_MANY_REQUESTS' apps/api/test/integration/auth.login.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'UNAUTHORIZED' apps/api/test/integration/auth.login.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'HttpOnly' apps/api/test/integration/auth.login.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'csrf_token' apps/api/test/integration/auth.login.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'toHaveBeenCalledTimes' apps/api/test/integration/auth.login.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'x-forwarded-for' apps/api/test/integration/auth.login.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'differentEmail|otherEmail|secondEmail|notThrottled|different-email' apps/api/test/integration/auth.login.test.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["vitest", "testcontainers", "api-integration-testing", "security-testing"],
+      "model": "sonnet",
+      "estimate_tokens": 22000,
+      "depends_on": ["task-test-support", "task-auth-routes"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "blocked",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-test-auth-refresh",
+      "title": "Integration: auth.refresh rotation + replay (scoped to hash) + concurrent race + multi-session isolation",
+      "description": "Create apps/api/test/integration/auth.refresh.test.ts. Cases per B4 and the scoped-replay coverage requirement: (1) login → call /api/auth.refresh with the refresh cookie → assert 200 + rotated cookies (new session, new refresh, new csrf) + the old refresh_token row has revoked_at IS NOT NULL while a fresh row exists; (2) replay path — re-send the original (already-rotated) refresh cookie → 401 AND assert via direct SQL query that the offending row has revoked_at IS NOT NULL AND the captured pino log has EXACTLY ONE warn-level entry containing both `userId` and `requestId`; (3) MULTI-SESSION ISOLATION — issue TWO independent refresh tokens for the SAME user by logging in twice from two simulated clients (sessionA, sessionB); replay the first (already-rotated) refresh from sessionA and assert 401; THEN call /api/auth.refresh with sessionB's still-active refresh cookie and assert it returns 200 with rotated cookies — proving the family of other active tokens for that user was NOT swept; (4) concurrent-refresh race — fire two parallel POST /api/auth.refresh with the same cookie via Promise.all; assert exactly one response is 200 and the other is 401.",
+      "context": [
+        "Acceptance bullet B4 — refresh rotates token, replay returns 401",
+        "Coverage gap — replay revocation is SCOPED TO THE REPLAYED HASH ONLY; other active tokens for the user remain usable; multi-session test must prove a second active token still rotates after the first is replayed"
+      ],
+      "references": [
+        "apps/api/test/support/container.ts",
+        "apps/api/test/support/request.ts",
+        "apps/api/test/support/logCapture.ts",
+        "apps/api/src/modules/auth/service.ts",
+        ".claude/skills/api-integration-testing/SKILL.md",
+        ".claude/skills/security-testing/SKILL.md"
+      ],
+      "target_files": {
+        "create": ["apps/api/test/integration/auth.refresh.test.ts"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": ["apps/api/test/integration/auth.refresh.test.ts"],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'auth\\.refresh' apps/api/test/integration/auth.refresh.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'Promise.all' apps/api/test/integration/auth.refresh.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'revoked_at' apps/api/test/integration/auth.refresh.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'warn' apps/api/test/integration/auth.refresh.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'userId' apps/api/test/integration/auth.refresh.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'requestId' apps/api/test/integration/auth.refresh.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'sessionA|sessionB|secondSession|twoSessions|second.session' apps/api/test/integration/auth.refresh.test.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["vitest", "testcontainers", "api-integration-testing", "security-testing"],
+      "model": "sonnet",
+      "estimate_tokens": 24000,
+      "depends_on": ["task-test-support", "task-auth-routes"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-test-auth-session",
+      "title": "Integration: auth.me, auth.logout, JWT clock-skew (jose default 5s) + HS256 algorithm pinning (HS384 rejected)",
+      "description": "Create apps/api/test/integration/auth.session.test.ts. Cases: (1) GET /api/auth.me with valid session cookie → 200 with current user; without cookie → 401; (2) POST /api/auth.logout (with csrf header) → 200 + Set-Cookie clears `session`+`refresh_token`+`csrf_token` (maxAge=0) + the active refresh_token row has revoked_at IS NOT NULL; (3) JWT clock-skew: mint a session token via the same jose key+HS256 with `exp` set 4 seconds in the past — GET /api/auth.me must still pass (jose default 5s tolerance per B12); mint with `exp` 6 seconds in the past — must return 401 with code UNAUTHORIZED; (4) HS256 ALGORITHM PINNING — mint a session token using the same JWT_SECRET but signed with HS384 (`new SignJWT({...}).setProtectedHeader({ alg: 'HS384' })`) → assert GET /api/auth.me with that cookie returns 401 with code UNAUTHORIZED (proves authn pins to HS256 only and rejects other algorithms even when the secret is correct).",
+      "context": [
+        "Acceptance bullet B5 — me + logout HTTP behavior + cookie clearing + refresh row revocation",
+        "Acceptance bullet B12 — jose default 5s clockTolerance: 4s past → pass, 6s past → fail",
+        "Coverage gap — HS256 must be pinned; an HS384-signed token must be rejected with HTTP 401"
+      ],
+      "references": [
+        "apps/api/test/support/container.ts",
+        "apps/api/test/support/request.ts",
+        "apps/api/src/middleware/authn.ts",
+        ".claude/skills/api-integration-testing/SKILL.md"
+      ],
+      "target_files": {
+        "create": ["apps/api/test/integration/auth.session.test.ts"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": ["apps/api/test/integration/auth.session.test.ts"],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'auth\\.me' apps/api/test/integration/auth.session.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'auth\\.logout' apps/api/test/integration/auth.session.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'exp' apps/api/test/integration/auth.session.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'jose|SignJWT' apps/api/test/integration/auth.session.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'UNAUTHORIZED' apps/api/test/integration/auth.session.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'HS384' apps/api/test/integration/auth.session.test.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["vitest", "testcontainers", "api-integration-testing", "security-testing"],
+      "model": "sonnet",
+      "estimate_tokens": 19000,
+      "depends_on": ["task-test-support", "task-auth-routes"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "blocked",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-test-csrf",
+      "title": "Integration: state-changing route without matching X-CSRF-Token → 403 FORBIDDEN",
+      "description": "Create apps/api/test/integration/csrf.test.ts. Cases per B6: (1) authenticated POST /api/auth.logout (or any state-changing route) WITH valid session cookie but WITHOUT the X-CSRF-Token header → 403 with { error: { code: 'FORBIDDEN' } }; (2) same request WITH header but the header value does NOT match the csrf_token cookie → 403 same shape; (3) same request WITH header matching the cookie value → 200 (or the route's normal success). Confirms the double-submit middleware.",
+      "context": [
+        "ARCHITECTURE.md §5.4 — CSRF double-submit constant-time compare",
+        "Acceptance bullet B6 — state-changing route without matching X-CSRF-Token returns 403 FORBIDDEN"
+      ],
+      "references": [
+        "apps/api/test/support/container.ts",
+        "apps/api/test/support/request.ts",
+        "apps/api/src/middleware/csrf.ts",
+        ".claude/skills/api-integration-testing/SKILL.md",
+        ".claude/skills/security-testing/SKILL.md"
+      ],
+      "target_files": {
+        "create": ["apps/api/test/integration/csrf.test.ts"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": ["apps/api/test/integration/csrf.test.ts"],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'X-CSRF-Token' apps/api/test/integration/csrf.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'FORBIDDEN' apps/api/test/integration/csrf.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet '403' apps/api/test/integration/csrf.test.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["vitest", "testcontainers", "api-integration-testing", "security-testing"],
+      "model": "sonnet",
+      "estimate_tokens": 13000,
+      "depends_on": ["task-test-support", "task-app"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "blocked",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-test-log-redaction",
+      "title": "Integration: pino redact paths render [REDACTED] for cookie, authorization, X-CSRF-Token, password, set-cookie",
+      "description": "Create apps/api/test/integration/log-redaction.test.ts. Wire the log capture from test/support/logCapture.ts onto the pino instance for the test app. Cases per B8/B14 (extended with the Authorization redact path): exercise (a) auth.login (sends body.password and receives Set-Cookie), (b) auth.refresh (request carries cookies, response carries Set-Cookie), (c) a CSRF-failing POST (carries cookie + X-CSRF-Token header), (d) a request bearing an `Authorization: Bearer <fake-jwt>` header against any route — capture the log line and assert the literal `Authorization` header value is rendered as `[REDACTED]` (never the raw bearer value). For every captured log line, assert: every redaction-target field that appears renders the LITERAL string `[REDACTED]`, AND the captured stream NEVER contains the raw plaintext password from fixtures, NEVER contains a real JWT (no `eyJ...` substring), NEVER contains a real refresh-token value, NEVER contains a raw csrf_token cookie value, NEVER contains a Set-Cookie header value other than `[REDACTED]`, NEVER contains the raw Bearer value sent in case (d).",
+      "context": [
+        "Acceptance bullet B8 — no API log line during auth flows contains password, JWT, refresh token, or CSRF token value",
+        "Acceptance bullet B14 — pino redact verbatim paths render [REDACTED]",
+        "Coverage gap — redact paths MUST include req.headers.authorization, and a log-redaction test case MUST send an Authorization header and assert it never appears verbatim in captured stdout"
+      ],
+      "references": [
+        "apps/api/src/shared/logger.ts",
+        "apps/api/test/support/logCapture.ts",
+        "apps/api/test/support/request.ts",
+        ".claude/skills/api-integration-testing/SKILL.md",
+        ".claude/skills/security-testing/SKILL.md"
+      ],
+      "target_files": {
+        "create": ["apps/api/test/integration/log-redaction.test.ts"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": ["apps/api/test/integration/log-redaction.test.ts"],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'REDACTED' apps/api/test/integration/log-redaction.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'eyJ' apps/api/test/integration/log-redaction.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'auth\\.login' apps/api/test/integration/log-redaction.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'auth\\.refresh' apps/api/test/integration/log-redaction.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'set-cookie' apps/api/test/integration/log-redaction.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet -i 'authorization|Bearer' apps/api/test/integration/log-redaction.test.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["vitest", "testcontainers", "api-integration-testing", "security-testing"],
+      "model": "sonnet",
+      "estimate_tokens": 16000,
+      "depends_on": ["task-test-support", "task-app"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-test-seed",
+      "title": "Integration: seed is idempotent (re-run inserts zero rows, exits 0)",
+      "description": "Create apps/api/test/integration/seed.test.ts. Spin up a fresh testcontainer, run drizzle-kit migrate to apply schema, then invoke the seed main function twice against the same DB. After the first run: assert the `user` table row count equals the number of entries in apps/api/src/seed/fixtures/users.json. After the second run: assert the row count is unchanged AND the run exits 0 (no error thrown). Optionally also assert that `password_hash` is non-empty and starts with an argon2id prefix for each inserted row.",
+      "context": [
+        "Acceptance bullet B11 — seeder is idempotent; re-running inserts zero rows and exits 0; asserted by an integration test that runs the seed twice"
+      ],
+      "references": [
+        "apps/api/src/seed/main.ts",
+        "apps/api/src/seed/fixtures/users.json",
+        "apps/api/test/support/container.ts",
+        ".claude/skills/api-integration-testing/SKILL.md"
+      ],
+      "target_files": {
+        "create": ["apps/api/test/integration/seed.test.ts"],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": ["apps/api/test/integration/seed.test.ts"],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'idempotent|twice' apps/api/test/integration/seed.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'seed' apps/api/test/integration/seed.test.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'user' apps/api/test/integration/seed.test.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["vitest", "testcontainers", "api-integration-testing"],
+      "model": "sonnet",
+      "estimate_tokens": 11000,
+      "depends_on": ["task-test-support", "task-seed"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-test-support",
+      "title": "Integration-test harness: per-file testcontainers Postgres + request helper + assertions + log capture",
+      "description": "Create apps/api/test/support/container.ts (export `startPostgres()` using @testcontainers/postgresql; returns `{ url, stop }`; the integration vitest config wires this so each test FILE gets its own container — one Postgres per file), apps/api/test/support/fixtures.ts (truncate-and-seed helper that re-runs the seed fixtures against a fresh container's DB, returning the seeded user records — reads from apps/api/src/seed/fixtures/users.json), apps/api/test/support/request.ts (export `buildClient(app)` returning helpers `loginAs(email, password)` and `csrfPost(path, body)` that maintain cookie jar + auto-attach X-CSRF-Token header from the csrf_token cookie; also supports setting custom headers like `Authorization` and `x-forwarded-for`), apps/api/test/support/assertions.ts (export `expectAppError(res, code)` asserting `res.status === <statusForCode>` and JSON body `{ error: { code } }`), apps/api/test/support/passwords.ts (re-exports a Vitest-spyable argon2 verify so any test can `vi.fn` it), apps/api/test/support/logCapture.ts (in-memory pino destination collecting log lines for assertions).",
+      "context": [
+        "ARCHITECTURE.md §8 — integration tests use ephemeral Postgres per test file",
+        "test/integration tests (downstream) all depend on these helpers",
+        "Acceptance bullets B7/B8/B14 — log capture + argon2 spy"
+      ],
+      "references": [
+        "docs/ARCHITECTURE.md",
+        "apps/api/src/shared/password.ts",
+        "apps/api/src/shared/logger.ts",
+        "apps/api/src/app.ts",
+        "apps/api/src/seed/fixtures/users.json",
+        ".claude/skills/vitest/SKILL.md",
+        ".claude/skills/testcontainers/SKILL.md",
+        ".claude/skills/api-integration-testing/SKILL.md"
+      ],
+      "target_files": {
+        "create": [
+          "apps/api/test/support/container.ts",
+          "apps/api/test/support/fixtures.ts",
+          "apps/api/test/support/request.ts",
+          "apps/api/test/support/assertions.ts",
+          "apps/api/test/support/passwords.ts",
+          "apps/api/test/support/logCapture.ts"
+        ],
+        "update": [],
+        "remove": [],
+        "may_also_touch": []
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": [
+          "apps/api/test/support/container.ts",
+          "apps/api/test/support/fixtures.ts",
+          "apps/api/test/support/request.ts",
+          "apps/api/test/support/assertions.ts",
+          "apps/api/test/support/passwords.ts",
+          "apps/api/test/support/logCapture.ts"
+        ],
+        "custom": [
+          {
+            "cmd": "rg --quiet 'startPostgres' apps/api/test/support/container.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet '@testcontainers/postgresql' apps/api/test/support/container.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'X-CSRF-Token' apps/api/test/support/request.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'expectAppError' apps/api/test/support/assertions.ts",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'logCapture|captureLogs' apps/api/test/support/logCapture.ts",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["typescript", "vitest", "testcontainers", "api-integration-testing"],
+      "model": "sonnet",
+      "estimate_tokens": 19000,
+      "depends_on": ["task-app", "task-db-schema", "task-shared", "task-seed"],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    },
+    {
+      "id": "task-workspace",
+      "title": "Scaffold pnpm workspace root with biome, tsconfig base, .npmrc",
+      "description": "Create the repo-root package.json (private, packageManager pinned to pnpm@10.x, scripts: typecheck = `pnpm -r typecheck`, lint = `biome check .`, format = `biome format --write .`), biome.json (formatter+linter, line width 100, recommended rules), tsconfig.base.json (strict, ESNext, NodeNext module resolution, exactOptionalPropertyTypes, noUncheckedIndexedAccess), .npmrc (auto-install-peers=true, strict-peer-dependencies=true), and .gitignore additions (node_modules, dist, .turbo, coverage, uploads/, .env). Keep the preserved pnpm-workspace.yaml as the workspace declaration (apps/* + packages/*).",
+      "context": [
+        "INTEL.md §Planned Tech Stack — pnpm workspaces monorepo, TypeScript strict",
+        "ARCHITECTURE.md §2.1 — workspace topology with apps/ and packages/contracts/",
+        "ARCHITECTURE.md §6.3 — biome chosen as single linter+formatter"
+      ],
+      "references": [
+        "pnpm-workspace.yaml",
+        "docs/ARCHITECTURE.md",
+        ".planning/intel/build-graph.json",
+        ".claude/skills/pnpm/SKILL.md",
+        ".claude/skills/biome/SKILL.md"
+      ],
+      "target_files": {
+        "create": ["package.json", "biome.json", "tsconfig.base.json", ".npmrc"],
+        "update": [".gitignore"],
+        "remove": [],
+        "may_also_touch": ["pnpm-workspace.yaml"]
+      },
+      "verification": {
+        "tests": [],
+        "lint": [],
+        "build": [],
+        "files_exist": [
+          "package.json",
+          "biome.json",
+          "tsconfig.base.json",
+          ".npmrc",
+          "pnpm-workspace.yaml"
+        ],
+        "custom": [
+          {
+            "cmd": "node -e \"const p=require('./package.json'); process.exit(p.packageManager && p.packageManager.startsWith('pnpm@') ? 0 : 1)\"",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "node -e \"const t=require('./tsconfig.base.json'); process.exit(t.compilerOptions && t.compilerOptions.strict === true ? 0 : 1)\"",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'apps/\\*' pnpm-workspace.yaml",
+            "expect_exit": 0
+          },
+          {
+            "cmd": "rg --quiet 'packages/\\*' pnpm-workspace.yaml",
+            "expect_exit": 0
+          }
+        ]
+      },
+      "skills": ["pnpm", "biome", "typescript"],
+      "model": "sonnet",
+      "estimate_tokens": 12000,
+      "depends_on": [],
+      "depends_on_contracts": [],
+      "max_attempts": 2,
+      "on_fail": "escalate",
+      "status": "done",
+      "attempts": [],
+      "actuals": null
+    }
+  ]
+}

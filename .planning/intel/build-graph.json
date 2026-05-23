@@ -1,0 +1,62 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ganderbite/relay-core/main/schemas/intel/build-graph.schema.json",
+  "snapshot_sha": "1c8d5d1707e5aa47d37c987e847cd6ae0fcc2a41",
+  "fresh_repo": false,
+  "tools": {
+    "package_manager": "pnpm@10.11.0",
+    "test_runner": "vitest@^2.1.9",
+    "linter": "biome@^2.4.15",
+    "type_checker": "typescript@^5.7.3",
+    "builder": "tsc",
+    "migration_tool": "drizzle-kit@^0.30.6"
+  },
+  "global": {
+    "install": "pnpm install --frozen-lockfile",
+    "lint": "pnpm -w lint",
+    "format": "pnpm -w format",
+    "typecheck": "pnpm -w typecheck",
+    "test": "pnpm -F @medbridge/api test",
+    "test_integration": "pnpm -F @medbridge/api test:integration",
+    "build": "pnpm -F @medbridge/api build"
+  },
+  "per_module": {
+    "@medbridge/api": {
+      "dev": "pnpm -F @medbridge/api dev",
+      "build": "pnpm -F @medbridge/api build",
+      "start": "pnpm -F @medbridge/api start",
+      "typecheck": "pnpm -F @medbridge/api typecheck",
+      "lint": "pnpm -F @medbridge/api lint",
+      "format": "pnpm -F @medbridge/api format",
+      "test": "pnpm -F @medbridge/api test",
+      "test_integration": "pnpm -F @medbridge/api test:integration",
+      "drizzle_generate": "pnpm -F @medbridge/api drizzle:generate",
+      "drizzle_migrate": "pnpm -F @medbridge/api drizzle:migrate"
+    },
+    "@medbridge/contracts": {
+      "note": "No package-local scripts declared yet. Linted/typechecked via root workspace (`biome check .`, `pnpm -r typecheck`)."
+    }
+  },
+  "migrations": {
+    "tool": "drizzle-kit",
+    "config": "apps/api/drizzle.config.ts",
+    "schema_source": "apps/api/src/db/schema.ts",
+    "out_dir": "apps/api/src/db/migrations",
+    "journal": "apps/api/src/db/migrations/meta/_journal.json",
+    "generate_cmd": "pnpm -F @medbridge/api drizzle:generate",
+    "apply_cmd": "pnpm -F @medbridge/api drizzle:migrate",
+    "applied": ["0000_init"]
+  },
+  "smoke": [
+    "pnpm install --frozen-lockfile",
+    "pnpm -w lint",
+    "pnpm -w typecheck",
+    "pnpm -F @medbridge/api build"
+  ],
+  "docker": {
+    "compose_file": "docker-compose.yml",
+    "services": ["postgres", "api-migrate", "api"],
+    "api_dockerfile": "apps/api/Dockerfile",
+    "stack_up": "docker compose up --build"
+  },
+  "planner_guidance": "All commands above are derived from the on-disk manifests at snapshot 1c8d5d1: root `package.json` (lint, format, typecheck), `apps/api/package.json` (dev, build, start, typecheck, lint, format, test, test:integration, drizzle:*), and the workspace topology in `pnpm-workspace.yaml`. There is no `db:seed` script on disk yet (`apps/api/README.md` references one but the script is not declared) — do not invoke it until added. `packages/contracts` has no test or build scripts; treat it as a source-only contracts package."
+}

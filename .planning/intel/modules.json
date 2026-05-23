@@ -1,0 +1,101 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ganderbite/relay-core/main/schemas/intel/modules.schema.json",
+  "snapshot_sha": "1c8d5d1707e5aa47d37c987e847cd6ae0fcc2a41",
+  "fresh_repo": false,
+  "modules": [
+    {
+      "name": "@medbridge/api",
+      "path": "apps/api",
+      "language": "typescript",
+      "test_path": "apps/api/test/integration",
+      "depends_on": [
+        "@medbridge/contracts",
+        "@hono/node-server",
+        "hono",
+        "drizzle-orm",
+        "pg",
+        "argon2",
+        "jose",
+        "pino",
+        "pino-http",
+        "zod"
+      ],
+      "exports": [
+        "src/main.ts (server entrypoint)",
+        "src/app.ts (createApp factory)",
+        "src/modules/auth/index.ts (createAuthService, AuthService types)"
+      ],
+      "owners": []
+    },
+    {
+      "name": "@medbridge/contracts",
+      "path": "packages/contracts",
+      "language": "typescript",
+      "test_path": null,
+      "depends_on": [
+        "zod"
+      ],
+      "exports": [
+        "src/index.ts (barrel re-exports auth + common)",
+        "src/auth.ts (Role, loginRequest, loginResponse, refreshResponse, meResponse, logoutResponse)",
+        "src/common.ts (ErrorCode enum, errorEnvelope schema)"
+      ],
+      "owners": []
+    }
+  ],
+  "submodules": {
+    "@medbridge/api": [
+      {
+        "name": "accounts",
+        "path": "apps/api/src/modules/accounts",
+        "exports": ["schema.ts (user table, userRoleEnum, citext custom type)"]
+      },
+      {
+        "name": "auth",
+        "path": "apps/api/src/modules/auth",
+        "exports": [
+          "index.ts (createAuthService factory + types)",
+          "routes.ts (createAuthRoutes — POST /login, /refresh, /logout, GET /me)",
+          "service.ts (AuthService — login, refresh, logout, me)",
+          "repo.ts (findUserByEmail, refresh-token CRUD)",
+          "schema.ts (refresh_token table)",
+          "dto.ts (response builders, buildLoginResponseFromClaims preferred)",
+          "throttle.ts (createLoginThrottle — per (ip,email) 10/15min)"
+        ]
+      },
+      {
+        "name": "middleware",
+        "path": "apps/api/src/middleware",
+        "exports": [
+          "requestId.ts",
+          "logger.ts (per-request pino child logger)",
+          "csrf.ts (double-submit; UNSAFE_METHODS=POST/PATCH/DELETE; EXEMPT_PATHS=/api/login,/api/refresh)",
+          "authn.ts (HS256 JWT via jose, 5s clockTolerance)",
+          "authz.ts (requireRole(...roles) factory)",
+          "errorHandler.ts (AppError → JSON envelope)"
+        ]
+      },
+      {
+        "name": "shared",
+        "path": "apps/api/src/shared",
+        "exports": [
+          "db.ts (Pool + drizzle instance, Db/Tx types)",
+          "errors.ts (AppError hierarchy: Validation, NotFound, Unauthorized, Forbidden, Conflict, UnsupportedMedia, PayloadTooLarge, TooManyRequests)",
+          "logger.ts (root pino logger with redact paths)",
+          "password.ts (argon2id hash/verify + createPasswordVerifier factory)",
+          "ids.ts",
+          "time.ts"
+        ]
+      },
+      {
+        "name": "seed",
+        "path": "apps/api/src/seed",
+        "exports": [
+          "main.ts (idempotent seeder; reads fixtures/users.json)",
+          "fixtures/users.json (patient@medbridge.test, doctor@medbridge.test)"
+        ]
+      }
+    ]
+  },
+  "note": "Sprint-002 (api-scaffold-auth) landed: pnpm workspace with apps/api (Hono + Drizzle) and packages/contracts (Zod schemas). Auth module is the only feature module so far; accounts module exposes the user schema only. Tests live under apps/api/test/integration via Testcontainers Postgres."
+}

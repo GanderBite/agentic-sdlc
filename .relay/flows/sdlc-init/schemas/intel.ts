@@ -26,13 +26,19 @@ export const IntelSchema = z.object({
     .describe('Package manager detected from manifests (e.g. "pnpm", "npm", "uv", "go").'),
   test_runner: z
     .string()
-    .describe('Test runner derived from manifests (e.g. "vitest", "pytest"). Empty string if none.'),
+    .describe(
+      'Test runner derived from manifests (e.g. "vitest", "pytest"). Empty string if none.',
+    ),
   fresh_repo: z
     .boolean()
-    .describe('True iff the repository had no source files at intel time. Drives downstream defaults.'),
+    .describe(
+      'True iff the repository had no source files at intel time. Drives downstream defaults.',
+    ),
   snapshot_sha: z
     .string()
-    .describe('The SHA written to `.planning/intel/.snapshot`. Use "INIT" when there is no commit yet.'),
+    .describe(
+      'The SHA written to `.planning/intel/.snapshot`. Use "INIT" when there is no commit yet.',
+    ),
   files_written: z
     .array(z.string())
     .describe('Every file the intel-keeper wrote this run. Used by reviewers to scope audits.'),

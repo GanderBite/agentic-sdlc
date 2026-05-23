@@ -1,0 +1,60 @@
+{
+  "wave_id": "wave-2",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "low",
+      "category": "style",
+      "file": "packages/contracts/src/common.ts",
+      "line": 1,
+      "summary": "Double-quoted string literals; biome.json mandates quoteStyle: 'single' — formatter will rewrite every line",
+      "suggested_fix": "Replace double-quote string literals with single-quotes in common.ts, auth.ts, and index.ts (or run `pnpm format`).",
+      "auto_fixable": true,
+      "first_seen_iteration": 1
+    },
+    {
+      "id": "F-002",
+      "severity": "low",
+      "category": "style",
+      "file": "packages/contracts/src/auth.ts",
+      "line": 1,
+      "summary": "Double-quoted string literals; biome.json mandates quoteStyle: 'single' — formatter will rewrite every line",
+      "suggested_fix": "Replace double-quote string literals with single-quotes in auth.ts (or run `pnpm format`).",
+      "auto_fixable": true,
+      "first_seen_iteration": 1
+    },
+    {
+      "id": "F-003",
+      "severity": "low",
+      "category": "style",
+      "file": "packages/contracts/src/index.ts",
+      "line": 1,
+      "summary": "Double-quoted string literals; biome.json mandates quoteStyle: 'single' — formatter will rewrite re-export lines",
+      "suggested_fix": "Replace `from \"./common.js\"` and `from \"./auth.js\"` with single-quoted forms (or run `pnpm format`).",
+      "auto_fixable": true,
+      "first_seen_iteration": 1
+    },
+    {
+      "id": "F-004",
+      "severity": "info",
+      "category": "architecture",
+      "file": "packages/contracts/src/auth.ts",
+      "line": 6,
+      "summary": "userShape schema is declared `const` (un-exported); only the inferred `User` type is exported — downstream modules cannot compose/extend the schema",
+      "suggested_fix": "Either export userShape (rename e.g. `userSchema`) so api/ui can reuse it for validation/composition, or accept type-only export as a deliberate API surface choice.",
+      "auto_fixable": false,
+      "first_seen_iteration": 1
+    },
+    {
+      "id": "F-005",
+      "severity": "info",
+      "category": "architecture",
+      "file": "packages/contracts/package.json",
+      "line": 1,
+      "summary": "No `scripts.typecheck` declared; root `pnpm -r typecheck` will silently skip this package (and any tsc errors here go unobserved)",
+      "suggested_fix": "Add `\"scripts\": { \"typecheck\": \"tsc -p tsconfig.json\" }` so root `-r typecheck` exercises the contracts package.",
+      "auto_fixable": true,
+      "first_seen_iteration": 1
+    }
+  ]
+}

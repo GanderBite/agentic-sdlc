@@ -22,6 +22,16 @@ The brief is in `<context name="brief">`, the architecture in `<context name="ar
 - Cap the PRD at ~8k tokens. Push feature-specific detail into `.planning/features/FEATURE-*.md` files written in later sprints.
 </rules>
 
+<verification>
+MANDATORY before submitting the handoff. The downstream `verify-prd` gate mechanically re-checks `prd_path` — a missing or stub file aborts the run.
+
+1. Call `Write docs/PRD.md` with the full PRD content. Do not "plan" — write it.
+2. Call `Read docs/PRD.md` to confirm it landed. MUST be ≥ 1024 bytes.
+3. Only after Write + Read-back pass, submit the handoff.
+
+The handoff is a RECORD of work done, not a PLAN.
+</verification>
+
 <output_format>
 Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
 

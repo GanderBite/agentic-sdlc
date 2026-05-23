@@ -62,6 +62,23 @@ atomic_write() {
   mv -f "$tmp" "$dest"
 }
 
+# epoch_ms — print current Unix time in milliseconds.
+# Portable across GNU coreutils and BSD `date`. macOS ships BSD `date`, which
+# does not support `%N`/`%3N`, so `date +%s%3N` emits a literal `N` and
+# produces garbage. Prefer `gdate` (Homebrew coreutils) if installed, then
+# fall back to `perl` (present on every macOS and most Linux distros).
+# Last-resort fallback is whole-second precision so the script keeps running
+# even if neither is available.
+epoch_ms() {
+  if command -v gdate >/dev/null 2>&1; then
+    gdate +%s%3N
+  elif command -v perl >/dev/null 2>&1; then
+    perl -MTime::HiRes=time -e 'printf "%d\n", time()*1000'
+  else
+    printf '%s000\n' "$(date +%s)"
+  fi
+}
+
 # slugify <string> — produces a kebab-case id-safe slug.
 slugify() {
   printf '%s' "$1" \

@@ -1,11 +1,11 @@
 import { defineFlow, step, z } from '@ganderbite/relay-core';
-import { IntelSchema } from './schemas/intel.js';
+import { ArchitectureSchema } from './schemas/architecture.js';
 import { BriefSchema } from './schemas/brief.js';
 import { BriefQuestionsSchema } from './schemas/brief-questions.js';
-import { ArchitectureSchema } from './schemas/architecture.js';
-import { TechStackSchema } from './schemas/tech-stack.js';
-import { SkillsIndexSchema } from './schemas/skills-index.js';
+import { IntelSchema } from './schemas/intel.js';
 import { PrdSchema } from './schemas/prd.js';
+import { SkillsIndexSchema } from './schemas/skills-index.js';
+import { TechStackSchema } from './schemas/tech-stack.js';
 
 /**
  * sdlc-init — bootstrap a project per AGENTIC_SDLC.md §7.1.
@@ -45,17 +45,43 @@ export default defineFlow({
         'Path to the user-supplied initial brief (e.g. "START.md"). The brainstorm prompts read this directly via {{input.startMd}}; leave unset to bootstrap from zero.',
       ),
   }),
-  start: 'intel',
+  start: 'branch',
   steps: {
+    // First step — switch to `sdlc/init` on a clean worktree (or `git init`
+    // the repo entirely if this is a brand-new starter directory). Every
+    // downstream write lands on a pushable, persistent branch.
+    branch: step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/branch.sh"'],
+      onFail: 'abort',
+    }),
+
     intel: step.prompt({
       promptFile: 'prompts/01_intel.md',
+      dependsOn: ['branch'],
       tools: ['Read', 'Glob', 'Grep', 'Bash', 'Write'],
       output: { handoff: 'intel', schema: IntelSchema },
     }),
 
+    'verify-intel': step.script({
+      // MIN_BYTES is intentionally low: intel emits 8 files, several of
+      // which are legitimately tiny (`.snapshot` is a 41-byte git SHA;
+      // modules.json / build-graph.json on a fresh repo can be a
+      // 2-character `{}` etc.). The gate's real job here is "every
+      // claimed file exists and is non-empty" — strict size checks
+      // belong on the docs (brief / ARCHITECTURE / TECH_STACK / PRD).
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/assert-handoff-files.sh"'],
+      dependsOn: ['intel'],
+      env: {
+        HANDOFF_NAME: 'intel',
+        PATHS_JQ: '.files_written // []',
+        MIN_BYTES: '1',
+      },
+      onFail: 'abort',
+    }),
+
     'brief-questions': step.prompt({
       promptFile: 'prompts/02a_brainstorm_questions.md',
-      dependsOn: ['intel'],
+      dependsOn: ['verify-intel'],
       contextFrom: ['intel'],
       tools: ['Read'],
       model: 'opus',
@@ -76,17 +102,39 @@ export default defineFlow({
       output: { handoff: 'brief', schema: BriefSchema },
     }),
 
+    'verify-brainstorm': step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/assert-handoff-files.sh"'],
+      dependsOn: ['brainstorm'],
+      env: {
+        HANDOFF_NAME: 'brief',
+        PATHS_JQ: '[.brief_path]',
+        MIN_BYTES: '1024',
+      },
+      onFail: 'abort',
+    }),
+
     architecture: step.prompt({
       promptFile: 'prompts/03_architecture.md',
-      dependsOn: ['brainstorm'],
+      dependsOn: ['verify-brainstorm'],
       contextFrom: ['brief', 'intel'],
       tools: ['Read', 'Write'],
       model: 'opus',
       output: { handoff: 'architecture', schema: ArchitectureSchema },
     }),
 
-    'approve-arch': step.ask({
+    'verify-architecture': step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/assert-handoff-files.sh"'],
       dependsOn: ['architecture'],
+      env: {
+        HANDOFF_NAME: 'architecture',
+        PATHS_JQ: '[.architecture_path]',
+        MIN_BYTES: '2048',
+      },
+      onFail: 'abort',
+    }),
+
+    'approve-arch': step.ask({
+      dependsOn: ['verify-architecture'],
       questions: [
         {
           id: 'approved',
@@ -107,8 +155,19 @@ export default defineFlow({
       output: { handoff: 'tech_stack', schema: TechStackSchema },
     }),
 
-    'approve-stack': step.ask({
+    'verify-tech-stack': step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/assert-handoff-files.sh"'],
       dependsOn: ['tech-stack'],
+      env: {
+        HANDOFF_NAME: 'tech_stack',
+        PATHS_JQ: '[.tech_stack_path]',
+        MIN_BYTES: '1024',
+      },
+      onFail: 'abort',
+    }),
+
+    'approve-stack': step.ask({
+      dependsOn: ['verify-tech-stack'],
       questions: [
         {
           id: 'approved',
@@ -131,8 +190,7 @@ export default defineFlow({
     }),
 
     'skill-lint': step.script({
-      run: 'node .relay/flows/sdlc-init/scripts/skill-linter.mjs',
-      cwd: '.',
+      run: ['bash', '-c', 'node "$RELAY_FLOW_DIR/scripts/skill-linter.mjs"'],
       dependsOn: ['skills'],
       onFail: 'abort',
     }),
@@ -146,8 +204,19 @@ export default defineFlow({
       output: { handoff: 'prd', schema: PrdSchema },
     }),
 
-    'approve-prd': step.ask({
+    'verify-prd': step.script({
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/assert-handoff-files.sh"'],
       dependsOn: ['prd'],
+      env: {
+        HANDOFF_NAME: 'prd',
+        PATHS_JQ: '[.prd_path]',
+        MIN_BYTES: '1024',
+      },
+      onFail: 'abort',
+    }),
+
+    'approve-prd': step.ask({
+      dependsOn: ['verify-prd'],
       questions: [
         {
           id: 'approved',
@@ -160,8 +229,7 @@ export default defineFlow({
     }),
 
     commit: step.script({
-      run: '.relay/flows/sdlc-init/scripts/commit-sdlc-init.sh',
-      cwd: '.',
+      run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/commit-sdlc-init.sh"'],
       dependsOn: ['approve-prd'],
     }),
   },

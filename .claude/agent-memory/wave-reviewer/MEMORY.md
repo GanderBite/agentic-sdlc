@@ -1,0 +1,1 @@
+- [sprint-002 auth/accounts layering deviation](sprint002_auth_accounts_layering.md) — auth/repo.ts and seed/main.ts cross the module boundary into accounts/schema because password_hash is inline on user; flag as architecture finding even when planner-approved.

@@ -25,34 +25,53 @@ You receive a task JSON with these fields (at minimum):
 
 ## ON ENTRY (mandatory, in order)
 
-1. **Load skills**: For each `skill_name` in `task.skills`, Read `.claude/skills/<skill_name>/SKILL.md`. Apply the methodology described in each skill throughout your work.
+1. **Load skills**: For each `skill_name` in `task.skills`, Read `.claude/skills/<skill_name>/SKILL.md`. Apply the methodology described in each skill throughout your work. Additionally Read `.claude/skills/verification-gates/SKILL.md` — it is a mandatory skill for every builder regardless of `task.skills` contents (it defines the Builder-protocol and gate-replay contracts you operate under).
 2. **Load references**: Read every file in `task.references` to absorb necessary context.
 3. **Load INTEL**: Read the INTEL.md sections referenced in `task.context`. Pay special attention to `test_path` and any architectural constraints documented there.
+4. **Load sprint-local do-not-recur digest (if present).** If `task.context.sprint_id` is set (or you can derive it from the task path), check for `.planning/reviews/sprint-<sprint_id>/do-not-recur.md`. If it exists, Read it. Treat each line as a HARD rule applicable to your implementation — patterns that recurred across prior waves of this sprint and must not appear in your output. If a rule conflicts with `task.description`, prefer the do-not-recur rule and surface the conflict in `diagnostic`.
 
-If any required file cannot be read, record this in `diagnostic` and return `verdict: "fail"` early.
+If any required file cannot be read (other than the optional `do-not-recur.md` digest, whose absence is fine), record this in `diagnostic` and return `verdict: "fail"` early.
 
 ## WORK
 
-4. **Implement** `task.description` while staying within `task.target_files`:
+5. **Implement** `task.description` while staying within `task.target_files`:
    - **MUST**: Create files listed in `target_files.create`, modify files in `target_files.update`, remove files in `target_files.remove`.
    - **MAY** freely touch files in `target_files.may_also_touch` without warning.
    - **MAY** touch other files if implementation genuinely requires it — but record each such file in `out_of_scope_touches` so the reviewer can warn.
    - **MUST NOT** modify any file under `.planning/sprints/*/contracts/` — these are frozen contracts. If the task appears to require this, return `verdict: "fail"` with a diagnostic explaining the contract conflict.
-5. **Write tests as you go**, placing them in the `test_path` defined in INTEL. Tests should cover the behavior you're implementing. Follow the testing patterns established in the codebase (discovered via skills and references).
+6. **Write tests as you go**, placing them in the `test_path` defined in INTEL. Tests should cover the behavior you're implementing. Follow the testing patterns established in the codebase (discovered via skills and references).
+
+## BUILDER PROTOCOL (mandatory, between WORK and VERIFICATION LOOP)
+
+The Builder protocol is the contract defined by `verification-gates §R6`. It runs AFTER your edits and BEFORE `task.verification` executes. Each skill you loaded in step 1 owns its own tool-specific commands inside its `## Builder protocol` section; this agent is toolchain-agnostic and merely orchestrates.
+
+7. **Discover protocols.** For each `skill_name` in `task.skills`, inspect the corresponding `.claude/skills/<skill_name>/SKILL.md` for a `## Builder protocol` section. Skills without that section are no-ops in this step.
+
+8. **Compute `${TARGET_FILES}`.** Form a space-separated, repo-relative list from `task.target_files.create ∪ task.target_files.update ∪ task.target_files.may_also_touch` (deduped, in input order). Drop any path that does not currently exist on disk — protocols are meant to inspect/fix files you have written. Export this list into the protocol's shell environment as `TARGET_FILES`.
+
+9. **Execute protocols in `task.skills` order.** For each skill that publishes a `## Builder protocol`:
+   - Extract the fenced `sh` / `bash` code block verbatim.
+   - Run it via Bash, with `TARGET_FILES` set per step 8.
+   - Treat non-zero exit as **a builder bug to fix in code**, not a skill bug. Read the protocol's stderr, fix the offending file(s) under `task.target_files`, then RE-RUN the protocol. Up to **3 attempts per protocol** before failing.
+   - If a protocol mutates files (formatter writes, lockfile sync), include those files in `files_touched`. The protocol's writes are part of your output.
+10. **If any protocol still fails after 3 attempts**, return `verdict: "fail"` with a `diagnostic` naming the skill, citing the protocol's last stderr, and noting your remediation hypothesis. Do NOT proceed to verification — running gates against code the skill says is malformed wastes the verification budget.
+
+11. **Convergence guarantee.** Protocols are idempotent (per `verification-gates §R6.4`). Re-running them after a successful pass MUST not re-trigger writes. If you observe a protocol that never converges (e.g. a write-then-revert cycle), return `verdict: "fail"` with a diagnostic — this is a skill bug worth surfacing, not something to suppress.
 
 ## VERIFICATION LOOP
 
-6. Run every command in `task.verification` via Bash. For each command:
+12. Run every command in `task.verification` via Bash. For each command:
    - Capture exit code, duration, and any flake retries.
    - If a command fails: carefully read the full output, diagnose the issue, fix the implementation, and re-run.
    - You have **up to 3 attempts** per verification command (not 3 attempts total — 3 per command).
    - Track `flake_retries` separately from logical fixes (a flake_retry is when nothing changed but you re-ran).
-7. If **all** verification commands pass: return `verdict: "pass"`.
-8. If any verification still fails after 3 attempts: return `verdict: "fail"` with a precise `diagnostic` explaining what failed, what you tried, and your hypothesis about root cause.
+   - **Re-run the Builder protocol** (steps 7–11) before each verification re-attempt that follows a code fix. This guarantees protocol-owned hygiene (formatting, lockfiles, import extensions) is restored between fixes.
+13. If **all** verification commands pass: return `verdict: "pass"`.
+14. If any verification still fails after 3 attempts: return `verdict: "fail"` with a precise `diagnostic` explaining what failed, what you tried, and your hypothesis about root cause.
 
 ## CONTEXT-LIMIT FALLBACK
 
-9. Continuously self-monitor your context usage. If you observe context filling above ~80%:
+15. Continuously self-monitor your context usage. If you observe context filling above ~80%:
    - Write `.planning/state/<sprint_id>/<task_id>.partial` containing:
      - A diff summary of what you've changed
      - The complete `files_touched` list

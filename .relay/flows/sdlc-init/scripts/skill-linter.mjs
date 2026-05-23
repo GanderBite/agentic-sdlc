@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 // skill-linter.mjs — §19.3 skill linter.
 //
 // Usage:
@@ -6,9 +7,9 @@
 //
 // Walks .claude/skills/* and validates against §19.3 rules.
 
-import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { join, dirname } from 'node:path';
 import { execSync } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const errors = [];
 const emit = (severity, code, message, extra = {}) =>
@@ -17,7 +18,9 @@ const emit = (severity, code, message, extra = {}) =>
 const projectRoot = (() => {
   try {
     return execSync('git rev-parse --show-toplevel', { encoding: 'utf8' }).trim();
-  } catch { return process.cwd(); }
+  } catch {
+    return process.cwd();
+  }
 })();
 
 const skillsDir = join(projectRoot, '.claude/skills');
@@ -33,8 +36,9 @@ if (!existsSync(indexPath)) {
 }
 
 let index;
-try { index = JSON.parse(readFileSync(indexPath, 'utf8')); }
-catch (e) {
+try {
+  index = JSON.parse(readFileSync(indexPath, 'utf8'));
+} catch (e) {
   emit('blocking', 'index_parse', `INDEX.json parse error: ${e.message}`);
   finish();
 }
@@ -51,7 +55,9 @@ for (const s of index.skills) {
     continue;
   }
   if (indexNames.has(s.name)) {
-    emit('blocking', 'skill_name_duplicate_index', `INDEX has duplicate skill: ${s.name}`, { name: s.name });
+    emit('blocking', 'skill_name_duplicate_index', `INDEX has duplicate skill: ${s.name}`, {
+      name: s.name,
+    });
   }
   indexNames.add(s.name);
 }
@@ -63,12 +69,22 @@ const onDisk = readdirSync(skillsDir, { withFileTypes: true })
 
 for (const name of onDisk) {
   if (!indexNames.has(name)) {
-    emit('blocking', 'skill_not_in_index', `.claude/skills/${name}/ exists on disk but is missing from INDEX.json`, { name });
+    emit(
+      'blocking',
+      'skill_not_in_index',
+      `.claude/skills/${name}/ exists on disk but is missing from INDEX.json`,
+      { name },
+    );
   }
 }
 for (const name of indexNames) {
   if (!onDisk.includes(name)) {
-    emit('blocking', 'skill_not_on_disk', `INDEX.json lists "${name}" but .claude/skills/${name}/ does not exist`, { name });
+    emit(
+      'blocking',
+      'skill_not_on_disk',
+      `INDEX.json lists "${name}" but .claude/skills/${name}/ does not exist`,
+      { name },
+    );
   }
 }
 
@@ -88,32 +104,54 @@ for (const s of index.skills) {
   const text = readFileSync(skillMd, 'utf8');
   const tokens = tokenCount(text);
   if (tokens > TOKEN_LIMIT) {
-    emit('blocking', 'skill_md_oversize', `${s.name}/SKILL.md ≈ ${tokens} tokens > limit ${TOKEN_LIMIT}`, { name: s.name, tokens });
+    emit(
+      'blocking',
+      'skill_md_oversize',
+      `${s.name}/SKILL.md ≈ ${tokens} tokens > limit ${TOKEN_LIMIT}`,
+      { name: s.name, tokens },
+    );
   }
   if (/https?:\/\//i.test(text)) {
-    emit('blocking', 'skill_md_url', `${s.name}/SKILL.md contains an http(s) URL — cache content locally`, { name: s.name });
+    emit(
+      'blocking',
+      'skill_md_url',
+      `${s.name}/SKILL.md contains an http(s) URL — cache content locally`,
+      { name: s.name },
+    );
   }
   if (s.domain) {
     const key = `${s.domain}/${s.subdomain ?? ''}`;
     if (seenDomains.has(key)) {
-      emit('blocking', 'skill_domain_duplicate', `${s.name} duplicates domain ${key} (also covered by ${seenDomains.get(key)})`, { name: s.name, domain: key });
+      emit(
+        'blocking',
+        'skill_domain_duplicate',
+        `${s.name} duplicates domain ${key} (also covered by ${seenDomains.get(key)})`,
+        { name: s.name, domain: key },
+      );
     } else {
       seenDomains.set(key, s.name);
     }
   }
   // references/ recommended for non-trivial skills (>3k tokens).
   if (tokens > 3000 && !existsSync(join(dir, 'references'))) {
-    emit('low', 'skill_references_missing', `${s.name}/references/ missing — large SKILL.md should split into references`, { name: s.name, tokens });
+    emit(
+      'low',
+      'skill_references_missing',
+      `${s.name}/references/ missing — large SKILL.md should split into references`,
+      { name: s.name, tokens },
+    );
   }
 }
 
 finish();
 
 function finish() {
-  for (const e of errors) process.stderr.write(JSON.stringify(e) + '\n');
+  for (const e of errors) process.stderr.write(`${JSON.stringify(e)}\n`);
   const fatal = errors.filter((e) => e.severity === 'blocking').length;
   if (fatal > 0) {
-    process.stderr.write(`skill-linter: ${fatal} blocking error(s); ${errors.length - fatal} other\n`);
+    process.stderr.write(
+      `skill-linter: ${fatal} blocking error(s); ${errors.length - fatal} other\n`,
+    );
     process.exit(1);
   }
   process.exit(0);

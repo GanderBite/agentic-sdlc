@@ -35,10 +35,20 @@ const TaskSummarySchema = z
       })
       .describe('Mechanical gates the reviewer runs after builders return.'),
     skills: z.array(z.string()).describe('Skill names the builder must Read on entry.'),
-    model: z.enum(['opus', 'sonnet', 'haiku']).describe('Per-task model override for the spawned builder.'),
-    estimate_tokens: z.number().int().positive().describe('Token estimate; informs budget enforcement.'),
-    depends_on: z.array(z.string()).describe('Task ids that must complete before this task is dispatched.'),
-    depends_on_contracts: z.array(z.string()).describe('Contract ids consumed; usually empty in v1 (§5.4).'),
+    model: z
+      .enum(['opus', 'sonnet', 'haiku'])
+      .describe('Per-task model override for the spawned builder.'),
+    estimate_tokens: z
+      .number()
+      .int()
+      .positive()
+      .describe('Token estimate; informs budget enforcement.'),
+    depends_on: z
+      .array(z.string())
+      .describe('Task ids that must complete before this task is dispatched.'),
+    depends_on_contracts: z
+      .array(z.string())
+      .describe('Contract ids consumed; usually empty in v1 (§5.4).'),
     max_attempts: z.number().int().min(1),
     on_fail: z.enum(['escalate', 'skip']),
   })
@@ -71,7 +81,9 @@ const StateSnapshotSchema = z.object({
 });
 
 export const ExecutionPlanSchema = z.object({
-  sprint_id: z.string().describe('Sprint id from `--sprint`; matches `.planning/sprints/<id>.json`.'),
+  sprint_id: z
+    .string()
+    .describe('Sprint id from `--sprint`; matches `.planning/sprints/<id>.json`.'),
   branch: z.string().describe('Sprint branch name created by `scripts/sprint-branch.sh`.'),
   feature_brief: z.string().describe('Path to the enriched feature brief used by the planner.'),
   waves: z
@@ -81,7 +93,9 @@ export const ExecutionPlanSchema = z.object({
   state: StateSnapshotSchema.describe('Snapshot of `.planning/state/<sprint>.json` at load time.'),
   next_wave_id: z
     .union([z.string(), z.null()])
-    .describe('First wave the wave-loop should attempt. Null only when every wave is already done.'),
+    .describe(
+      'First wave the wave-loop should attempt. Null only when every wave is already done.',
+    ),
   dry_run: z
     .boolean()
     .describe(

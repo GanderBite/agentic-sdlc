@@ -13,15 +13,9 @@ import { z } from '@ganderbite/relay-core';
  *   - `model` per task — `opus` for cross-cutting, `haiku` for mechanical.
  */
 const TargetFilesSchema = z.object({
-  create: z
-    .array(z.string())
-    .describe('Files the task is expected to create.'),
-  update: z
-    .array(z.string())
-    .describe('Files the task is expected to update.'),
-  remove: z
-    .array(z.string())
-    .describe('Files the task is expected to delete.'),
+  create: z.array(z.string()).describe('Files the task is expected to create.'),
+  update: z.array(z.string()).describe('Files the task is expected to update.'),
+  remove: z.array(z.string()).describe('Files the task is expected to delete.'),
   may_also_touch: z
     .array(z.string())
     .describe(
@@ -38,7 +32,9 @@ const VerificationCustomSchema = z.object({
 });
 
 const VerificationSchema = z.object({
-  tests: z.array(z.string()).describe('Test commands. Sourced from `build-graph.json` per-module or global.'),
+  tests: z
+    .array(z.string())
+    .describe('Test commands. Sourced from `build-graph.json` per-module or global.'),
   lint: z.array(z.string()).describe('Lint commands. Sourced from `build-graph.json`.'),
   build: z.array(z.string()).describe('Build commands. Empty when the change is test-only.'),
   files_exist: z
@@ -51,15 +47,15 @@ export const TaskSchema = z.object({
   id: z
     .string()
     .regex(/^task-[a-z0-9]+(?:-[a-z0-9]+)*$/i)
-    .describe('Stable id starting with `task-` followed by one or more `[a-z0-9]+` segments joined by `-`. Examples: `task-7f2a`, `task-api-skel`, `task-doctor-profile`.'),
+    .describe(
+      'Stable id starting with `task-` followed by one or more `[a-z0-9]+` segments joined by `-`. Examples: `task-7f2a`, `task-api-skel`, `task-doctor-profile`.',
+    ),
   title: z.string().describe('Human-readable summary, one sentence.'),
   description: z.string().describe('Detailed prose telling the builder what to do.'),
   context: z
     .array(z.string())
     .describe('References to `INTEL.md` / `ARCHITECTURE.md` sections relevant to this task.'),
-  references: z
-    .array(z.string())
-    .describe('Concrete file paths the builder should read on entry.'),
+  references: z.array(z.string()).describe('Concrete file paths the builder should read on entry.'),
   target_files: TargetFilesSchema.describe(
     'Expected scope buckets used by the §5.2 wave disjointness check (excluding `may_also_touch`).',
   ),
@@ -69,10 +65,14 @@ export const TaskSchema = z.object({
   skills: z
     .array(z.string())
     .max(4)
-    .describe('Skill names from `.claude/skills/INDEX.json`. Hard cap of 4 keeps builder context lean.'),
+    .describe(
+      'Skill names from `.claude/skills/INDEX.json`. Hard cap of 4 keeps builder context lean.',
+    ),
   model: z
     .enum(['opus', 'sonnet', 'haiku'])
-    .describe('Per-task model: `opus` for cross-cutting/architectural, `haiku` for mechanical, `sonnet` default.'),
+    .describe(
+      'Per-task model: `opus` for cross-cutting/architectural, `haiku` for mechanical, `sonnet` default.',
+    ),
   estimate_tokens: z
     .number()
     .int()
@@ -80,7 +80,9 @@ export const TaskSchema = z.object({
     .describe('Token estimate adjusted by `estimation_priors.json` multipliers (§5.5).'),
   depends_on: z
     .array(z.string())
-    .describe('Task ids this task depends on. Must NOT contain other ids inside the same wave (§5.2 invariant 1).'),
+    .describe(
+      'Task ids this task depends on. Must NOT contain other ids inside the same wave (§5.2 invariant 1).',
+    ),
   depends_on_contracts: z
     .array(z.string())
     .describe('Contract ids this task consumes. Usually empty in v1; see §5.4.'),
@@ -91,10 +93,14 @@ export const TaskSchema = z.object({
     .describe('Retry envelope for the builder (§9). Typically 1 or 2.'),
   on_fail: z
     .enum(['escalate', 'skip'])
-    .describe('Policy after `max_attempts` is reached. `escalate` blocks the wave; `skip` continues.'),
+    .describe(
+      'Policy after `max_attempts` is reached. `escalate` blocks the wave; `skip` continues.',
+    ),
   status: z
     .enum(['todo', 'in_progress', 'done', 'blocked', 'failed'])
-    .describe('Lifecycle status. `todo` at planning time; runtime mutates this in `.planning/state/*`.'),
+    .describe(
+      'Lifecycle status. `todo` at planning time; runtime mutates this in `.planning/state/*`.',
+    ),
   attempts: z
     .array(z.unknown())
     .describe('Runtime log appended by the wave-runner; empty at planning time.'),

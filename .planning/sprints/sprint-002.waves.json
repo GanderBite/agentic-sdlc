@@ -1,0 +1,99 @@
+{
+  "waves": [
+    {
+      "id": "wave-1",
+      "kind": "build",
+      "tasks": ["task-workspace", "task-docker"],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "done"
+    },
+    {
+      "id": "wave-2",
+      "kind": "build",
+      "tasks": ["task-contracts"],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "done"
+    },
+    {
+      "id": "wave-3",
+      "kind": "build",
+      "tasks": ["task-api-pkg"],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "done"
+    },
+    {
+      "id": "wave-4",
+      "kind": "build",
+      "tasks": ["task-shared"],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "done"
+    },
+    {
+      "id": "wave-5",
+      "kind": "build",
+      "tasks": ["task-db-schema", "task-middleware", "task-auth-throttle"],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "done"
+    },
+    {
+      "id": "wave-6",
+      "kind": "build",
+      "tasks": ["task-auth-service", "task-seed"],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "done"
+    },
+    {
+      "id": "wave-7",
+      "kind": "build",
+      "tasks": ["task-auth-routes", "task-api-readme"],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "done"
+    },
+    {
+      "id": "wave-8",
+      "kind": "build",
+      "tasks": ["task-app"],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "done"
+    },
+    {
+      "id": "wave-9",
+      "kind": "build",
+      "tasks": ["task-test-support"],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "done"
+    },
+    {
+      "id": "wave-10",
+      "kind": "build",
+      "tasks": [
+        "task-test-auth-login",
+        "task-test-auth-refresh",
+        "task-test-auth-session",
+        "task-test-csrf",
+        "task-test-log-redaction",
+        "task-test-seed"
+      ],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "done"
+    },
+    {
+      "id": "wave-smoke",
+      "kind": "review",
+      "tasks": ["task-smoke"],
+      "token_budget": 10000,
+      "max_parallelism": 1,
+      "status": "done"
+    }
+  ]
+}

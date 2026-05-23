@@ -65,6 +65,8 @@ all libraries are latest stable versions
 - simplified auth - no sign up. Patients and Doctors will be seeded to the database
 - once scheduled appointment is final, it cannot be canceled or rescheduled
 - no in-app notifications
+- no UI unit tests / integration tests
+- no e2e testing
 
 ## UI
 
@@ -81,3 +83,10 @@ user must pick
 - share medical documents (user picks which documents to share)
 - confirm step (user must confirm the appointment details before submitting)
 - appointment is scheduled
+
+## Testing
+
+Only for app/api
+
+- unit testing
+- integration testing

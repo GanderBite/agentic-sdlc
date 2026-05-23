@@ -1,0 +1,75 @@
+{
+  "wave_id": "wave-3",
+  "tasks": [
+    {
+      "task_id": "task-api-pkg",
+      "gates": [
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/package.json",
+          "exit": 0,
+          "duration_ms": 2,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/tsconfig.json",
+          "exit": 0,
+          "duration_ms": 2,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/drizzle.config.ts",
+          "exit": 0,
+          "duration_ms": 2,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/vitest.config.ts",
+          "exit": 0,
+          "duration_ms": 2,
+          "flake_retries": 0
+        },
+        {
+          "kind": "files_exist",
+          "cmd": "apps/api/vitest.integration.config.ts",
+          "exit": 0,
+          "duration_ms": 2,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "node -e \"const p=require('./apps/api/package.json'); const d={...p.dependencies,...p.devDependencies}; const need=['hono','drizzle-orm','pg','zod','argon2','jose','pino','drizzle-kit','vitest','@testcontainers/postgresql']; const miss=need.filter(n=>!d[n]); process.exit(miss.length===0?0:1)\"",
+          "exit": 0,
+          "duration_ms": 48,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "node -e \"const p=require('./apps/api/package.json'); process.exit(p.dependencies && p.dependencies['@medbridge/contracts'] && p.dependencies['@medbridge/contracts'].startsWith('workspace:') ? 0 : 1)\"",
+          "exit": 0,
+          "duration_ms": 37,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet 'postgresql' apps/api/drizzle.config.ts",
+          "exit": 0,
+          "duration_ms": 12,
+          "flake_retries": 0
+        },
+        {
+          "kind": "custom",
+          "cmd": "rg --quiet 'resolveJsonModule' apps/api/tsconfig.json",
+          "exit": 0,
+          "duration_ms": 5,
+          "flake_retries": 0
+        }
+      ],
+      "verdict": "pass"
+    }
+  ],
+  "verdict": "pass"
+}

@@ -1,0 +1,163 @@
+{
+  "verdict": "pass",
+  "bullets_total": 13,
+  "bullets_covered": 13,
+  "coverage": [
+    {
+      "bullet": "`pnpm -r build` emits an `apps/ui/dist/` bundle and `docker compose up ui` serves `index.html` on the configured UI port via nginx.",
+      "task_ids": [
+        "task-ui-docker",
+        "task-ui-scaffold"
+      ],
+      "gates": [
+        "rg --quiet 'nginx' apps/ui/Dockerfile",
+        "rg --quiet 'try_files' apps/ui/nginx.conf",
+        "rg --quiet 'proxy_pass' apps/ui/nginx.conf",
+        "rg --quiet '^\\s*ui:' docker-compose.yml",
+        "rg --quiet 'apps/ui/Dockerfile' docker-compose.yml",
+        "docker compose -f docker-compose.yml config -q",
+        "rg --quiet 'UI_PORT' .env.example"
+      ]
+    },
+    {
+      "bullet": "Navigating to `/login` renders an accessible email/password form (every input has a programmatic `<label>` and visible focus ring).",
+      "task_ids": [
+        "task-ui-login-route",
+        "task-ui-tailwind-shadcn"
+      ],
+      "gates": [
+        "rg --quiet 'zodResolver' apps/ui/src/features/login/LoginForm.tsx",
+        "rg --quiet 'loginRequest' apps/ui/src/features/login/LoginForm.tsx",
+        "rg --quiet 'FormMessage' apps/ui/src/components/ui/form.tsx"
+      ]
+    },
+    {
+      "bullet": "Submitting `/login` with valid seeded credentials navigates to `/dashboard` and `GET /api/me` succeeds on the next request thanks to the cookies set by the login response.",
+      "task_ids": [
+        "task-ui-login-route",
+        "task-ui-api-client",
+        "task-ui-auth-hooks"
+      ],
+      "gates": [
+        "rg --quiet 'useLogin' apps/ui/src/features/login/LoginForm.tsx",
+        "rg --quiet '/api/login' apps/ui/src/api",
+        "rg --quiet '/api/me' apps/ui/src/api",
+        "rg --quiet \"credentials:\\s*'include'\" apps/ui/src/api/client.ts",
+        "rg --quiet 'useMe' apps/ui/src/api/queries/me.ts"
+      ]
+    },
+    {
+      "bullet": "Submitting `/login` with invalid credentials renders an inline error region with `role=\"alert\"` and does not navigate away.",
+      "task_ids": [
+        "task-ui-login-route"
+      ],
+      "gates": [
+        "rg --quiet 'role=\"alert\"' apps/ui/src/features/login/LoginForm.tsx"
+      ]
+    },
+    {
+      "bullet": "Visiting `/dashboard` without a valid session redirects to `/login`.",
+      "task_ids": [
+        "task-ui-protected-shell"
+      ],
+      "gates": [
+        "rg --quiet 'beforeLoad' apps/ui/src/routes/__protected.tsx",
+        "rg --quiet 'ensureQueryData' apps/ui/src/routes/__protected.tsx",
+        "rg --quiet 'redirect' apps/ui/src/routes/__protected.tsx",
+        "rg --quiet \"to:\\s*'/login'\" apps/ui/src/routes/__protected.tsx"
+      ]
+    },
+    {
+      "bullet": "The typed client retries a 401 response from any non-auth endpoint exactly once via `POST /api/refresh` and replays the original request on success.",
+      "task_ids": [
+        "task-ui-api-client"
+      ],
+      "gates": [
+        "rg --quiet '/api/refresh' apps/ui/src/api",
+        "rg --quiet \"credentials:\\s*'include'\" apps/ui/src/api/client.ts",
+        "pnpm -w typecheck"
+      ]
+    },
+    {
+      "bullet": "The logout button issues `POST /api/logout`, clears in-memory auth state, and returns the user to `/login`.",
+      "task_ids": [
+        "task-ui-protected-shell",
+        "task-ui-auth-hooks",
+        "task-ui-api-client"
+      ],
+      "gates": [
+        "rg --quiet 'useLogout' apps/ui/src/features/auth/LogoutButton.tsx",
+        "rg --quiet 'useLogout' apps/ui/src/api/mutations/logout.ts",
+        "rg --quiet 'invalidateQueries' apps/ui/src/api/mutations/logout.ts",
+        "rg --quiet '/api/logout' apps/ui/src/api"
+      ]
+    },
+    {
+      "bullet": "The typed client targets the existing plain `/api/<verb>` paths (`/api/login`, `/api/refresh`, `/api/logout`, `/api/me`); the future `/api/auth.<verb>` rename (open debt F-202) is deferred to a later sprint.",
+      "task_ids": [
+        "task-ui-api-client"
+      ],
+      "gates": [
+        "rg --quiet '/api/login' apps/ui/src/api",
+        "rg --quiet '/api/refresh' apps/ui/src/api",
+        "rg --quiet '/api/logout' apps/ui/src/api",
+        "rg --quiet '/api/me' apps/ui/src/api"
+      ]
+    },
+    {
+      "bullet": "Auth state is read exclusively from the TanStack Query cache via a `useMe()` hook backed by `useQuery({ queryKey: ['auth','me'], queryFn: api.me })`; no React Context, Zustand, or other parallel store is introduced.",
+      "task_ids": [
+        "task-ui-auth-hooks"
+      ],
+      "gates": [
+        "rg --quiet \"queryKey:\\s*\\[\\s*'auth'\\s*,\\s*'me'\\s*\\]\" apps/ui/src/api/queries/me.ts",
+        "rg --quiet 'useMe' apps/ui/src/api/queries/me.ts"
+      ]
+    },
+    {
+      "bullet": "When two or more requests fail with 401 concurrently, exactly one `POST /api/refresh` is issued; concurrent failures await the same in-flight promise and replay their original request on success (single-flight coalescing in the typed client).",
+      "task_ids": [
+        "task-ui-api-client"
+      ],
+      "gates": [
+        "rg --quiet '/api/refresh' apps/ui/src/api",
+        "rg --quiet 'X-CSRF-Token' apps/ui/src/api/client.ts",
+        "pnpm -w typecheck"
+      ]
+    },
+    {
+      "bullet": "The protected-route shell is implemented as a TanStack Router `__protected` layout route whose `beforeLoad` calls `queryClient.ensureQueryData({ queryKey: ['auth','me'], queryFn: api.me })` and `throw redirect({ to: '/login', search: { redirect: location.pathname + location.search } })` when the call fails with 401.",
+      "task_ids": [
+        "task-ui-protected-shell"
+      ],
+      "gates": [
+        "rg --quiet 'beforeLoad' apps/ui/src/routes/__protected.tsx",
+        "rg --quiet 'ensureQueryData' apps/ui/src/routes/__protected.tsx",
+        "rg --quiet 'redirect' apps/ui/src/routes/__protected.tsx",
+        "rg --quiet \"to:\\s*'/login'\" apps/ui/src/routes/__protected.tsx"
+      ]
+    },
+    {
+      "bullet": "After successful login, the app navigates to the `redirect` search param when present (URL-decoded, same-origin path only) and falls back to `/dashboard` otherwise.",
+      "task_ids": [
+        "task-ui-login-route"
+      ],
+      "gates": [
+        "rg --quiet 'redirect' apps/ui/src/routes/login.tsx",
+        "rg --quiet 'validateSearch' apps/ui/src/routes/login.tsx"
+      ]
+    },
+    {
+      "bullet": "The logout button optimistically invalidates the `['auth','me']` query, clears any cached auth data, and navigates to `/login` regardless of whether `POST /api/logout` resolves or rejects (errors are logged, not surfaced).",
+      "task_ids": [
+        "task-ui-auth-hooks",
+        "task-ui-protected-shell"
+      ],
+      "gates": [
+        "rg --quiet 'invalidateQueries' apps/ui/src/api/mutations/logout.ts",
+        "rg --quiet 'useLogout' apps/ui/src/features/auth/LogoutButton.tsx"
+      ]
+    }
+  ],
+  "gaps": []
+}

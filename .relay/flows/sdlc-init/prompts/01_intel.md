@@ -25,11 +25,21 @@ Build the complete intel surface for this repository per AGENTIC_SDLC.md §4.1:
 </procedure>
 
 <rules>
-- Never invent a command. If `package.json` has no `lint` script, omit `lint` from `build-graph.global` and note it in `conventions.md`.
+- Never invent a command. If the project's manifests do not declare a lint runner (no `lint` script in `package.json`, no `[tool.ruff]` block in `pyproject.toml`, no `.golangci.yml`, etc.), omit `lint` from `build-graph.global` and note its absence in `conventions.md`. Same rule applies to test / build / typecheck commands — every command in `build-graph.json` must be derivable from a manifest the project actually has.
 - Never speculate about modules that do not exist on disk.
 - Cap `INTEL.md` at ~5k tokens. Push depth into `.planning/intel/` files.
 - On a fresh repo (no source files), write minimal valid stubs for every intel file so downstream steps can read them.
 </rules>
+
+<verification>
+MANDATORY before submitting the handoff. The downstream `verify-intel` gate (`scripts/assert-handoff-files.sh`) mechanically re-checks every path in `files_written` — a missing or stub file aborts the run and wastes this prompt's entire token budget.
+
+1. For every path you intend to put in `files_written`, call `Write` with the actual content. Do not "plan" file content — write it.
+2. After each Write, call `Read` on the same path to confirm the file landed with substantive content (not empty, not a placeholder). Major docs (`docs/INTEL.md`, `.planning/intel/modules.json`, `build-graph.json`) MUST be ≥ 256 bytes; smaller is a stub.
+3. Only after every claimed file passes Write + Read-back, submit the handoff. The handoff is a RECORD of work done, not a PLAN.
+
+If a required Write fails, submit a handoff with `files_written` reflecting only what landed — do not lie about absent files.
+</verification>
 
 <output_format>
 Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
@@ -37,9 +47,9 @@ Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
 {
   "intel_md_path": "docs/INTEL.md",
   "modules_count": 0,
-  "languages": ["typescript"],
-  "package_manager": "pnpm",
-  "test_runner": "vitest",
+  "languages": ["<primary-language>"],
+  "package_manager": "<package-manager>",
+  "test_runner": "<test-runner-or-null>",
   "fresh_repo": true,
   "snapshot_sha": "INIT",
   "files_written": [

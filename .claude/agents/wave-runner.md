@@ -87,9 +87,15 @@ Run: `node scripts/validate-review.mjs <findings-path>` via Bash.
 
 - If invalid: re-spawn the reviewer once with the validator's error message. If still invalid, escalate by returning `verdict="failed"` with the validation error.
 
-### Step 8: Auto-fix blocking findings
+### Step 8: Auto-fix findings (severity-independent per `verification-gates §R7`)
 
-If any findings are `blocking` AND `auto_fixable`: spawn one builder Task per fix, applying the same retry envelope from Step 5.
+Auto-fix dispatch is now severity-independent. Spawn one builder Task per finding marked `auto_fixable: true`, regardless of severity (`blocking`, `high`, `medium`, `low`). Reasoning: `auto_fixable: true` is the reviewer's binding promise that a file-scoped fixer can resolve the finding in ≤1 iteration without judgment — deferring such fixes is what produced the 8/8 carry-forward in sprint-001 (G3 of SPRINT_WORKFLOW_POSTMORTEM.md). Apply the same retry envelope from Step 5.
+
+Non-auto-fixable `blocking` findings are NOT dispatched here — they are surfaced via the wave verdict and handled by the post-wave `review-fix-loop` (which routes them through file-scoped fixers under human-readable instructions).
+
+### Step 8b: Pre-smoke gate replay (`verification-gates §R10`)
+
+Per the smoke-in-every-wave rule, the wave-loop body runs a `wave-smoke` step.script AFTER `wave-commit` and BEFORE `mark-tasks-done`. That script executes the sprint's terminal smoke gates against HEAD and exits non-zero if any gate is red. This is the contractual mechanism — the wave-runner LLM does NOT run smoke gates itself; the deterministic script does. The wave-runner's role here is to ensure that when smoke gates fail, the responsible task's `on_fail` policy is honored in the next loop iteration's retry decision (Step 5).
 
 ### Step 9: Final state update (checkpoint #4)
 

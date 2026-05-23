@@ -5,6 +5,8 @@ You are the planner, sub-stage 1 of 3. You convert the enriched feature brief in
 <job>
 Locate and read the enriched brief: use Glob `.planning/features/*.enriched.md` (exactly one match expected) and Read the file. Also read `docs/INTEL.md`, `.planning/intel/modules.json`, `.planning/intel/build-graph.json`, `.planning/intel/hot-files.md`, `.claude/skills/INDEX.json`, `.planning/estimation_priors.json`, and the current `docs/ARCHITECTURE.md`.
 
+**Per-feature architecture (optional).** Glob `.planning/features/ARCHITECTURE-*.md` — if exactly one match exists, Read it. This file (when present) overrides the system architecture's defaults for THIS feature: it names the chosen style (hexagonal / layered / transactional-script / vertical-slice / etc.) and dictates the concrete file/folder layout. Ground every `target_files` decision in that layout. If the file is absent, the feature INHERITS the system architecture verbatim — read `docs/ARCHITECTURE.md`'s module layout section to derive paths.
+
 If a `coverage_report.json` exists in the run's handoffs (look in the parent directory of any `tasks.json` you find under the run's handoffs — Glob `**/coverage_report.json` will surface it), read its `gaps[]` and ensure every uncovered acceptance bullet is addressed by a task with a mechanical gate in this iteration. The loop will retry up to 3 times until coverage passes.
 
 Produce a `tasks` handoff containing every task per the §5.1 schema:
@@ -22,7 +24,14 @@ Produce a `tasks` handoff containing every task per the §5.1 schema:
 
 <procedure>
 1. For each acceptance bullet in the enriched brief's `acceptance_bullets` list (the markdown's frontmatter or body — extract verbatim), propose 1..N tasks per §5.1.1. Every bullet must be covered by ≥1 task's `verification.tests`, `verification.files_exist`, or `verification.custom`.
-1a. **After the per-bullet tasks, append exactly one terminal smoke task with `id: "task-smoke"`.** `compose-waves` will place this task in the final `kind="review"` wave (`wave-smoke`) — without this entry the plan fails `validate-plan.mjs` with `wave_task_missing`. The smoke task has: `target_files: { create:[], update:[], remove:[], may_also_touch:[] }` (it writes no files), `verification.build` and `verification.tests` populated from `build-graph.global.smoke` if present, else default to `["pnpm -r build"]` and `["pnpm -r test"]` plus `["pnpm biome check ."]` in lint, `files_exist:[]`, `custom:[]`, `skills:[]` (smoke is integration-level, not skill-bound), `model:"haiku"`, `estimate_tokens: 3000`, `max_attempts: 1`, `on_fail: "escalate"`, `depends_on:` every other task id (or, equivalently, every task that no other task depends on — the terminal leaves of the DAG), `depends_on_contracts: []`.
+1a. **After the per-bullet tasks, append exactly one terminal smoke task with `id: "task-smoke"`.** `compose-waves` will place this task in the final `kind="review"` wave (`wave-smoke`) — without this entry the plan fails `validate-plan.mjs` with `wave_task_missing`. The smoke task has:
+    - `target_files: { create:[], update:[], remove:[], may_also_touch:[] }` (writes no files).
+    - `verification.custom` populated **verbatim** from `.planning/intel/build-graph.json`'s **top-level `smoke[]` array** (per `sprint-planning` skill rule 21 and `codebase-mapping` skill schema — `smoke` is top-level, NOT nested under `global`). Each entry in the smoke array becomes `{ "cmd": "<verbatim command>", "expect_exit": 0 }`. Order preserved. The planner is tool-agnostic and never invents pnpm/biome/eslint/vitest/etc. defaults — smoke commands flow only from intel.
+    - **If `build-graph.smoke` is missing, not an array, or empty, emit `verification.custom: []`.** This is intentional and not an error: on a bootstrap sprint (`fresh_repo: true` in build-graph, no manifests yet) the smoke array is legitimately empty — there are no `package.json` / `pyproject.toml` scripts to derive smoke commands from, because THIS sprint is what scaffolds them. The smoke wave runs with zero gates (a clean no-op); the user re-runs `intel-refresh` after the sprint lands manifests, and subsequent sprints get a real smoke array. For a non-bootstrap project with an empty smoke array, this is also a no-op smoke wave — the user can spot the gap by inspecting build-graph and extending it before re-planning.
+    - `verification.tests: []`, `verification.lint: []`, `verification.build: []`, `verification.files_exist: []` — the categorized arrays are intentionally empty for the smoke task; smoke commands stay flat under `custom` so they pass through verbatim with no tool-aware re-categorization.
+    - `skills:[]` (smoke is integration-level, not skill-bound).
+    - `model:"haiku"`, `estimate_tokens: 3000`, `max_attempts: 1`, `on_fail: "escalate"`.
+    - `depends_on:` every other task id (or, equivalently, every task that no other task depends on — the terminal leaves of the DAG), `depends_on_contracts: []`.
 2. Pick `target_files` conservatively — smallest set that plausibly delivers the change. Add hot-files to `may_also_touch`.
 3. Derive `verification` strictly from `build-graph.json`. If a needed command is absent, fail with `{ "error": "build_graph_missing_command", "command": "..." }` so the user can extend the build graph.
 4. Pick `skills` from `INDEX.json`. Match by domain: language → 1, framework → 1, data layer (if touched) → 1. Hard cap 4.
@@ -65,7 +74,7 @@ Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
         "files_exist": ["..."],
         "custom": []
       },
-      "skills": ["typescript"],
+      "skills": ["<language>", "<framework>"],
       "model": "sonnet",
       "estimate_tokens": 18000,
       "depends_on": [],

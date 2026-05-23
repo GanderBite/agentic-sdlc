@@ -26,11 +26,15 @@ const CoverageEntrySchema = z.object({
 const GapEntrySchema = z.object({
   bullet: z
     .string()
-    .describe('Acceptance bullet with zero gate coverage. Surfaces a planner mistake to the human.'),
+    .describe(
+      'Acceptance bullet with zero gate coverage. Surfaces a planner mistake to the human.',
+    ),
   reason: z
     .string()
     .optional()
-    .describe('Optional explanation for why coverage is missing (e.g. "no matching test command").'),
+    .describe(
+      'Optional explanation for why coverage is missing (e.g. "no matching test command").',
+    ),
 });
 
 export const CoverageReportSchema = z.object({
@@ -47,7 +51,9 @@ export const CoverageReportSchema = z.object({
     .int()
     .nonnegative()
     .describe('Number of bullets with ≥1 gate. Always ≤ `bullets_total`.'),
-  coverage: z.array(CoverageEntrySchema).describe('Per-bullet coverage entries; empty when verdict is `fail`.'),
+  coverage: z
+    .array(CoverageEntrySchema)
+    .describe('Per-bullet coverage entries; empty when verdict is `fail`.'),
   gaps: z
     .array(GapEntrySchema)
     .describe('Bullets without gate coverage. Empty on `verdict: "pass"`.'),

@@ -26,8 +26,8 @@ Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
 
 {
   "index_path": ".claude/skills/INDEX.json",
-  "skills_authored": ["typescript", "react"],
-  "skills_skipped_existing": ["version-control"],
+  "skills_authored": ["<skill-name-1>", "<skill-name-2>"],
+  "skills_skipped_existing": ["<existing-skill>"],
   "skills_failed": []
 }
 </output_format>

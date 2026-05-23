@@ -35,16 +35,28 @@ The architecture is in `<context name="architecture">`. The brief is in `<contex
 - Reuse the existing process skills already in `.claude/skills/INDEX.json` — do not propose duplicates of `version-control`, `verification-gates`, etc.
 </rules>
 
+<verification>
+MANDATORY before submitting the handoff. The downstream `verify-tech-stack` gate mechanically re-checks `tech_stack_path` — a missing or stub file aborts the run.
+
+1. Call `Write docs/TECH_STACK.md` with the full stack document (all 10 sections). Do not "plan" — write it.
+2. Call `Read docs/TECH_STACK.md` to confirm it landed. MUST be ≥ 1024 bytes.
+3. Only after Write + Read-back pass, submit the handoff.
+
+The handoff is a RECORD of work done, not a PLAN.
+</verification>
+
 <output_format>
 Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
 
+**The example values below are placeholders** — fill each field from the stack YOU just picked above for THIS project. Do not pattern-match on the placeholder values; a Python+FastAPI+pytest project would produce `"languages": ["python"]`, `"runtime": "python@3.13"`, `"package_manager": "uv"`, `"test_runner": "pytest"`, `"linter": "ruff"`, `"skills_to_author": ["python", "fastapi", "sqlalchemy", "pytest", "unit-testing", "api-integration-testing", "security-testing"]`. A Go project produces a different set again. The `*-testing` strategy skill names ARE stable across stacks; everything else is project-specific.
+
 {
   "tech_stack_path": "docs/TECH_STACK.md",
-  "languages": ["typescript"],
-  "runtime": "node@22",
-  "package_manager": "pnpm",
-  "test_runner": "vitest",
-  "linter": "biome",
-  "skills_to_author": ["typescript", "react", "hono", "vitest", "unit-testing", "api-integration-testing", "frontend-testing", "security-testing"]
+  "languages": ["<primary-language>"],
+  "runtime": "<runtime>@<version>",
+  "package_manager": "<package-manager>",
+  "test_runner": "<test-runner>",
+  "linter": "<linter>",
+  "skills_to_author": ["<language-skill>", "<framework-skill>", "<orm-or-data-skill>", "<test-runner-skill>", "unit-testing", "api-integration-testing", "frontend-testing", "security-testing"]
 }
 </output_format>

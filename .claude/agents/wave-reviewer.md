@@ -36,17 +36,35 @@ You receive:
    - Read the file using the Read tool.
    - Apply all checks defined by your loaded skills (security, architecture, performance, duplication, style).
    - Generate findings with appropriate severity. **Severity is the 5-tier scheme from §10.2: `blocking | high | medium | low | info`.** See the `code-reviewing` skill's `references/severity-rubric.md` for the per-category rubric.
+   - **`auto_fixable` is a binding contract** (`verification-gates §R7`). Mark a finding `auto_fixable: true` ONLY when you are confident a file-scoped fixer Task can resolve it in ≤1 iteration without exercising judgment — typically: trivial syntactic drift the loaded skill's Builder protocol could have caught, missing imports the language tooling auto-resolves, scope-drift formatting, or removal of a clearly-redundant pattern. NEVER mark architectural / semantic findings auto-fixable — those need human judgment.
+   - **Record `first_seen_iteration`** on every finding. The default is the current iteration; if this finding (same `category` + same `file` + same `line` if present) appears in the previous `findings-review-iter-*.json` for this sprint, carry that earlier iteration index forward.
 5. Cross-check changed files against `task.target_files`:
    - Any file edited that is NOT in `create`, `update`, or `may_also_touch` produces an **info-severity** finding (scope drift signal).
 6. Cross-check against `ARCHITECTURE.md`:
    - Detect layering violations (e.g., domain layer importing from infrastructure).
    - Emit findings with severity proportional to architectural impact.
 
+## Phase 2.5 — Recurrence escalation (verification-gates §R7.3)
+
+7. After authoring `findings-{wave_id}.json`, walk every finding with `auto_fixable: true`. For each:
+   - If `first_seen_iteration < current_iteration` AND that prior occurrence was ALSO `auto_fixable: true`, **upgrade severity to `blocking`** and set `meta.escalated: true` + `meta.escalation_reason: "auto_fixable finding recurred across iterations — the fixer is failing silently OR the underlying skill's Builder protocol does not cover this case"`.
+   - Rationale: an auto-fixable finding that survives a fixer dispatch is a PROJECT bug (broken protocol, brittle fixer prompt, or mis-classified finding), not finding noise. Surfacing it as blocking forces the review-fix-loop to keep iterating AND the retro to flag the skill/protocol pair.
+
 ## Output Files
 
 You MUST emit exactly two structured JSON files per wave:
 - `review-{wave_id}.json` — mechanical results (schema §10.1)
 - `findings-{wave_id}.json` — audit results (schema §10.2)
+
+Additionally, you MUST append to the sprint-local **do-not-recur digest** at `.planning/reviews/sprint-{sprint_id}/do-not-recur.md`. Closes G5 of SPRINT_WORKFLOW_POSTMORTEM.md.
+
+- For EVERY finding you emitted (excluding `info` severity), append one line in this exact format (tool-agnostic — pattern descriptions are project-meaningful but never tool-specific syntax):
+  ```
+  [<severity>] <short pattern description> — auto_fixable=<true|false> — first_seen=<wave_id|review-iter-<n>>
+  ```
+- Create the parent directory (`.planning/reviews/sprint-{sprint_id}/`) if missing.
+- **Dedupe before appending.** Read the existing digest first; if a line with the same `<short pattern description>` (case-insensitive) already exists, do NOT append a duplicate — that line already serves its purpose. If the existing entry has a HIGHER `<first_seen>` than this occurrence's, update it (recurrence count is tracked implicitly via the wave_id chain).
+- The digest is **read by every subsequent task-builder in this sprint** (per `.claude/agents/task-builder.md` step 4) and **read by the planner of the NEXT sprint** (per `sprint-planning/SKILL.md` Rule 22). Keep entries short — one line, pattern-shaped, no source quotes.
 
 Use the Write tool only via Bash redirection if Write is unavailable; otherwise document that Write is not in your tool list and surface the JSON via stdout in a clearly delimited block. (Note: your tools are Read, Bash, Glob, Grep — use Bash with `cat > file.json <<EOF` heredocs to write outputs.)
 

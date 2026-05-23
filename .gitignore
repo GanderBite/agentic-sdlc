@@ -46,3 +46,9 @@ Thumbs.db
 *.pid
 *.pid.lock
 *.seed
+
+# Uploads (bind-mounted volume; not committed)
+uploads/
+
+# Turbo cache
+.turbo/

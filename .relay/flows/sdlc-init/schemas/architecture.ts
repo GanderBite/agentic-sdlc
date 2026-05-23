@@ -15,10 +15,14 @@ export const ArchitectureSchema = z.object({
     .describe('Path to the committed architecture document, normally `docs/ARCHITECTURE.md`.'),
   style: z
     .enum(['monolith', 'modular-monolith', 'service-oriented', 'serverless'])
-    .describe('The chosen architecture style. Reject premature complexity unless the brief requires it.'),
+    .describe(
+      'The chosen architecture style. Reject premature complexity unless the brief requires it.',
+    ),
   primary_datastore: z
     .enum(['postgres', 'sqlite', 'mysql', 'dynamodb', 'none', 'other'])
-    .describe('Primary datastore. "none" for stateless services; "other" only with a justification in the doc.'),
+    .describe(
+      'Primary datastore. "none" for stateless services; "other" only with a justification in the doc.',
+    ),
   decisions_count: z
     .number()
     .int()

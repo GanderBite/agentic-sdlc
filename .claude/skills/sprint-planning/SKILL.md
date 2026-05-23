@@ -17,7 +17,7 @@ Full annotated schemas live in [`references/schemas.md`](references/schemas.md).
 
 Numbered, imperative, individually verifiable. Mirrors `scripts/validate-plan.mjs` (§19.1).
 
-1. Derive `task.verification` strictly from `build-graph.json`. NEVER invent commands. Missing command → abort with `step.ask` to extend the graph.
+1. Derive `task.verification` strictly from `build-graph.json` OR from a loaded skill's `## Verification recipe` section (see Rule 18 / `verification-gates §R6.2`). NEVER invent commands. Missing command → abort with `step.ask` to extend the graph.
 2. Reference skills only from `.claude/skills/INDEX.json`. NEVER name a skill not in the registry.
 3. Cap `task.skills` at 4 entries.
 4. Pick `task.model` per the rule in **Derivation procedure** step 4. Exhaustive enum: `opus | sonnet | haiku`.
@@ -34,6 +34,22 @@ Numbered, imperative, individually verifiable. Mirrors `scripts/validate-plan.mj
 15. Every acceptance bullet MUST map to ≥1 `task.verification` gate. Emit `coverage_report`; uncovered → abort.
 16. Every enforced `wave_invariant_hints` entry (§11.3) MUST be satisfied. Re-prompt on violation.
 17. NEVER set `on_fail: skip` unless the task is tagged `optional: true`.
+
+### Rules 18–21 — plan-time validation of generated artifacts (closes G4 of SPRINT_WORKFLOW_POSTMORTEM.md)
+
+18. **Skill-published `Verification recipe` gates are allowed (R4c).** For every skill in `task.skills`, read `.claude/skills/<skill>/SKILL.md` and look for a `## Verification recipe` section. If present, merge its declared gates into `task.verification`. The recipe author has guaranteed every first token resolves to an entry in `build-graph.json → tools` or to a project-wide built-in (`pnpm`, `rg`, `node`, `bash`), so Rule 1 still holds. This is the ONLY way the planner may emit a gate not literally present in `build-graph.json`.
+
+19. **Custom regex gates must be satisfiable (R4a).** For every entry in `task.verification.custom` whose `cmd` invokes `rg` or `grep` with a regex, the planner MUST do the following BEFORE emitting `tasks.json`:
+   - Construct a sample line consistent with the acceptance bullet the gate covers (e.g., for "the schema declares `findUserById`", a sample line `export function findUserById(id: string)`).
+   - Pipe that line through the gate's regex via `printf '...' | rg --quiet '<pattern>'`. Confirm the exit code matches `expect_exit`.
+   - If the regex cannot match the sample line, the regex is unsatisfiable — abort planning with a diagnostic naming the gate and the acceptance bullet. Do NOT emit the plan.
+   - **Concrete: anchor patterns to the JSON value, not the raw file.** When verifying a parsed value (e.g. `packageManager` in `package.json`), the gate MUST parse the JSON and assert the value — `{ "cmd": "node -e '...' ", "expect_exit": 0 }` — never a hand-rolled regex over the raw text. The wave-1 block in sprint-001 (`^packageManager\":\s*\"pnpm@10` — no leading `"`) traces directly to this rule's absence.
+
+20. **Acceptance-bullet symbols MUST be coverable by `target_files` (R4b).** For every `acceptance_bullet` mentioning an identifier (function/method/class/constant name in CamelCase, camelCase, snake_case, or SCREAMING_SNAKE), the file that defines that identifier MUST appear in some task's `target_files.{create,update}` (creating the symbol) OR `target_files.may_also_touch` (extending an existing file). Cross-check by grepping the existing codebase for the identifier: if it exists, the holder file MUST be in `update` or `may_also_touch`; if it doesn't, the planner MUST create a `create` entry for the file that will hold the new definition AND the file(s) any acceptance-listed caller relies on. The `task-auth-service` wave-7 block in sprint-001 (service needed `repo.findUserById` but `target_files` only permitted `service.ts`) traces directly to this rule's absence.
+
+21. **Lint / format / build gate scope MUST match `target_files` (R4d, mirrors `verification-gates §R9`).** Forbidden: emitting `pnpm -r lint`, `pnpm -r build`, `pnpm -r typecheck`, `biome check apps packages`, or any other repo-root-scoped gate when `task.target_files` is package-scoped (i.e., not empty and not all repo-root-level). The default scope is the union of workspace packages whose `package.json` directory is the longest prefix of any path in `task.target_files.{create,update,remove}`. Emit one filtered command per touched package (`pnpm --filter <pkg> lint`). The smoke wave is the SOLE exception — its commands come from `build-graph.json → smoke` verbatim and are expected to be repo-wide.
+
+22. **Common-pitfalls cross-check.** Before emitting `tasks.json`, consult `references/common-pitfalls.md` and, if it exists, `.planning/reviews/sprint-<id>/do-not-recur.md`. Each task's `description` MUST be inspected against the listed pitfall patterns; matching patterns are appended to `task.context.do_not_recur` so the builder can read them. This is informational — it does NOT block planning — but it primes the builder with the recurring drift catalogue. Closes G5 of SPRINT_WORKFLOW_POSTMORTEM.md.
 
 ## Schemas
 
@@ -101,14 +117,16 @@ Emit at `.planning/sprints/<sprint>/contracts/contract-<name>/{contract.md, type
 
 Apply per task, in order. Verbatim from §5.1.1.
 
-1. **`target_files`** — pick from feature description + `modules.json` + `hot-files.md`. Smallest plausible set. Hot-files go to `may_also_touch`.
-2. **`verification`** — strictly from `build-graph.json`:
-   - `tests` ← `per_module[<module>].test` if module-local, else `global.test`.
-   - `lint` ← same pattern.
-   - `build` ← only if non-test source touched.
-   - `files_exist` ← `target_files.create` plus expected new test files.
-   - `custom` ← only when a literal symbol must appear (use `rg --quiet`).
-   - Missing command → abort with `step.ask`. Never invent.
+1. **`target_files`** — pick from feature description + `modules.json` + `hot-files.md`. Smallest plausible set. Hot-files go to `may_also_touch`. Then apply Rule 20 (R4b cross-check): every identifier mentioned in an acceptance bullet must have its defining file present in some `target_files.{create,update,may_also_touch}` entry across the sprint.
+2. **`verification`** — derived from two complementary sources:
+   - From `build-graph.json`:
+     - `tests` ← `per_module[<module>].test` if module-local, else `global.test`.
+     - `lint` ← same pattern, scoped per Rule 21 (R4d / lint-scope discipline).
+     - `build` ← only if non-test source touched.
+     - `files_exist` ← `target_files.create` plus expected new test files.
+     - `custom` ← only when a literal symbol must appear (use `rg --quiet`). Validate satisfiability per Rule 19 (R4a) before emitting.
+   - From each loaded skill's `## Verification recipe` (Rule 18 / `verification-gates §R6.2`): merge declared gates. Recipe authors guarantee first tokens are in `build-graph.json → tools` or built-ins.
+   - Missing command (neither source provides it) → abort with `step.ask`. Never invent.
 3. **`skills`** — domain match: 1 language + 1 framework + (1 data, if data layer touched). Hard cap 4. All names in `INDEX.json`.
 4. **`model`** — exhaustive rule:
    - `opus` if task touches `>5` files OR involves new architecture, security, or data-schema decisions.
@@ -205,7 +223,7 @@ WHY INVALID: both tasks list `src/service.ts` under `update`, violating wave inv
 
 ## NEVER
 
-- NEVER invent verification commands not in `build-graph.json`.
+- NEVER invent verification commands not in `build-graph.json` OR a loaded skill's `## Verification recipe` (Rules 1 + 18). Hand-rolled regex outside `references/common-pitfalls.md`-blessed patterns is invention.
 - NEVER reference skills not in `INDEX.json`.
 - NEVER produce a sprint with `target_files` conflicts within any wave.
 - NEVER skip the smoke wave.
@@ -213,3 +231,6 @@ WHY INVALID: both tasks list `src/service.ts` under `update`, violating wave inv
 - NEVER trust a multiplier when its `n < 5` — fall back to `1.0`.
 - NEVER set `on_fail: skip` on a non-`optional` task.
 - NEVER write `estimation_priors.json` directly — emit a patch.
+- NEVER emit a repo-root-scoped lint / format / build gate when the task is package-scoped (Rule 21 / R4d).
+- NEVER ship a plan without running the satisfiability check from Rule 19 on every `custom` regex gate.
+- NEVER include an identifier in an acceptance bullet without confirming Rule 20 — its defining file is somewhere in the sprint's `target_files` union.
