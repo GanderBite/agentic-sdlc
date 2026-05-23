@@ -1,6 +1,6 @@
 ---
 name: sprint002-biome-quote-recurrence
-description: Every wave in sprint-002 has shipped TS sources with double quotes despite biome quoteStyle=single; pattern recurs in waves 2, 4, and 5.
+description: Every wave in sprint-002 has shipped TS sources with double quotes despite biome quoteStyle=single; pattern recurs in waves 2, 4, 5, 7, 8, and now 9.
 metadata:
   type: project
 ---

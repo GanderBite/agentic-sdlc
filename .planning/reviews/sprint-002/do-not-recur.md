@@ -27,3 +27,9 @@
 [low] apps/api/README.md documents `pnpm -F @medbridge/api db:seed` but apps/api/package.json defines no db:seed script — auto_fixable=false — first_seen=wave-7
 [medium] main.ts PORT env coerced via Number() without isInteger/range validation; non-numeric values yield NaN and undefined serve() behavior — auto_fixable=true — first_seen=wave-8
 [low] graceful shutdown calls pool.end().then() without .catch; pool close rejection leaves server hung without exit — auto_fixable=false — first_seen=wave-8
+[high] test/support/passwords.ts wraps argon2 directly so vi.spyOn never intercepts production calls (shared/password.ts is the real import path); B7 spy contract broken — auto_fixable=false — first_seen=wave-9
+[high] test/support/logCapture.ts builds a stream but never swaps shared/logger.ts pino instance; B14 capture has no working path through this helper — auto_fixable=false — first_seen=wave-9
+[medium] test/support/container.ts withReuse() violates ARCHITECTURE §8 ephemeral-per-file when vitest fileParallelism is not disabled — auto_fixable=false — first_seen=wave-9
+[medium] test/support/fixtures.ts loadRawFixtures() duplicates seed/main.ts loadFixtures(); single fixture parser should live under src/seed/fixtures/ — auto_fixable=false — first_seen=wave-9
+[low] container.ts migration pool not wrapped in try/finally; pool leaks on migrate() throw — auto_fixable=true — first_seen=wave-9
+[low] request.ts cookie deletion detects max-age=0 but not past-date Expires; brittle if hono/cookie deleteCookie ever emits Expires instead — auto_fixable=false — first_seen=wave-9
