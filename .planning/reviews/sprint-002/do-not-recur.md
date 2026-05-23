@@ -13,3 +13,10 @@
 [medium] Hono ctx variables (requestId,log,user) used via untyped `as` casts across middleware; no typed HonoEnv Variables interface — auto_fixable=false — first_seen=wave-5
 [low] csrf UNSAFE_METHODS includes PUT but ARCHITECTURE §5.4 enumerates only POST/PATCH/DELETE — auto_fixable=false — first_seen=wave-5
 [low] AppError.statusCode is `number` (wider than Hono StatusCode union); errorHandler casts via Parameters<typeof c.json>[1] — auto_fixable=false — first_seen=wave-5
+[blocking] refresh token rotation: revoke update return value ignored, two concurrent refreshes can both issue new tokens (B4 single-use breaks) — auto_fixable=false — first_seen=wave-6
+[high] auth/service.ts runs direct drizzle select on userTable (findUserById), bypassing repo layer per ARCHITECTURE §2.3 — auto_fixable=false — first_seen=wave-6
+[high] auth/service.ts imports another module's schema.ts (accounts/schema userTable) — ARCHITECTURE §2.3 explicitly forbids — auto_fixable=false — first_seen=wave-6
+[medium] auth/repo.ts queries accounts.user table directly; ARCHITECTURE §2.3 says repo.ts never imports another module — auto_fixable=false — first_seen=wave-6
+[medium] seed/main.ts does direct drizzle insert into accounts schema instead of calling accounts repo layer per ARCHITECTURE §2.2 — auto_fixable=false — first_seen=wave-6
+[low] expired-refresh-token revoke runs inside tx then throws; rollback undoes the intended revoke — auto_fixable=false — first_seen=wave-6
+[low] DUMMY_HASH argon2id parameters hard-coded in auth/service.ts; drift from shared/password.ts hash() silently breaks B7 constant-time — auto_fixable=false — first_seen=wave-6
