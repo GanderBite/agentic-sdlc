@@ -1086,7 +1086,7 @@
       "depends_on_contracts": [],
       "max_attempts": 1,
       "on_fail": "escalate",
-      "status": "in_progress",
+      "status": "done",
       "attempts": [],
       "actuals": null
     },

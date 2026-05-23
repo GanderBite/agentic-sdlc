@@ -16,8 +16,8 @@ import { UnauthorizedError } from "../shared/errors.js";
  * the `algorithms` option so tokens signed with HS384, HS512, or any other
  * algorithm are rejected even when the same secret is used.
  *
- * Jose's built-in 5-second clock tolerance applies automatically — no override
- * is required or performed.
+ * A clockTolerance of 5 seconds is passed to jwtVerify to honour the B12
+ * 5-second clock-skew guarantee defined in ARCHITECTURE §B12.
  *
  * On success, attaches `{ id, email, role }` to `c.get("user")`.
  * On a missing cookie for a protected route, throws UnauthorizedError (401).
@@ -41,6 +41,7 @@ export const authn: MiddlewareHandler = async (c, next): Promise<void> => {
   try {
     const { payload } = await jwtVerify(sessionCookie, secretKey, {
       algorithms: ["HS256"],
+      clockTolerance: 5,
     });
 
     const id = payload["sub"];

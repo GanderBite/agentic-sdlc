@@ -1,15 +1,22 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "organizeImports": { "enabled": true },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
   "files": {
-    "ignore": [
-      "dist/**",
-      "build/**",
-      "coverage/**",
-      "**/node_modules/**",
-      "**/migrations/meta/**",
-      "pnpm-lock.yaml",
-      ".turbo/**"
+    "includes": [
+      "**",
+      "!dist",
+      "!build",
+      "!coverage",
+      "!**/node_modules",
+      "!**/migrations/meta",
+      "!pnpm-lock.yaml",
+      "!.turbo"
     ]
   },
   "vcs": {
@@ -53,7 +60,7 @@
   },
   "overrides": [
     {
-      "include": ["**/*.test.ts", "**/*.test.tsx"],
+      "includes": ["**/*.test.ts", "**/*.test.tsx"],
       "linter": { "rules": { "suspicious": { "noExplicitAny": "off" } } }
     }
   ]
