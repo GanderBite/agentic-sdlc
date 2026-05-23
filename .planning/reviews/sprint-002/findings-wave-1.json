@@ -1,0 +1,60 @@
+{
+  "wave_id": "wave-1",
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "medium",
+      "category": "architecture",
+      "file": "tsconfig.base.json",
+      "line": 5,
+      "summary": "module: ESNext paired with moduleResolution: NodeNext — TS 5.x errors TS5095, blocks every downstream typecheck",
+      "suggested_fix": "Change \"module\": \"ESNext\" to \"module\": \"NodeNext\" (NodeNext resolution requires the matching module setting).",
+      "auto_fixable": true,
+      "first_seen_iteration": 1
+    },
+    {
+      "id": "F-002",
+      "severity": "low",
+      "category": "architecture",
+      "file": "package.json",
+      "line": 1,
+      "summary": "Root package.json declares no engines.node; ARCHITECTURE.md §1 pins Node 25 for apps/api",
+      "suggested_fix": "Add top-level field: \"engines\": { \"node\": \">=25\" } so corepack/CI fail fast on wrong Node.",
+      "auto_fixable": true,
+      "first_seen_iteration": 1
+    },
+    {
+      "id": "F-003",
+      "severity": "info",
+      "category": "architecture",
+      "file": "docker-compose.yml",
+      "line": 1,
+      "summary": "ARCHITECTURE.md §1 lists 5 services (ui, api, postgres, api-migrate, seed); this wave ships 3. ui+seed are deferred to later sprints — signal only.",
+      "suggested_fix": "No action this wave. Subsequent waves (task-seed in this sprint; ui in a later sprint) will add the missing service definitions.",
+      "auto_fixable": false,
+      "first_seen_iteration": 1
+    },
+    {
+      "id": "F-004",
+      "severity": "info",
+      "category": "architecture",
+      "file": "docker-compose.yml",
+      "line": 3,
+      "summary": "postgres image is postgres:17-alpine; sprint task description names postgres:17. Alpine variant uses musl — minor deviation from literal spec.",
+      "suggested_fix": "Either accept the alpine variant (smaller image, well supported) or change to image: postgres:17 to match the literal task description.",
+      "auto_fixable": false,
+      "first_seen_iteration": 1
+    },
+    {
+      "id": "F-005",
+      "severity": "info",
+      "category": "style",
+      "file": "tsconfig.base.json",
+      "line": 12,
+      "summary": "noPropertyAccessFromIndexSignature: true added beyond the planner's stated requirements; reasonable tightening, downstream code must use bracket access on index-signature types.",
+      "suggested_fix": "No change required; flag the tightening so downstream tasks (shared/, modules/) anticipate the stricter access pattern.",
+      "auto_fixable": false,
+      "first_seen_iteration": 1
+    }
+  ]
+}

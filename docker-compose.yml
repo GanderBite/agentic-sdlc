@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: "postgres:17-alpine"
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-medbridge}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}"
+      POSTGRES_DB: "${POSTGRES_DB:-medbridge}"
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "$$POSTGRES_USER", "-d", "$$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  api-migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: "medbridge/api:dev"
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-medbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-medbridge}"
+      NODE_ENV: "${NODE_ENV:-production}"
+    command: ["pnpm", "--filter", "@medbridge/api", "drizzle:migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: "medbridge/api:dev"
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-medbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-medbridge}"
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET must be set}"
+      REFRESH_SECRET: "${REFRESH_SECRET:?REFRESH_SECRET must be set}"
+      NODE_ENV: "${NODE_ENV:-production}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./uploads:/app/uploads"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

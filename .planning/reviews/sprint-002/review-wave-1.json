@@ -1,0 +1,38 @@
+{
+  "wave_id": "wave-1",
+  "tasks": [
+    {
+      "task_id": "task-workspace",
+      "gates": [
+        { "kind": "files_exist", "cmd": "package.json", "exit": 0, "duration_ms": 2, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "biome.json", "exit": 0, "duration_ms": 1, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "tsconfig.base.json", "exit": 0, "duration_ms": 1, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": ".npmrc", "exit": 0, "duration_ms": 1, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "pnpm-workspace.yaml", "exit": 0, "duration_ms": 1, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "node -e \"const p=require('./package.json'); process.exit(p.packageManager && p.packageManager.startsWith('pnpm@') ? 0 : 1)\"", "exit": 0, "duration_ms": 45, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "node -e \"const t=require('./tsconfig.base.json'); process.exit(t.compilerOptions && t.compilerOptions.strict === true ? 0 : 1)\"", "exit": 0, "duration_ms": 41, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'apps/\\*' pnpm-workspace.yaml", "exit": 0, "duration_ms": 6, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'packages/\\*' pnpm-workspace.yaml", "exit": 0, "duration_ms": 5, "flake_retries": 0 }
+      ],
+      "verdict": "pass"
+    },
+    {
+      "task_id": "task-docker",
+      "gates": [
+        { "kind": "files_exist", "cmd": "docker-compose.yml", "exit": 0, "duration_ms": 1, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "apps/api/Dockerfile", "exit": 0, "duration_ms": 1, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": ".env.example", "exit": 0, "duration_ms": 1, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": ".dockerignore", "exit": 0, "duration_ms": 1, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'postgres:' docker-compose.yml", "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'api-migrate:' docker-compose.yml", "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'service_completed_successfully' docker-compose.yml", "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'service_healthy' docker-compose.yml", "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'healthcheck' docker-compose.yml", "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'DATABASE_URL' .env.example", "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'JWT_SECRET' .env.example", "exit": 0, "duration_ms": 5, "flake_retries": 0 }
+      ],
+      "verdict": "pass"
+    }
+  ],
+  "verdict": "pass"
+}
