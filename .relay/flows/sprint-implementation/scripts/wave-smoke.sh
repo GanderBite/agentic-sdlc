@@ -60,7 +60,12 @@ fi
 # Extract the smoke wave's task.verification commands from tasks.json.
 # Convention: the smoke task id is `task-smoke`. Fall back to scanning
 # any task whose id starts with `task-smoke` if the canonical id is absent.
-mapfile -t gates < <(
+# Portable bash 3.2 alternative to `mapfile -t` (which requires bash 4+).
+# macOS ships /bin/bash 3.2; this script must run there.
+gates=()
+while IFS= read -r line; do
+  gates+=("$line")
+done < <(
   jq -r '
     [
       .tasks // [] |

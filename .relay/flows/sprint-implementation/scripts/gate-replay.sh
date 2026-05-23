@@ -51,7 +51,12 @@ out_file="${state_dir}/gate-replay-iter-${iteration}.json"
 # Union every task.verification entry, dedupe by (kind, cmd, expect_exit).
 # The 5 gate kinds are: tests, lint, build, files_exist, custom — same as
 # verification-gates SKILL R1.
-mapfile -t gates < <(
+# Portable bash 3.2 alternative to `mapfile -t` (which requires bash 4+).
+# macOS ships /bin/bash 3.2; this script must run there.
+gates=()
+while IFS= read -r line; do
+  gates+=("$line")
+done < <(
   jq -r '
     [
       .tasks // [] | .[] |
