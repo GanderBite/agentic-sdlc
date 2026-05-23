@@ -71,7 +71,12 @@ done < <(
       .tasks // [] |
       map(select(.id == "task-smoke" or (.id // "" | startswith("task-smoke"))))
       | .[]
-      | .verification // {} as $v
+      # Parens are load-bearing: `.verification // {} as $v` is parsed as
+      # `.verification // ({} as $v | <rest>)`, so when .verification is
+      # non-null the downstream `(A,B,C,D) | .[]` never runs and jq emits
+      # the verification object verbatim. `(.verification // {}) as $v`
+      # forces the alternative to bind first, then `$v` carries it forward.
+      | (.verification // {}) as $v
       | (
           ($v.tests  // [] | map({kind:"tests",       cmd:., expect_exit:0})),
           ($v.lint   // [] | map({kind:"lint",        cmd:., expect_exit:0})),
@@ -100,9 +105,9 @@ for gate_json in "${gates[@]}"; do
   cmd="$(echo "$gate_json"    | jq -r '.cmd')"
   expect="$(echo "$gate_json" | jq -r '.expect_exit')"
 
-  start_ms="$(date +%s%3N 2>/dev/null || echo 0)"
+  start_ms="$(epoch_ms)"
   bash -c "$cmd" >/dev/null 2>&1 && exit_code=0 || exit_code=$?
-  end_ms="$(date +%s%3N 2>/dev/null || echo 0)"
+  end_ms="$(epoch_ms)"
   duration_ms=$(( end_ms - start_ms ))
 
   if [ "$exit_code" != "$expect" ]; then

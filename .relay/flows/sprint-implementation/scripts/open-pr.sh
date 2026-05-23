@@ -108,14 +108,17 @@ existing=$(gh pr view --repo "$REPO" --json url --jq '.url' 2>/dev/null || true)
 if [ -z "$existing" ]; then
   log "creating PR on $REPO from $branch"
   set +e
+  # `"${arr[@]+"${arr[@]}"}"` is the bash 3.2-safe expansion: it expands to
+  # nothing when the array is empty, sidestepping `set -u` ("unbound
+  # variable") which would otherwise abort the script on macOS bash 3.2.
   url=$(gh pr create \
     --repo "$REPO" \
     --base main \
     --head "$branch" \
     --title "$title" \
     --body-file "$body_file" \
-    "${draft_flag[@]}" \
-    "${label_args[@]}" 2>&1)
+    "${draft_flag[@]+"${draft_flag[@]}"}" \
+    "${label_args[@]+"${label_args[@]}"}" 2>&1)
   status=$?
   set -e
   if [ $status -ne 0 ]; then
@@ -126,7 +129,7 @@ if [ -z "$existing" ]; then
   printf '%s\n' "$url"
 else
   log "updating existing PR: $existing"
-  gh pr edit "$existing" --title "$title" --body-file "$body_file" "${label_args[@]}" >/dev/null || \
+  gh pr edit "$existing" --title "$title" --body-file "$body_file" "${label_args[@]+"${label_args[@]}"}" >/dev/null || \
     log "gh pr edit failed — leaving PR as-is"
   printf '%s\n' "$existing"
 fi

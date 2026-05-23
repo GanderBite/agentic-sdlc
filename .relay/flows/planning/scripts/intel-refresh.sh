@@ -30,8 +30,11 @@ fi
 # exit 1 so callers (e.g. planning) can decide whether to skip downstream
 # work.
 log "invoking relay run intel-refresh"
-run_dir=$(relay run intel-refresh "${input_args[@]}" --print-run-dir 2>/dev/null \
-  || relay run intel-refresh "${input_args[@]}" >&2 && true)
+# `"${input_args[@]+"${input_args[@]}"}"` is the bash 3.2-safe form: it
+# expands to nothing when the array is empty, sidestepping `set -u` which
+# would otherwise abort the script on macOS bash 3.2.
+run_dir=$(relay run intel-refresh "${input_args[@]+"${input_args[@]}"}" --print-run-dir 2>/dev/null \
+  || relay run intel-refresh "${input_args[@]+"${input_args[@]}"}" >&2 && true)
 
 # Locate the latest run dir if the CLI didn't print one.
 if [ -z "${run_dir:-}" ] || [ ! -d "$run_dir" ]; then

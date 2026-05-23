@@ -60,7 +60,12 @@ done < <(
   jq -r '
     [
       .tasks // [] | .[] |
-      .verification // {} as $v |
+      # Parens are load-bearing: `.verification // {} as $v` is parsed as
+      # `.verification // ({} as $v | <rest>)`, so when .verification is
+      # non-null the downstream `(A,B,C,D,E) | .[]` never runs and jq emits
+      # the verification object verbatim. `(.verification // {}) as $v`
+      # forces the alternative to bind first, then `$v` carries it forward.
+      (.verification // {}) as $v |
       (
         ($v.tests  // [] | map({kind:"tests",       cmd:., expect_exit:0})),
         ($v.lint   // [] | map({kind:"lint",        cmd:., expect_exit:0})),
@@ -77,12 +82,15 @@ done < <(
 results_json="[]"
 any_failure=0
 
-for gate_json in "${gates[@]}"; do
+# `"${gates[@]+"${gates[@]}"}"` is the bash 3.2-safe form: it expands to
+# nothing when the array is empty, sidestepping `set -u` ("unbound variable")
+# which would otherwise abort the script on macOS bash 3.2.
+for gate_json in "${gates[@]+"${gates[@]}"}"; do
   kind="$(echo "$gate_json"   | jq -r '.kind')"
   cmd="$(echo "$gate_json"    | jq -r '.cmd')"
   expect="$(echo "$gate_json" | jq -r '.expect_exit')"
 
-  start_ms="$(date +%s%3N 2>/dev/null || echo 0)"
+  start_ms="$(epoch_ms)"
   if [ "$kind" = "files_exist" ]; then
     # Pass iff path exists AND is non-empty (verification-gates §R2.3).
     if [ -s "$cmd" ]; then exit_code=0; else exit_code=1; fi
@@ -90,7 +98,7 @@ for gate_json in "${gates[@]}"; do
     # One-shot exec; no flake-retry here (those are per-task at wave time).
     bash -c "$cmd" >/dev/null 2>&1 && exit_code=0 || exit_code=$?
   fi
-  end_ms="$(date +%s%3N 2>/dev/null || echo 0)"
+  end_ms="$(epoch_ms)"
   duration_ms=$(( end_ms - start_ms ))
 
   if [ "$exit_code" != "$expect" ]; then
