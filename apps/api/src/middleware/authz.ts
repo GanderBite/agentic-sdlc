@@ -1,8 +1,7 @@
-import type { MiddlewareHandler } from "hono";
+import type { Role } from '@medbridge/contracts';
+import type { MiddlewareHandler } from 'hono';
 
-import type { Role } from "@medbridge/contracts";
-
-import { ForbiddenError } from "../shared/errors.js";
+import { ForbiddenError } from '../shared/errors.js';
 
 /**
  * requireRole factory
@@ -21,10 +20,10 @@ export function requireRole(...roles: readonly [Role, ...Role[]]): MiddlewareHan
   const allowed = new Set<string>(roles);
 
   return async (c, next): Promise<void> => {
-    const user = c.get("user") as { id: string; email: string; role: string } | undefined;
+    const user = c.get('user') as { id: string; email: string; role: string } | undefined;
 
     if (user === undefined) {
-      throw new ForbiddenError("Authentication required");
+      throw new ForbiddenError('Authentication required');
     }
 
     if (!allowed.has(user.role)) {

@@ -11,14 +11,14 @@
  *
  * Requires Docker daemon running on the host (testcontainers).
  */
-import { readFileSync } from 'node:fs';
+
 import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { startPostgres } from '../support/container.js';
@@ -93,9 +93,7 @@ function runSeed(databaseUrl: string): Promise<number> {
 
 async function countUsers(): Promise<number> {
   const db = drizzle(pool);
-  const result = await db.execute<{ c: number }>(
-    sql`SELECT COUNT(*)::int AS c FROM "user"`,
-  );
+  const result = await db.execute<{ c: number }>(sql`SELECT COUNT(*)::int AS c FROM "user"`);
   const first = result.rows[0];
   if (first === undefined) {
     throw new Error('COUNT query returned no rows');
@@ -109,9 +107,7 @@ async function countUsers(): Promise<number> {
 
 async function fetchPasswordHashes(): Promise<string[]> {
   const db = drizzle(pool);
-  const result = await db.execute<{ password_hash: string }>(
-    sql`SELECT password_hash FROM "user"`,
-  );
+  const result = await db.execute<{ password_hash: string }>(sql`SELECT password_hash FROM "user"`);
   return result.rows.map((row) => row.password_hash);
 }
 
@@ -134,34 +130,26 @@ describe('seed — idempotent seed via main.ts', () => {
     containerUrl = url;
   });
 
-  it(
-    'first run inserts exactly FIXTURE_COUNT rows and exits 0',
-    async () => {
-      const exitCode = await runSeed(containerUrl);
+  it('first run inserts exactly FIXTURE_COUNT rows and exits 0', async () => {
+    const exitCode = await runSeed(containerUrl);
 
-      expect(exitCode, 'seed main.ts must exit 0 on first run').toBe(0);
+    expect(exitCode, 'seed main.ts must exit 0 on first run').toBe(0);
 
-      const count = await countUsers();
-      expect(count, `expected ${FIXTURE_COUNT} rows after first seed run`).toBe(FIXTURE_COUNT);
-    },
-    30_000,
-  );
+    const count = await countUsers();
+    expect(count, `expected ${FIXTURE_COUNT} rows after first seed run`).toBe(FIXTURE_COUNT);
+  }, 30_000);
 
-  it(
-    'second run (twice / idempotent) leaves row count unchanged and exits 0',
-    async () => {
-      const exitCode = await runSeed(containerUrl);
+  it('second run (twice / idempotent) leaves row count unchanged and exits 0', async () => {
+    const exitCode = await runSeed(containerUrl);
 
-      expect(exitCode, 'seed main.ts must exit 0 on second (idempotent) run').toBe(0);
+    expect(exitCode, 'seed main.ts must exit 0 on second (idempotent) run').toBe(0);
 
-      const count = await countUsers();
-      expect(
-        count,
-        `row count must be unchanged after second seed run (idempotent); expected ${FIXTURE_COUNT}`,
-      ).toBe(FIXTURE_COUNT);
-    },
-    30_000,
-  );
+    const count = await countUsers();
+    expect(
+      count,
+      `row count must be unchanged after second seed run (idempotent); expected ${FIXTURE_COUNT}`,
+    ).toBe(FIXTURE_COUNT);
+  }, 30_000);
 
   it('every inserted row has a non-empty password_hash starting with $argon2id$', async () => {
     const hashes = await fetchPasswordHashes();

@@ -1,17 +1,17 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes } from 'node:crypto';
 
-import { eq } from "drizzle-orm";
+import { eq } from 'drizzle-orm';
 
-import type { Db, Tx } from "../../shared/db.js";
-import { UnauthorizedError } from "../../shared/errors.js";
-import { user as userTable } from "../accounts/schema.js";
+import type { Db, Tx } from '../../shared/db.js';
+import { UnauthorizedError } from '../../shared/errors.js';
+import { user as userTable } from '../accounts/schema.js';
 import {
-  findUserByEmail,
   findRefreshTokenByHash,
+  findUserByEmail,
   insertRefreshToken,
   revokeRefreshToken,
-} from "./repo.js";
-import type { LoginThrottle } from "./throttle.js";
+} from './repo.js';
+import type { LoginThrottle } from './throttle.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,7 +20,7 @@ import type { LoginThrottle } from "./throttle.js";
 export type UserClaims = {
   readonly userId: string;
   readonly email: string;
-  readonly role: "patient" | "doctor";
+  readonly role: 'patient' | 'doctor';
 };
 
 export type AuthTokens = {
@@ -98,14 +98,14 @@ export type AuthService = {
  * of whether the email exists in the database (B7 — constant-time).
  */
 const DUMMY_HASH =
-  "$argon2id$v=19$m=65536,t=3,p=4$dW5rbm93bi11c2VyLXBhZGRpbmc$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+  '$argon2id$v=19$m=65536,t=3,p=4$dW5rbm93bi11c2VyLXBhZGRpbmc$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
 
 function generateSecureToken(): string {
-  return randomBytes(32).toString("hex");
+  return randomBytes(32).toString('hex');
 }
 
 /**
@@ -116,11 +116,7 @@ async function findUserById(
   dbOrTx: Db | Tx,
   userId: string,
 ): Promise<typeof userTable.$inferSelect | undefined> {
-  const rows = await dbOrTx
-    .select()
-    .from(userTable)
-    .where(eq(userTable.id, userId))
-    .limit(1);
+  const rows = await dbOrTx.select().from(userTable).where(eq(userTable.id, userId)).limit(1);
   return rows[0];
 }
 
@@ -140,7 +136,7 @@ export function createAuthService(deps: AuthServiceDeps): AuthService {
   // -------------------------------------------------------------------------
   async function issueTokens(
     dbOrTx: Db | Tx,
-    userRow: { id: string; email: string; role: "patient" | "doctor" },
+    userRow: { id: string; email: string; role: 'patient' | 'doctor' },
     rawRefreshToken: string,
     csrfToken: string,
   ): Promise<AuthTokens> {
@@ -182,7 +178,7 @@ export function createAuthService(deps: AuthServiceDeps): AuthService {
     const passwordOk = await verifyPassword(hashToVerify, password);
 
     if (userRow === undefined || !passwordOk) {
-      throw new UnauthorizedError("Invalid email or password");
+      throw new UnauthorizedError('Invalid email or password');
     }
 
     const rawRefreshToken = generateSecureToken();
@@ -223,34 +219,37 @@ export function createAuthService(deps: AuthServiceDeps): AuthService {
 
       if (tokenRow === undefined) {
         // Fabricated or already-deleted token — treat as replay
-        log.warn({ requestId }, "refresh_token replay detected");
-        throw new UnauthorizedError("Invalid or expired refresh token");
+        log.warn({ requestId }, 'refresh_token replay detected');
+        throw new UnauthorizedError('Invalid or expired refresh token');
       }
 
       if (tokenRow.revokedAt !== null) {
         // Row exists but was already revoked: replay attack on this specific hash.
         // The revoked_at is already set; we only warn and reject.
-        log.warn({ userId: tokenRow.userId, requestId }, "refresh_token replay detected");
-        throw new UnauthorizedError("Invalid or expired refresh token");
+        log.warn({ userId: tokenRow.userId, requestId }, 'refresh_token replay detected');
+        throw new UnauthorizedError('Invalid or expired refresh token');
       }
 
       // Check wall-clock expiry
       if (tokenRow.expiresAt < now()) {
         // Revoke the expired token and reject
         await revokeRefreshToken(tx, tokenRow.id, now());
-        throw new UnauthorizedError("Refresh token has expired");
+        throw new UnauthorizedError('Refresh token has expired');
       }
 
-      // Revoke THIS row (update-where-not-revoked guard: no-op if the row was
-      // concurrently revoked between the select and this update — the other
-      // session's re-read will then fall into the revokedAt !== null branch above).
-      await revokeRefreshToken(tx, tokenRow.id, now());
+      // Revoke THIS row (update-where-not-revoked guard: zero rows returned means
+      // another concurrent request already claimed this token between the SELECT
+      // above and this UPDATE — enforce single-use by rejecting the race loser).
+      const revokedRows = await revokeRefreshToken(tx, tokenRow.id, now());
+      if (revokedRows.length === 0) {
+        throw new UnauthorizedError('refresh token already used');
+      }
 
       // Resolve user record to build fresh JWT claims
       const userRow = await findUserById(tx, tokenRow.userId);
 
       if (userRow === undefined || userRow.deletedAt !== null) {
-        throw new UnauthorizedError("User account is no longer active");
+        throw new UnauthorizedError('User account is no longer active');
       }
 
       // Issue NEW refresh token + session JWT + CSRF token in the same tx

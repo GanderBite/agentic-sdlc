@@ -1,6 +1,6 @@
-import type { MiddlewareHandler } from "hono";
+import type { MiddlewareHandler } from 'hono';
 
-import { logger as rootLogger } from "../shared/logger.js";
+import { logger as rootLogger } from '../shared/logger.js';
 
 /**
  * logger middleware
@@ -14,16 +14,16 @@ export const logger: MiddlewareHandler = async (c, next): Promise<void> => {
   const startMs = Date.now();
   const method = c.req.method;
   const path = new URL(c.req.url).pathname;
-  const requestId = (c.get("requestId") as string | undefined) ?? "unknown";
+  const requestId = (c.get('requestId') as string | undefined) ?? 'unknown';
 
   const child = rootLogger.child({ requestId, method, path });
-  c.set("log", child);
+  c.set('log', child);
 
   await next();
 
   const durationMs = Date.now() - startMs;
   const status = c.res.status;
-  const userId = (c.get("user") as { id?: string } | undefined)?.id;
+  const userId = (c.get('user') as { id?: string } | undefined)?.id;
 
   const logEntry: Record<string, unknown> = {
     requestId,
@@ -34,8 +34,8 @@ export const logger: MiddlewareHandler = async (c, next): Promise<void> => {
   };
 
   if (userId !== undefined) {
-    logEntry["userId"] = userId;
+    logEntry['userId'] = userId;
   }
 
-  child.info(logEntry, "request.complete");
+  child.info(logEntry, 'request.complete');
 };

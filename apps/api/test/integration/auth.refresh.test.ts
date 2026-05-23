@@ -8,28 +8,27 @@
  * One ephemeral Postgres 17 container is started per file.
  */
 import { createHash, createSecretKey } from 'node:crypto';
-
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import type { Hono } from 'hono';
 import { SignJWT } from 'jose';
+import { Pool } from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-
-import { startPostgres } from '../support/container.js';
-import { seedFixtures } from '../support/fixtures.js';
-import { buildClient } from '../support/request.js';
-import { expectAppError } from '../support/assertions.js';
-import { captureLogs, buildCapturingLogger } from '../support/logCapture.js';
-import type { LogCaptureHandle } from '../support/logCapture.js';
-import { createAuthService } from '../../src/modules/auth/index.js';
-import { createLoginThrottle } from '../../src/modules/auth/throttle.js';
-import { createPasswordVerifier } from '../../src/shared/password.js';
-import { refreshToken as refreshTokenTable } from '../../src/modules/auth/schema.js';
 import { createApp } from '../../src/app.js';
+import * as schema from '../../src/db/schema.js';
 import { authn } from '../../src/middleware/authn.js';
 import type { UserClaims } from '../../src/modules/auth/index.js';
+import { createAuthService } from '../../src/modules/auth/index.js';
+import { refreshToken as refreshTokenTable } from '../../src/modules/auth/schema.js';
+import { createLoginThrottle } from '../../src/modules/auth/throttle.js';
 import type { Db } from '../../src/shared/db.js';
-import type { Hono } from 'hono';
+import { createPasswordVerifier } from '../../src/shared/password.js';
+import { expectAppError } from '../support/assertions.js';
+import { startPostgres } from '../support/container.js';
+import { seedFixtures } from '../support/fixtures.js';
+import type { LogCaptureHandle } from '../support/logCapture.js';
+import { buildCapturingLogger, captureLogs } from '../support/logCapture.js';
+import { buildClient } from '../support/request.js';
 
 // ---------------------------------------------------------------------------
 // Module-level state (one container per file)
@@ -93,9 +92,8 @@ beforeAll(async () => {
   stopContainer = stop;
 
   // Dedicated pool + drizzle for direct SQL assertions in tests.
-  // schema cast mirrors src/shared/db.ts; noExplicitAny is off in test files per biome.json.
   pool = new Pool({ connectionString: url });
-  db = drizzle(pool, { schema: {} as any }) as unknown as Db;
+  db = drizzle(pool, { schema }) as unknown as Db;
 
   // Wire the capturing logger so warn entries land in logCapture.records.
   logCapture = captureLogs();
@@ -234,10 +232,7 @@ describe('auth.refresh', () => {
     // The service emits: log.warn({ userId, requestId }, "refresh_token replay detected")
     // only for the already-revoked path (the row exists but revokedAt !== null).
     const warnRecords = logCapture.records.filter(
-      (r) =>
-        r['level'] === 40 &&
-        r['userId'] !== undefined &&
-        r['requestId'] !== undefined,
+      (r) => r['level'] === 40 && r['userId'] !== undefined && r['requestId'] !== undefined,
     );
     expect(
       warnRecords.length,

@@ -17,35 +17,22 @@
  * Requires Docker daemon running on the host.
  */
 import { createHash, createSecretKey } from 'node:crypto';
-
-import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { SignJWT } from 'jose';
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
-
-import { startPostgres } from '../support/container.js';
-import { seedFixtures } from '../support/fixtures.js';
-import { buildClient } from '../support/request.js';
-import { expectAppError } from '../support/assertions.js';
-
+import { Pool } from 'pg';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createApp } from '../../src/app.js';
+import { authn } from '../../src/middleware/authn.js';
+import type { UserClaims } from '../../src/modules/auth/index.js';
+import { createAuthService } from '../../src/modules/auth/index.js';
+import { createLoginThrottle } from '../../src/modules/auth/throttle.js';
 // Production password module — spy target for verifyPassword (F-001: must use
 // the production module path, NOT the test/support/passwords.ts wrapper).
 import * as prodPassword from '../../src/shared/password.js';
-
-import { createApp } from '../../src/app.js';
-import { createAuthService } from '../../src/modules/auth/index.js';
-import { createLoginThrottle } from '../../src/modules/auth/throttle.js';
-import { authn } from '../../src/middleware/authn.js';
-import type { UserClaims } from '../../src/modules/auth/index.js';
+import { expectAppError } from '../support/assertions.js';
+import { startPostgres } from '../support/container.js';
+import { seedFixtures } from '../support/fixtures.js';
+import { buildClient } from '../support/request.js';
 
 // ---------------------------------------------------------------------------
 // Container / app setup (one container per file)
@@ -327,10 +314,9 @@ describe('auth.login — POST /api/login', () => {
     });
 
     // Should reach the verify path (result is 401, not 429)
-    expect(
-      notThrottledRes.status,
-      'different-email request from the same IP must not be 429',
-    ).toBe(401);
+    expect(notThrottledRes.status, 'different-email request from the same IP must not be 429').toBe(
+      401,
+    );
   });
 
   // -------------------------------------------------------------------------

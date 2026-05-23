@@ -36,35 +36,24 @@
  * Requires Docker daemon to be running (testcontainers).
  */
 import { createHash, createSecretKey } from 'node:crypto';
-
-import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import type { Hono } from 'hono';
 import { SignJWT } from 'jose';
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
-
-import { startPostgres } from '../support/container.js';
-import { seedFixtures } from '../support/fixtures.js';
-import { buildClient } from '../support/request.js';
-import { captureLogs, buildCapturingLogger } from '../support/logCapture.js';
-import type { LogCaptureHandle, LogRecord } from '../support/logCapture.js';
-import { createAuthService } from '../../src/modules/auth/index.js';
-import { createLoginThrottle } from '../../src/modules/auth/throttle.js';
-import { createPasswordVerifier } from '../../src/shared/password.js';
-import { refreshToken as refreshTokenTable } from '../../src/modules/auth/schema.js';
+import { Pool } from 'pg';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../src/app.js';
 import { authn } from '../../src/middleware/authn.js';
 import type { UserClaims } from '../../src/modules/auth/index.js';
+import { createAuthService } from '../../src/modules/auth/index.js';
+import { refreshToken as refreshTokenTable } from '../../src/modules/auth/schema.js';
+import { createLoginThrottle } from '../../src/modules/auth/throttle.js';
 import type { Db } from '../../src/shared/db.js';
-import type { Hono } from 'hono';
+import { createPasswordVerifier } from '../../src/shared/password.js';
+import { startPostgres } from '../support/container.js';
+import { seedFixtures } from '../support/fixtures.js';
+import type { LogCaptureHandle, LogRecord } from '../support/logCapture.js';
+import { buildCapturingLogger, captureLogs } from '../support/logCapture.js';
+import { buildClient } from '../support/request.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -140,10 +129,7 @@ function assertRedactedOrAbsent(value: unknown, fieldLabel: string): void {
  */
 function assertNeverInLogs(rawValue: string, label: string, allChunks: string[]): void {
   for (const chunk of allChunks) {
-    expect(
-      chunk,
-      `stdout must never contain raw ${label} value`,
-    ).not.toContain(rawValue);
+    expect(chunk, `stdout must never contain raw ${label} value`).not.toContain(rawValue);
   }
 }
 
@@ -491,10 +477,9 @@ describe('Authorization Bearer header — log redaction for Authorization header
     expect(reqField, 'req field must be present in log record').toBeDefined();
     const headers = reqField?.['headers'] as Record<string, unknown> | undefined;
     expect(headers, 'req.headers must be present in log record').toBeDefined();
-    expect(
-      headers?.['authorization'],
-      'req.headers.authorization must be "[REDACTED]"',
-    ).toBe('[REDACTED]');
+    expect(headers?.['authorization'], 'req.headers.authorization must be "[REDACTED]"').toBe(
+      '[REDACTED]',
+    );
 
     // The cookie field must also be "[REDACTED]".
     assertRedactedOrAbsent(headers?.['cookie'], 'req.headers.cookie in captured record');

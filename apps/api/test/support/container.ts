@@ -8,20 +8,20 @@
  *     // build db + app here...
  *   }, 60_000);
  */
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
-import { Pool } from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { Pool } from 'pg';
 
 // ---------------------------------------------------------------------------
 // Paths
 // ---------------------------------------------------------------------------
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MIGRATIONS_FOLDER = resolve(__dirname, "../../src/db/migrations");
+const MIGRATIONS_FOLDER = resolve(__dirname, '../../src/db/migrations');
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -45,10 +45,10 @@ export type StartedPostgresResult = {
  * Reuse is enabled when `process.env.CI !== "true"` to speed up local runs.
  */
 export async function startPostgres(): Promise<StartedPostgresResult> {
-  const builder = new PostgreSqlContainer("postgres:17-alpine");
+  const builder = new PostgreSqlContainer('postgres:17-alpine');
 
   // Enable Testcontainers daemon reuse on local machines (not CI).
-  if (process.env["CI"] !== "true") {
+  if (process.env['CI'] !== 'true') {
     builder.withReuse();
   }
 

@@ -16,8 +16,7 @@ import { PatchedSchema } from './schemas/patched.js';
 export default defineFlow({
   name: 'intel-refresh',
   version: '0.1.0',
-  description:
-    'Diff-only refresh of INTEL.md and .planning/intel/* against the current HEAD.',
+  description: 'Diff-only refresh of INTEL.md and .planning/intel/* against the current HEAD.',
   input: z.object({
     full: z
       .boolean()

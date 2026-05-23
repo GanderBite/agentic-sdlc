@@ -1,7 +1,7 @@
-import type { ErrorHandler } from "hono";
+import type { ErrorHandler } from 'hono';
 
-import { AppError } from "../shared/errors.js";
-import { logger } from "../shared/logger.js";
+import { AppError } from '../shared/errors.js';
+import { logger } from '../shared/logger.js';
 
 /**
  * errorHandler
@@ -35,8 +35,8 @@ export const errorHandler: ErrorHandler = (err, c): Response => {
   }
 
   // Unknown / unexpected error — log it and return a generic 500.
-  const requestId = (c.get("requestId") as string | undefined) ?? "unknown";
-  logger.error({ err, requestId }, "Unhandled error");
+  const requestId = (c.get('requestId') as string | undefined) ?? 'unknown';
+  logger.error({ err, requestId }, 'Unhandled error');
 
-  return c.json({ error: { code: "INTERNAL" } }, 500);
+  return c.json({ error: { code: 'INTERNAL' } }, 500);
 };

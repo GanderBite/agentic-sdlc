@@ -1,6 +1,6 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-export const Role = z.enum(["patient", "doctor"]);
+export const Role = z.enum(['patient', 'doctor']);
 export type Role = z.infer<typeof Role>;
 
 const userShape = z.object({
@@ -11,10 +11,12 @@ const userShape = z.object({
 
 export type User = z.infer<typeof userShape>;
 
-export const loginRequest = z.object({
-  email: z.string().email().max(254),
-  password: z.string().min(1).max(128),
-}).strict();
+export const loginRequest = z
+  .object({
+    email: z.string().email().max(254),
+    password: z.string().min(1).max(128),
+  })
+  .strict();
 
 export type LoginRequest = z.infer<typeof loginRequest>;
 

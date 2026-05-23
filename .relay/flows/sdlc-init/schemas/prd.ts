@@ -10,9 +10,7 @@ import { z } from '@ganderbite/relay-core';
  * `features_count` and the doc body.
  */
 export const PrdSchema = z.object({
-  prd_path: z
-    .string()
-    .describe('Path to the committed PRD, normally `docs/PRD.md`.'),
+  prd_path: z.string().describe('Path to the committed PRD, normally `docs/PRD.md`.'),
   features_count: z
     .number()
     .int()
@@ -23,7 +21,9 @@ export const PrdSchema = z.object({
     .describe('Feature names included in the v1 release. Must be `p0` per the PRD body.'),
   open_questions: z
     .array(z.string())
-    .describe('Features whose acceptance bullets are not yet observable, deferred to the next planning round.'),
+    .describe(
+      'Features whose acceptance bullets are not yet observable, deferred to the next planning round.',
+    ),
 });
 
 export type Prd = z.infer<typeof PrdSchema>;

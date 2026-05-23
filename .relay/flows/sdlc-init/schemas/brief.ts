@@ -17,13 +17,19 @@ export const BriefSchema = z.object({
     .int()
     .min(0)
     .max(3)
-    .describe('Number of question rounds asked of the human. Hard cap of 3 per the brain-storming skill.'),
+    .describe(
+      'Number of question rounds asked of the human. Hard cap of 3 per the brain-storming skill.',
+    ),
   open_gaps: z
     .array(z.string())
-    .describe('Gap labels left unanswered after round 3, paired with best-effort defaults in the brief.'),
+    .describe(
+      'Gap labels left unanswered after round 3, paired with best-effort defaults in the brief.',
+    ),
   summary: z
     .string()
-    .describe('One-to-three-sentence restatement of the application, its primary user, and its core use cases.'),
+    .describe(
+      'One-to-three-sentence restatement of the application, its primary user, and its core use cases.',
+    ),
 });
 
 export type Brief = z.infer<typeof BriefSchema>;

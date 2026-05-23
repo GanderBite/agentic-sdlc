@@ -13,7 +13,7 @@
  * This file intentionally has NO module-level side-effects. Mocking is
  * always opt-in per test case.
  */
-import argon2 from "argon2";
+import argon2 from 'argon2';
 
 // ---------------------------------------------------------------------------
 // Public API

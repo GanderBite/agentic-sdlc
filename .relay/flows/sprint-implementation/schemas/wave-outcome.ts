@@ -21,21 +21,15 @@ export const WaveOutcomeSchema = z.object({
     .enum(['pass', 'blocked', 'failed', 'partial'])
     .describe('Aggregate verdict over all tasks in the wave.'),
   tasks_done: z.array(z.string()).describe('Task IDs that finished green.'),
-  tasks_blocked: z
-    .array(z.string())
-    .describe('Task IDs that escalated per `task.on_fail`.'),
-  tasks_failed: z
-    .array(z.string())
-    .describe('Task IDs that exhausted retries with no escalation.'),
+  tasks_blocked: z.array(z.string()).describe('Task IDs that escalated per `task.on_fail`.'),
+  tasks_failed: z.array(z.string()).describe('Task IDs that exhausted retries with no escalation.'),
   tokens_used_total: z
     .number()
     .describe('Sum of builder + reviewer + orchestrator tokens for this wave.'),
   wall_clock_ms: z.number().int().nonnegative().describe('Wave duration.'),
   all_waves_done: z
     .boolean()
-    .describe(
-      'True iff there is no next wave. Drives the wave-loop `until` condition.',
-    ),
+    .describe('True iff there is no next wave. Drives the wave-loop `until` condition.'),
   findings_summary: z
     .object({
       blocking: z.number().int().nonnegative(),
@@ -80,9 +74,7 @@ export const WaveOutcomeSchema = z.object({
           .describe(
             'The agent persona name the wave-runner passed to the Task tool. MUST appear in builder_agents.json — wave-commit asserts this before committing.',
           ),
-        files_touched: z
-          .array(z.string())
-          .describe('Files the builder reported writing/editing.'),
+        files_touched: z.array(z.string()).describe('Files the builder reported writing/editing.'),
         attempt: z
           .number()
           .int()

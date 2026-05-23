@@ -20,7 +20,9 @@ export const DiffReportSchema = z.object({
     ),
   head_sha: z
     .string()
-    .describe('The current `git rev-parse HEAD`. Will be written to `.snapshot` after a successful patch.'),
+    .describe(
+      'The current `git rev-parse HEAD`. Will be written to `.snapshot` after a successful patch.',
+    ),
   changed_files: z
     .array(z.string())
     .describe(
@@ -28,7 +30,9 @@ export const DiffReportSchema = z.object({
     ),
   intel_files_to_patch: z
     .array(z.string())
-    .describe('Deduplicated paths under `.planning/intel/` (and `docs/INTEL.md`) that the patch step must rewrite.'),
+    .describe(
+      'Deduplicated paths under `.planning/intel/` (and `docs/INTEL.md`) that the patch step must rewrite.',
+    ),
 });
 
 export type DiffReport = z.infer<typeof DiffReportSchema>;

@@ -1,14 +1,14 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const ErrorCode = z.enum([
-  "UNAUTHORIZED",
-  "FORBIDDEN",
-  "TOO_MANY_REQUESTS",
-  "VALIDATION",
-  "NOT_FOUND",
-  "CONFLICT",
-  "UNSUPPORTED_MEDIA",
-  "PAYLOAD_TOO_LARGE",
+  'UNAUTHORIZED',
+  'FORBIDDEN',
+  'TOO_MANY_REQUESTS',
+  'VALIDATION',
+  'NOT_FOUND',
+  'CONFLICT',
+  'UNSUPPORTED_MEDIA',
+  'PAYLOAD_TOO_LARGE',
 ]);
 
 export type ErrorCode = z.infer<typeof ErrorCode>;

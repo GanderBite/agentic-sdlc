@@ -20,7 +20,7 @@
  *   import { logCapture } from "./logCapture.js";
  *   const capture = logCapture();
  */
-import pino, { type DestinationStream } from "pino";
+import pino, { type DestinationStream } from 'pino';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,7 +46,7 @@ function buildCollectingStream(records: LogRecord[]): DestinationStream {
     write(data: string): void {
       try {
         const parsed: unknown = JSON.parse(data);
-        if (typeof parsed === "object" && parsed !== null) {
+        if (typeof parsed === 'object' && parsed !== null) {
           records.push(parsed as LogRecord);
         }
       } catch {
@@ -113,19 +113,19 @@ export const logCapture = captureLogs;
 export function buildCapturingLogger(handle: LogCaptureHandle): pino.Logger {
   return pino(
     {
-      level: "trace",
+      level: 'trace',
       // Preserve redaction config from the shared logger to verify redaction
       // behaviour in tests.
       redact: {
         paths: [
-          "req.headers.cookie",
-          "req.headers.authorization",
+          'req.headers.cookie',
+          'req.headers.authorization',
           'req.headers["x-csrf-token"]',
-          "req.body.password",
+          'req.body.password',
           'res.headers["set-cookie"]',
         ],
         remove: false,
-        censor: "[REDACTED]",
+        censor: '[REDACTED]',
       },
     },
     handle.stream,

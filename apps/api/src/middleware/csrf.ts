@@ -1,20 +1,19 @@
-import { Buffer } from "node:buffer";
-import { timingSafeEqual } from "node:crypto";
+import { Buffer } from 'node:buffer';
+import { timingSafeEqual } from 'node:crypto';
+import type { MiddlewareHandler } from 'hono';
+import { getCookie } from 'hono/cookie';
 
-import { getCookie } from "hono/cookie";
-import type { MiddlewareHandler } from "hono";
-
-import { ForbiddenError } from "../shared/errors.js";
+import { ForbiddenError } from '../shared/errors.js';
 
 /** HTTP methods that mutate state and require a CSRF check (ARCHITECTURE §5.4). */
-const UNSAFE_METHODS = new Set(["POST", "PATCH", "DELETE"]);
+const UNSAFE_METHODS = new Set(['POST', 'PATCH', 'DELETE']);
 
 /**
  * Routes that are exempt from CSRF validation even when using unsafe methods.
  * These are endpoints that issue session cookies and therefore cannot yet carry
  * a CSRF token (login, token refresh).
  */
-const EXEMPT_PATHS = new Set(["/api/login", "/api/refresh"]);
+const EXEMPT_PATHS = new Set(['/api/login', '/api/refresh']);
 
 /**
  * csrf middleware
@@ -38,20 +37,20 @@ export const csrf: MiddlewareHandler = async (c, next): Promise<void> => {
     return;
   }
 
-  const cookieToken = getCookie(c, "csrf_token");
-  const headerToken = c.req.header("X-CSRF-Token");
+  const cookieToken = getCookie(c, 'csrf_token');
+  const headerToken = c.req.header('X-CSRF-Token');
 
   if (
     cookieToken === undefined ||
-    cookieToken === "" ||
+    cookieToken === '' ||
     headerToken === undefined ||
-    headerToken === ""
+    headerToken === ''
   ) {
-    throw new ForbiddenError("CSRF token missing");
+    throw new ForbiddenError('CSRF token missing');
   }
 
-  const cookieBuf = Buffer.from(cookieToken, "utf8");
-  const headerBuf = Buffer.from(headerToken, "utf8");
+  const cookieBuf = Buffer.from(cookieToken, 'utf8');
+  const headerBuf = Buffer.from(headerToken, 'utf8');
 
   // Lengths must match; if they differ the tokens cannot be equal and we must
   // still use timingSafeEqual to avoid leaking length information via timing.
@@ -68,7 +67,7 @@ export const csrf: MiddlewareHandler = async (c, next): Promise<void> => {
   const bytesMatch = safeLen > 0 && timingSafeEqual(safeA, safeB);
 
   if (!lengthsMatch || !bytesMatch) {
-    throw new ForbiddenError("CSRF token mismatch");
+    throw new ForbiddenError('CSRF token mismatch');
   }
 
   await next();

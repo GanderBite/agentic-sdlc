@@ -41,3 +41,10 @@
 [medium] hashRefreshToken / signSessionJwt redefined verbatim in every integration test file; five copies must stay in lock-step with main.ts — auto_fixable=false — first_seen=wave-10
 [medium] log-redaction.test uses vi.spyOn(process.stdout,'write') ad-hoc; the workaround for wave-9 logCapture gap should be promoted into test/support — auto_fixable=false — first_seen=wave-10
 [low] seed integration test spawns tsx subprocess instead of importing seed/main.ts and calling exported main(); ~600ms cold-start tax per run — auto_fixable=false — first_seen=wave-10
+[blocking] typecheck fails with TS2769 on c.get('requestId')/c.get('user') because Hono ctx has no typed Variables env declared — auto_fixable=false — first_seen=review-iter-2
+[blocking] SignJWT().setIssuedAt() defaults to second precision; two refreshes <1s apart produce IDENTICAL session JWTs, B4 rotation observably broken — auto_fixable=false — first_seen=review-iter-2
+[blocking] pnpm -w lint exits 1 with 104 mechanical formatter errors because fixer never runs `biome format --write` after edits — auto_fixable=true — first_seen=review-iter-2
+[medium] integration test calls drizzle(pool,{schema:{} as any}) verbatim — the exact pattern F-008 just removed from src/shared/db.ts; fix did not propagate to tests — auto_fixable=true — first_seen=review-iter-2
+[medium] app.ts middleware-chain comment claims requestId→logger→csrf→authn→authz but only first three wired globally; misleading for downstream sprints — auto_fixable=false — first_seen=review-iter-2
+[low] routes.ts docstring still says 'Mount at /v1/auth' though app.ts mounts at /api; documentation half of the csrf-path fix — auto_fixable=false — first_seen=review-iter-2
+[low] authn middleware reads JWT_SECRET via process.env on every request; bad test-file isolation in single vitest worker — auto_fixable=false — first_seen=review-iter-2

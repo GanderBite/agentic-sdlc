@@ -2,14 +2,14 @@
 // Only re-export the factory and the types that other modules or the route
 // layer need.  Repo internals, schema, and throttle remain private.
 
-export { createAuthService } from "./service.js";
 export type {
   AuthService,
   AuthServiceDeps,
   AuthTokens,
+  Logger as AuthLogger,
   LoginInput,
   LogoutInput,
   RefreshInput,
   UserClaims,
-  Logger as AuthLogger,
-} from "./service.js";
+} from './service.js';
+export { createAuthService } from './service.js';

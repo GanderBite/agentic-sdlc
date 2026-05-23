@@ -16,14 +16,16 @@ export const SprintSchema = z.object({
   title: z.string().describe('Human-readable sprint title, one sentence.'),
   feature_brief: z
     .string()
-    .describe('Path to the enriched feature brief used as input. Same value across all tasks in the sprint.'),
-  branch: z
-    .string()
-    .describe('Sprint branch name, conventionally `sprint/<id>-<slug>` (§12).'),
+    .describe(
+      'Path to the enriched feature brief used as input. Same value across all tasks in the sprint.',
+    ),
+  branch: z.string().describe('Sprint branch name, conventionally `sprint/<id>-<slug>` (§12).'),
   waves: z
     .array(z.string())
     .min(1)
-    .describe('Ordered list of wave ids in this sprint. Must end with the smoke wave on the final sprint.'),
+    .describe(
+      'Ordered list of wave ids in this sprint. Must end with the smoke wave on the final sprint.',
+    ),
   orchestrator_token_budget: z
     .number()
     .int()

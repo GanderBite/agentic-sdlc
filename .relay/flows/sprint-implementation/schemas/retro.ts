@@ -13,10 +13,14 @@ import { z } from '@ganderbite/relay-core';
 export const RetroSchema = z.object({
   retro_md_path: z
     .string()
-    .describe('Path to the human-readable retro markdown, normally `.planning/retros/<sprint>.md`.'),
+    .describe(
+      'Path to the human-readable retro markdown, normally `.planning/retros/<sprint>.md`.',
+    ),
   priors_patch_path: z
     .string()
-    .describe('Path to the machine-readable priors patch JSON, normally `.planning/retros/<sprint>.priors-patch.json`.'),
+    .describe(
+      'Path to the machine-readable priors patch JSON, normally `.planning/retros/<sprint>.priors-patch.json`.',
+    ),
   tasks_summarized: z
     .number()
     .int()

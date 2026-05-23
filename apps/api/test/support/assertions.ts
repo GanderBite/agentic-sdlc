@@ -6,9 +6,9 @@
  *   import { expectAppError } from "./assertions.js";
  *   await expectAppError(res, "UNAUTHORIZED");
  */
-import { expect } from "vitest";
 
-import type { ErrorCode } from "@medbridge/contracts";
+import type { ErrorCode } from '@medbridge/contracts';
+import { expect } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Status-code map
@@ -58,15 +58,15 @@ const STATUS_FOR_CODE = {
 export async function expectAppError(res: Response, code: ErrorCode): Promise<void> {
   const expectedStatus = STATUS_FOR_CODE[code];
 
-  expect(res.status, `expected HTTP ${expectedStatus} for error code "${code}" but got ${res.status}`).toBe(expectedStatus);
+  expect(
+    res.status,
+    `expected HTTP ${expectedStatus} for error code "${code}" but got ${res.status}`,
+  ).toBe(expectedStatus);
 
   // Clone before consuming the body so callers can read it too if needed.
   const body: unknown = await res.clone().json();
 
-  expect(
-    body,
-    `expected JSON body to have shape { error: { code: "${code}" } }`,
-  ).toMatchObject({
+  expect(body, `expected JSON body to have shape { error: { code: "${code}" } }`).toMatchObject({
     error: {
       code,
     },

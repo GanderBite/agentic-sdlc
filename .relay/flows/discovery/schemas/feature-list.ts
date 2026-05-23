@@ -18,9 +18,7 @@ const FeatureSchema = z.object({
     })
     .describe('Stable kebab-case identifier. Filename becomes FEATURE-<slug>.md.'),
   title: z.string().describe('Human-readable feature name.'),
-  summary: z
-    .string()
-    .describe('One-sentence statement of what this feature delivers.'),
+  summary: z.string().describe('One-sentence statement of what this feature delivers.'),
   scope: z
     .array(z.string())
     .min(1)
