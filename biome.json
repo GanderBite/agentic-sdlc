@@ -16,7 +16,9 @@
       "!**/node_modules",
       "!**/migrations/meta",
       "!pnpm-lock.yaml",
-      "!.turbo"
+      "!.turbo",
+      "!.planning",
+      "!.relay"
     ]
   },
   "vcs": {

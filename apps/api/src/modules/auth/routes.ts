@@ -15,7 +15,14 @@
  * singleton imports.
  */
 
-import { type Role, loginRequest, loginResponse, logoutResponse, meResponse, refreshResponse } from '@medbridge/contracts';
+import {
+  loginRequest,
+  loginResponse,
+  logoutResponse,
+  meResponse,
+  type Role,
+  refreshResponse,
+} from '@medbridge/contracts';
 import type { MiddlewareHandler } from 'hono';
 import { Hono } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
