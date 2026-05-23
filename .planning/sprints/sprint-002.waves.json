@@ -29,7 +29,7 @@
       ],
       "token_budget": 200000,
       "max_parallelism": 4,
-      "status": "todo"
+      "status": "done"
     },
     {
       "id": "wave-4",
