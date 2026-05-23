@@ -1,0 +1,219 @@
+{
+  "verdict": "pass",
+  "bullets_total": 14,
+  "bullets_covered": 14,
+  "coverage": [
+    {
+      "bullet": "`pnpm install --frozen-lockfile` succeeds at the repo root and `pnpm -r typecheck` exits 0 across apps/api and packages/contracts.",
+      "task_ids": [
+        "task-workspace",
+        "task-contracts",
+        "task-api-pkg"
+      ],
+      "gates": [
+        "node -e \"const p=require('./package.json'); process.exit(p.packageManager && p.packageManager.startsWith('pnpm@') ? 0 : 1)\"",
+        "rg --quiet 'apps/\\*' pnpm-workspace.yaml",
+        "rg --quiet 'packages/\\*' pnpm-workspace.yaml",
+        "node -e \"const p=require('./packages/contracts/package.json'); process.exit(p.dependencies && p.dependencies.zod ? 0 : 1)\"",
+        "node -e \"const p=require('./apps/api/package.json'); const d={...p.dependencies,...p.devDependencies}; const need=['hono','drizzle-orm','pg','zod','argon2','jose','pino','drizzle-kit','vitest','@testcontainers/postgresql']; const miss=need.filter(n=>!d[n]); process.exit(miss.length===0?0:1)\"",
+        "node -e \"const t=require('./tsconfig.base.json'); process.exit(t.compilerOptions && t.compilerOptions.strict === true ? 0 : 1)\""
+      ]
+    },
+    {
+      "bullet": "`docker compose up postgres api-migrate api` results in `api` reporting healthy on `/api/health`, with `api-migrate` exiting 0 before `api` starts.",
+      "task_ids": [
+        "task-docker",
+        "task-app"
+      ],
+      "gates": [
+        "rg --quiet 'postgres:' docker-compose.yml",
+        "rg --quiet 'api-migrate:' docker-compose.yml",
+        "rg --quiet 'service_completed_successfully' docker-compose.yml",
+        "rg --quiet 'service_healthy' docker-compose.yml",
+        "rg --quiet 'healthcheck' docker-compose.yml",
+        "rg --quiet '/api/health' apps/api/src/app.ts"
+      ]
+    },
+    {
+      "bullet": "POST /api/auth.login with valid seeded credentials returns HTTP 200, sets HttpOnly+Secure `session` and `refresh_token` cookies plus a non-HttpOnly `csrf_token` cookie, and returns `{ user: { id, email, role } }`; invalid credentials return HTTP 401 with `{ error: { code: \"UNAUTHORIZED\" } }` and no cookies.",
+      "task_ids": [
+        "task-test-auth-login",
+        "task-auth-routes"
+      ],
+      "gates": [
+        "rg --quiet 'auth\\.login' apps/api/test/integration/auth.login.test.ts",
+        "rg --quiet 'UNAUTHORIZED' apps/api/test/integration/auth.login.test.ts",
+        "rg --quiet 'HttpOnly' apps/api/test/integration/auth.login.test.ts",
+        "rg --quiet 'csrf_token' apps/api/test/integration/auth.login.test.ts",
+        "rg --quiet 'HttpOnly' apps/api/src/modules/auth/routes.ts",
+        "rg --quiet 'csrf_token' apps/api/src/modules/auth/routes.ts"
+      ]
+    },
+    {
+      "bullet": "POST /api/auth.refresh rotates the refresh token (old hash revoked, new hash stored); a replayed refresh cookie returns HTTP 401.",
+      "task_ids": [
+        "task-test-auth-refresh"
+      ],
+      "gates": [
+        "rg --quiet 'auth\\.refresh' apps/api/test/integration/auth.refresh.test.ts",
+        "rg --quiet 'revoked_at' apps/api/test/integration/auth.refresh.test.ts",
+        "rg --quiet 'warn' apps/api/test/integration/auth.refresh.test.ts",
+        "rg --quiet 'Promise.all' apps/api/test/integration/auth.refresh.test.ts"
+      ]
+    },
+    {
+      "bullet": "GET /api/auth.me returns the current user on a valid session cookie and HTTP 401 otherwise; POST /api/auth.logout clears both cookies and revokes the active refresh-token row.",
+      "task_ids": [
+        "task-test-auth-session"
+      ],
+      "gates": [
+        "rg --quiet 'auth\\.me' apps/api/test/integration/auth.session.test.ts",
+        "rg --quiet 'auth\\.logout' apps/api/test/integration/auth.session.test.ts",
+        "rg --quiet 'UNAUTHORIZED' apps/api/test/integration/auth.session.test.ts"
+      ]
+    },
+    {
+      "bullet": "Any state-changing route invoked without a matching `X-CSRF-Token` header to the `csrf_token` cookie returns HTTP 403 with `{ error: { code: \"FORBIDDEN\" } }`.",
+      "task_ids": [
+        "task-test-csrf",
+        "task-middleware"
+      ],
+      "gates": [
+        "rg --quiet 'X-CSRF-Token' apps/api/test/integration/csrf.test.ts",
+        "rg --quiet 'FORBIDDEN' apps/api/test/integration/csrf.test.ts",
+        "rg --quiet '403' apps/api/test/integration/csrf.test.ts",
+        "rg --quiet 'timingSafeEqual' apps/api/src/middleware/csrf.ts"
+      ]
+    },
+    {
+      "bullet": "An integration test attempting login with an unknown email still incurs an argon2id verify (constant-time path) — asserted by measuring that unknown-email and wrong-password code paths both branch through the hashing call.",
+      "task_ids": [
+        "task-test-auth-login",
+        "task-shared"
+      ],
+      "gates": [
+        "rg --quiet 'toHaveBeenCalledTimes' apps/api/test/integration/auth.login.test.ts",
+        "rg --quiet 'createPasswordVerifier' apps/api/src/shared/password.ts",
+        "rg --quiet 'argon2id' apps/api/src/shared/password.ts"
+      ]
+    },
+    {
+      "bullet": "A log-capture integration test asserts no API log line emitted during auth flows contains a password, JWT, refresh token, or CSRF token value.",
+      "task_ids": [
+        "task-test-log-redaction"
+      ],
+      "gates": [
+        "rg --quiet 'REDACTED' apps/api/test/integration/log-redaction.test.ts",
+        "rg --quiet 'eyJ' apps/api/test/integration/log-redaction.test.ts",
+        "rg --quiet 'auth\\.login' apps/api/test/integration/log-redaction.test.ts",
+        "rg --quiet 'auth\\.refresh' apps/api/test/integration/log-redaction.test.ts",
+        "rg --quiet 'set-cookie' apps/api/test/integration/log-redaction.test.ts"
+      ]
+    },
+    {
+      "bullet": "Session JWTs are signed and verified with **HS256** using a single shared secret read from the `JWT_SECRET` env var; the API refuses to boot when `JWT_SECRET` is missing or shorter than 32 characters, and an integration test mints a token with HS384 and asserts authn rejects it with HTTP 401.",
+      "task_ids": [
+        "task-middleware",
+        "task-app",
+        "task-test-auth-session"
+      ],
+      "gates": [
+        "rg --quiet 'HS256' apps/api/src/middleware/authn.ts",
+        "rg --quiet 'algorithms' apps/api/src/middleware/authn.ts",
+        "rg --quiet 'jwtVerify' apps/api/src/middleware/authn.ts",
+        "rg --quiet 'JWT_SECRET' apps/api/src/main.ts",
+        "rg --quiet '32' apps/api/src/main.ts",
+        "rg --quiet 'length' apps/api/src/main.ts",
+        "rg --quiet 'HS384' apps/api/test/integration/auth.session.test.ts",
+        "rg --quiet 'UNAUTHORIZED' apps/api/test/integration/auth.session.test.ts"
+      ]
+    },
+    {
+      "bullet": "Refresh-token reuse detection is **scoped to the replayed hash only**: when a refresh cookie whose hash is already `revoked_at IS NOT NULL` (or absent) is presented, the route returns HTTP 401 and ensures the offending row is `revoked_at = now()`, but every other still-active `refresh_token` row for the same user remains untouched. An integration test creates two active refresh tokens for one user, replays the first (already-rotated) one, and asserts the second token still authenticates a subsequent `auth.refresh` successfully.",
+      "task_ids": [
+        "task-test-auth-refresh",
+        "task-auth-service"
+      ],
+      "gates": [
+        "rg --quiet 'sessionA|sessionB|secondSession|twoSessions|second.session' apps/api/test/integration/auth.refresh.test.ts",
+        "rg --quiet 'revoked_at' apps/api/test/integration/auth.refresh.test.ts",
+        "rg --quiet 'revokeAllActiveTokensForUser' apps/api/src/modules/auth/repo.ts",
+        "rg --quiet 'revokeAllActiveTokensForUser' apps/api/src/modules/auth/service.ts",
+        "rg --quiet 'replay' apps/api/src/modules/auth/service.ts",
+        "rg --quiet 'findRefreshTokenByHash' apps/api/src/modules/auth/repo.ts"
+      ]
+    },
+    {
+      "bullet": "The `accounts` schema in this feature ships **only the `user` table** with columns `id uuid pk default gen_random_uuid()`, `email citext unique not null`, `role` (enum `'patient' | 'doctor'`), `password_hash text not null`, `created_at timestamptz not null default now()`, `deleted_at timestamptz null`; `patient_profile` / `doctor_profile` / `specialization` / `doctor_specialization` tables are explicitly deferred to later features and MUST NOT appear in this migration.",
+      "task_ids": [
+        "task-db-schema"
+      ],
+      "gates": [
+        "rg --quiet 'password_hash' apps/api/src/modules/accounts/schema.ts",
+        "rg --quiet 'citext' apps/api/src/modules/accounts/schema.ts",
+        "rg --quiet 'role' apps/api/src/modules/accounts/schema.ts",
+        "rg --quiet 'deleted_at|deletedAt' apps/api/src/modules/accounts/schema.ts",
+        "rg --quiet 'patient_profile' apps/api/src/db/migrations/0000_init.sql",
+        "rg --quiet 'doctor_profile' apps/api/src/db/migrations/0000_init.sql",
+        "rg --quiet 'doctor_specialization' apps/api/src/db/migrations/0000_init.sql",
+        "rg --quiet 'user_credential' apps/api/src/db/migrations/0000_init.sql",
+        "rg --quiet 'pgcrypto' apps/api/src/db/migrations/0000_init.sql",
+        "rg --quiet 'citext' apps/api/src/db/migrations/0000_init.sql"
+      ]
+    },
+    {
+      "bullet": "`auth.login` is protected by an **in-memory IP+email throttle** wired through the auth service: 10 attempts per rolling 15-minute window per `(remoteIp, lowercased(email))` pair; the 11th attempt within the window returns HTTP 429 with `{ error: { code: \"TOO_MANY_REQUESTS\" } }` regardless of credential validity, and the counter naturally drains as old timestamps fall out of the window. An integration test fires 11 same-IP, same-email login requests against `auth.service` and asserts exactly the first 10 reach the argon2 verify spy while the 11th short-circuits to 429.",
+      "task_ids": [
+        "task-auth-throttle",
+        "task-test-auth-login",
+        "task-auth-service"
+      ],
+      "gates": [
+        "rg --quiet 'createLoginThrottle' apps/api/src/modules/auth/throttle.ts",
+        "rg --quiet 'toLowerCase' apps/api/src/modules/auth/throttle.ts",
+        "rg --quiet 'TooManyRequestsError' apps/api/src/modules/auth/throttle.ts",
+        "rg --quiet '15' apps/api/src/modules/auth/throttle.ts",
+        "rg --quiet 'windowMs|window' apps/api/src/modules/auth/throttle.ts",
+        "rg --quiet 'TOO_MANY_REQUESTS' apps/api/test/integration/auth.login.test.ts",
+        "rg --quiet 'toHaveBeenCalledTimes' apps/api/test/integration/auth.login.test.ts",
+        "rg --quiet 'x-forwarded-for' apps/api/test/integration/auth.login.test.ts",
+        "rg --quiet 'differentEmail|otherEmail|secondEmail|notThrottled|different-email' apps/api/test/integration/auth.login.test.ts",
+        "rg --quiet 'throttle' apps/api/src/modules/auth/service.ts"
+      ]
+    },
+    {
+      "bullet": "Seed credentials are sourced from a **JSON fixture file at `apps/api/src/seed/fixtures/users.json`** consumed by `apps/api/src/seed/main.ts`; the fixture lists at least one patient and one doctor with plaintext passwords that the seeder hashes via the production argon2id util before insert. The seeder is idempotent — re-running on a populated DB inserts zero rows and exits 0 — asserted by an integration test that runs the seed twice against the same testcontainer.",
+      "task_ids": [
+        "task-seed",
+        "task-test-seed"
+      ],
+      "gates": [
+        "node -e \"const fs=require('fs'); const a=JSON.parse(fs.readFileSync('apps/api/src/seed/fixtures/users.json','utf8')); const ok = Array.isArray(a) && a.some(u=>u.role==='patient') && a.some(u=>u.role==='doctor') && a.every(u=>u.email && u.password); process.exit(ok?0:1)\"",
+        "rg --quiet 'fixtures/users.json' apps/api/src/seed/main.ts",
+        "rg --quiet 'argon2|hash|password_hash' apps/api/src/seed/main.ts",
+        "rg --quiet 'idempotent|twice' apps/api/test/integration/seed.test.ts",
+        "rg --quiet 'seed' apps/api/test/integration/seed.test.ts"
+      ]
+    },
+    {
+      "bullet": "pino is configured with a `redact` paths config covering at minimum `req.headers.cookie`, `req.headers.authorization`, `req.headers[\"x-csrf-token\"]`, `req.body.password`, and `res.headers[\"set-cookie\"]`; an integration test captures stdout while exercising `auth.login`, `auth.refresh`, and a CSRF-failing POST, then greps the captured lines and asserts the literal values of the seeded password, the issued JWT, the issued refresh token, and the issued CSRF token do **not** appear in any captured byte.",
+      "task_ids": [
+        "task-shared",
+        "task-test-log-redaction"
+      ],
+      "gates": [
+        "rg --quiet 'redact' apps/api/src/shared/logger.ts",
+        "rg --quiet 'req.headers.cookie' apps/api/src/shared/logger.ts",
+        "rg --quiet 'authorization' apps/api/src/shared/logger.ts",
+        "rg --quiet 'x-csrf-token' apps/api/src/shared/logger.ts",
+        "rg --quiet 'req.body.password' apps/api/src/shared/logger.ts",
+        "rg --quiet 'set-cookie' apps/api/src/shared/logger.ts",
+        "rg --quiet 'REDACTED' apps/api/src/shared/logger.ts",
+        "rg --quiet 'REDACTED' apps/api/test/integration/log-redaction.test.ts",
+        "rg --quiet 'eyJ' apps/api/test/integration/log-redaction.test.ts",
+        "rg --quiet -i 'authorization|Bearer' apps/api/test/integration/log-redaction.test.ts"
+      ]
+    }
+  ],
+  "gaps": []
+}
