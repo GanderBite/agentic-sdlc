@@ -33,3 +33,11 @@
 [medium] test/support/fixtures.ts loadRawFixtures() duplicates seed/main.ts loadFixtures(); single fixture parser should live under src/seed/fixtures/ — auto_fixable=false — first_seen=wave-9
 [low] container.ts migration pool not wrapped in try/finally; pool leaks on migrate() throw — auto_fixable=true — first_seen=wave-9
 [low] request.ts cookie deletion detects max-age=0 but not past-date Expires; brittle if hono/cookie deleteCookie ever emits Expires instead — auto_fixable=false — first_seen=wave-9
+[blocking] authn middleware calls jwtVerify without clockTolerance; jose v5 default is 0s so B12's 5s skew guarantee is silently absent — auto_fixable=true — first_seen=wave-10
+[high] vi.spyOn(prodModule, 'fn') after a closure already captured the property by-value — spy never intercepts, toHaveBeenCalledTimes always observes 0 — auto_fixable=false — first_seen=wave-10
+[high] log-redaction integration test exercises buildCapturingLogger directly instead of production middleware/logger.ts; middleware never serialises req.headers so shared/logger.ts redact paths have no runtime coverage — auto_fixable=false — first_seen=wave-10
+[high] integration test substitutes always-true verifyPassword stub instead of createPasswordVerifier().verify; silently masks any real argon2 regression — auto_fixable=false — first_seen=wave-10
+[medium] one wave-10 test file rolls its own PostgreSqlContainer + withReuse() branch instead of the shared startPostgres() helper used by sibling files — auto_fixable=false — first_seen=wave-10
+[medium] hashRefreshToken / signSessionJwt redefined verbatim in every integration test file; five copies must stay in lock-step with main.ts — auto_fixable=false — first_seen=wave-10
+[medium] log-redaction.test uses vi.spyOn(process.stdout,'write') ad-hoc; the workaround for wave-9 logCapture gap should be promoted into test/support — auto_fixable=false — first_seen=wave-10
+[low] seed integration test spawns tsx subprocess instead of importing seed/main.ts and calling exported main(); ~600ms cold-start tax per run — auto_fixable=false — first_seen=wave-10
