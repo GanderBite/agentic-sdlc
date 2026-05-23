@@ -1,0 +1,10 @@
+{
+  "name": "medbridge",
+  "private": true,
+  "packageManager": "pnpm@10.11.0",
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  }
+}
