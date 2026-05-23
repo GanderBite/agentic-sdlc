@@ -118,7 +118,7 @@
       ],
       "token_budget": 10000,
       "max_parallelism": 1,
-      "status": "todo"
+      "status": "done"
     }
   ]
 }

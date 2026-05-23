@@ -6,15 +6,15 @@ import type { MiddlewareHandler } from "hono";
 
 import { ForbiddenError } from "../shared/errors.js";
 
-/** HTTP methods that mutate state and require a CSRF check. */
-const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+/** HTTP methods that mutate state and require a CSRF check (ARCHITECTURE §5.4). */
+const UNSAFE_METHODS = new Set(["POST", "PATCH", "DELETE"]);
 
 /**
  * Routes that are exempt from CSRF validation even when using unsafe methods.
  * These are endpoints that issue session cookies and therefore cannot yet carry
  * a CSRF token (login, token refresh).
  */
-const EXEMPT_PATHS = new Set(["/v1/auth/login", "/v1/auth/refresh"]);
+const EXEMPT_PATHS = new Set(["/api/login", "/api/refresh"]);
 
 /**
  * csrf middleware
