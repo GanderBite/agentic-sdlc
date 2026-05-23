@@ -1,0 +1,31 @@
+{
+  "wave_id": "wave-4",
+  "tasks": [
+    {
+      "task_id": "task-shared",
+      "gates": [
+        { "kind": "files_exist", "cmd": "test -e apps/api/src/shared/errors.ts",   "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "test -e apps/api/src/shared/logger.ts",   "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "test -e apps/api/src/shared/password.ts", "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "test -e apps/api/src/shared/db.ts",       "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "test -e apps/api/src/shared/ids.ts",      "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "files_exist", "cmd": "test -e apps/api/src/shared/time.ts",     "exit": 0, "duration_ms": 5, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'class AppError' apps/api/src/shared/errors.ts",         "exit": 0, "duration_ms": 33, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'UnauthorizedError' apps/api/src/shared/errors.ts",      "exit": 0, "duration_ms": 26, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'ForbiddenError' apps/api/src/shared/errors.ts",         "exit": 0, "duration_ms": 24, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'TooManyRequestsError' apps/api/src/shared/errors.ts",   "exit": 0, "duration_ms": 23, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'redact' apps/api/src/shared/logger.ts",                 "exit": 0, "duration_ms": 28, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'req.headers.cookie' apps/api/src/shared/logger.ts",     "exit": 0, "duration_ms": 24, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'authorization' apps/api/src/shared/logger.ts",          "exit": 0, "duration_ms": 25, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'x-csrf-token' apps/api/src/shared/logger.ts",           "exit": 0, "duration_ms": 25, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'req.body.password' apps/api/src/shared/logger.ts",      "exit": 0, "duration_ms": 25, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'set-cookie' apps/api/src/shared/logger.ts",             "exit": 0, "duration_ms": 25, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'REDACTED' apps/api/src/shared/logger.ts",               "exit": 0, "duration_ms": 25, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'argon2id' apps/api/src/shared/password.ts",             "exit": 0, "duration_ms": 24, "flake_retries": 0 },
+        { "kind": "custom", "cmd": "rg --quiet 'createPasswordVerifier' apps/api/src/shared/password.ts", "exit": 0, "duration_ms": 25, "flake_retries": 0 }
+      ],
+      "verdict": "pass"
+    }
+  ],
+  "verdict": "pass"
+}

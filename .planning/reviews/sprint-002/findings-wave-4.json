@@ -1,0 +1,106 @@
+{
+  "wave_id": "wave-4",
+  "findings": [
+    {
+      "id": "f-1",
+      "severity": "high",
+      "category": "style",
+      "file": "apps/api/src/shared/errors.ts",
+      "line": 1,
+      "message": "All string literals use double quotes, but biome.json mandates javascript.formatter.quoteStyle='single'. This is the third wave in sprint-002 where this anti-pattern recurs (first_seen=wave-2 per do-not-recur.md). Auto-fixable via `biome format --write`.",
+      "auto_fixable": true,
+      "suggested_fix": "Run the project's formatter (biome) to convert double-quote string literals to single quotes across the six new files in apps/api/src/shared/. Builder protocol for TS files should include a formatter pass."
+    },
+    {
+      "id": "f-2",
+      "severity": "high",
+      "category": "style",
+      "file": "apps/api/src/shared/logger.ts",
+      "line": 1,
+      "message": "Double-quote string literals violate biome quoteStyle='single' (recurrence of wave-2 pattern). Note: 'req.headers.authorization' and the redact path strings remain semantically correct under either quote style.",
+      "auto_fixable": true,
+      "suggested_fix": "Run `biome format --write apps/api/src/shared/logger.ts`. Confirm verification gates (which use single-quoted rg patterns to match double-quoted string contents) still pass — they will, because rg matches the literal characters inside the strings."
+    },
+    {
+      "id": "f-3",
+      "severity": "high",
+      "category": "style",
+      "file": "apps/api/src/shared/password.ts",
+      "line": 1,
+      "message": "Double-quote string literals violate biome quoteStyle='single' (recurrence).",
+      "auto_fixable": true,
+      "suggested_fix": "Run `biome format --write apps/api/src/shared/password.ts`."
+    },
+    {
+      "id": "f-4",
+      "severity": "high",
+      "category": "style",
+      "file": "apps/api/src/shared/db.ts",
+      "line": 1,
+      "message": "Double-quote string literals violate biome quoteStyle='single' (recurrence).",
+      "auto_fixable": true,
+      "suggested_fix": "Run `biome format --write apps/api/src/shared/db.ts`."
+    },
+    {
+      "id": "f-5",
+      "severity": "high",
+      "category": "style",
+      "file": "apps/api/src/shared/ids.ts",
+      "line": 1,
+      "message": "Double-quote string literals violate biome quoteStyle='single' (recurrence).",
+      "auto_fixable": true,
+      "suggested_fix": "Run `biome format --write apps/api/src/shared/ids.ts`."
+    },
+    {
+      "id": "f-6",
+      "severity": "medium",
+      "category": "correctness",
+      "file": "apps/api/src/shared/db.ts",
+      "line": 19,
+      "message": "Uses `as any` with an `eslint-disable @typescript-eslint/no-explicit-any` pragma, but the project lints with biome (suspicious.noExplicitAny: 'error') which does NOT honor ESLint pragmas. The cast will be flagged once biome lint is wired in (planned per do-not-recur wave-3 finding #4). Additionally, `schema: {}` defeats Drizzle's relational query API (db.query.*) — the file comments acknowledge this needs a follow-up.",
+      "auto_fixable": false,
+      "suggested_fix": "Either (a) replace `{} as any` with `{} as Record<string, never>` (still produces a degraded Db type but eliminates the `any`), or (b) defer drizzle initialisation until the schema barrel exists in a later wave and export a lazy getter. Option (b) matches the file's own TODO and avoids leaking a typed-loosely Db across the codebase."
+    },
+    {
+      "id": "f-7",
+      "severity": "low",
+      "category": "correctness",
+      "file": "apps/api/src/shared/errors.ts",
+      "line": 5,
+      "message": "AppError.code is typed as `string` even though every subclass narrows it to `ErrorCode` (the imported branded enum from @medbridge/contracts). Callers reading `err.code` get `string` instead of the exhaustive union, defeating the purpose of importing the type.",
+      "auto_fixable": true,
+      "suggested_fix": "Change `readonly code: string` to `readonly code: ErrorCode` and update the constructor parameter type to `code: ErrorCode`. Subclasses already pass a value of that type."
+    },
+    {
+      "id": "f-8",
+      "severity": "low",
+      "category": "correctness",
+      "file": "apps/api/src/shared/password.ts",
+      "line": 7,
+      "message": "Parameter name `hash` shadows the exported function `hash` (line 3). Inside `verify`, the identifier `hash` resolves to the argument, which is confusing and prevents calling the outer `hash` from within the function body.",
+      "auto_fixable": true,
+      "suggested_fix": "Rename the parameter to `hashed` (or `passwordHash`) in both `verify` and `createPasswordVerifier`. Update the matching type in `PasswordVerifier`."
+    },
+    {
+      "id": "f-9",
+      "severity": "low",
+      "category": "security",
+      "file": "apps/api/src/shared/db.ts",
+      "line": 5,
+      "message": "process.env['DATABASE_URL'] is passed directly to Pool without a runtime check. When unset, pg silently falls back to individual PG* env vars or libpq defaults — a misconfiguration is easy to miss until first query.",
+      "auto_fixable": false,
+      "suggested_fix": "Either throw at module load if `process.env.DATABASE_URL` is missing, or move env validation into a centralized `config.ts` (likely a later wave). The latter is preferable to keep db.ts minimal."
+    },
+    {
+      "id": "f-10",
+      "severity": "info",
+      "category": "style",
+      "file": "apps/api/src/shared/ids.ts",
+      "line": 18,
+      "message": "Bitwise operator precedence is correct (`<<` binds tighter than `|` in JS), but the inline expression mixing `&`, `<<`, and `|` without parentheses around the `(x << 8)` clause is hard to scan during review.",
+      "auto_fixable": true,
+      "suggested_fix": "Add explicit parens: `const randA = ((BigInt(rand[0] ?? 0) & 0x0fn) << 8n) | BigInt(rand[1] ?? 0);`. Pure readability — no behavioral change."
+    }
+  ],
+  "summary": { "blocking": 0, "high": 5, "medium": 1, "low": 3, "info": 1 }
+}
