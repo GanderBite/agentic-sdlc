@@ -31,7 +31,7 @@ Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
   "bullets_total": 0,
   "bullets_covered": 0,
   "coverage": [
-    { "bullet": "...", "task_ids": ["task-7f2a"], "gates": ["pnpm test --filter resource"] }
+    { "bullet": "...", "task_ids": ["task-7f2a"], "gates": ["<verbatim command from task.verification.*>"] }
   ],
   "gaps": []
 }
