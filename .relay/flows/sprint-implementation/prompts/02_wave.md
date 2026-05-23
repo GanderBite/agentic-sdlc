@@ -88,7 +88,7 @@ Return ONLY a JSON object matching the WaveOutcomeSchema. No prose, no backticks
   "next_wave_id": "wave-3",
   "commit_message": {
     "subject": "feat(patient-portal): wave-2 — JWT auth + refresh rotation",
-    "body": "Wire signup/login/refresh routes under apps/api/src/modules/auth.\nAdd argon2 password hashing, httpOnly refresh-token cookie, and\nzod-validated request boundaries. Refresh-token rotation rejects\nreplayed tokens.\n\nNotable changes:\n- apps/api/src/modules/auth/* (new)\n- apps/api/src/db/schema/users.ts (new)\n- apps/api/src/middleware/auth.ts (new)\n\nTasks:\n- task-auth-core\n- task-auth-mw\n- task-auth-routes"
+    "body": "Wire signup/login/refresh routes under the auth module.\nAdd password hashing, httpOnly refresh-token cookie, and validated\nrequest boundaries (validator per the project's stack). Refresh-token\nrotation rejects replayed tokens.\n\nNotable changes (project paths shown as illustrative — replace with\nyour repo's actual layout):\n- <api-source>/modules/auth/* (new)\n- <api-source>/db/schema/users.* (new)\n- <api-source>/middleware/auth.* (new)\n\nTasks:\n- task-auth-core\n- task-auth-mw\n- task-auth-routes"
   },
   "dispatches": [
     { "task_id": "task-auth-core", "subagent_type": "backend-builder", "files_touched": ["apps/api/src/modules/auth/service.ts", "apps/api/src/db/schema/users.ts"], "attempt": 1 },

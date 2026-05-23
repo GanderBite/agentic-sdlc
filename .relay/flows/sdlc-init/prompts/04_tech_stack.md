@@ -48,13 +48,15 @@ The handoff is a RECORD of work done, not a PLAN.
 <output_format>
 Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
 
+**The example values below are placeholders** — fill each field from the stack YOU just picked above for THIS project. Do not pattern-match on the placeholder values; a Python+FastAPI+pytest project would produce `"languages": ["python"]`, `"runtime": "python@3.13"`, `"package_manager": "uv"`, `"test_runner": "pytest"`, `"linter": "ruff"`, `"skills_to_author": ["python", "fastapi", "sqlalchemy", "pytest", "unit-testing", "api-integration-testing", "security-testing"]`. A Go project produces a different set again. The `*-testing` strategy skill names ARE stable across stacks; everything else is project-specific.
+
 {
   "tech_stack_path": "docs/TECH_STACK.md",
-  "languages": ["typescript"],
-  "runtime": "node@22",
-  "package_manager": "pnpm",
-  "test_runner": "vitest",
-  "linter": "biome",
-  "skills_to_author": ["typescript", "react", "hono", "vitest", "unit-testing", "api-integration-testing", "frontend-testing", "security-testing"]
+  "languages": ["<primary-language>"],
+  "runtime": "<runtime>@<version>",
+  "package_manager": "<package-manager>",
+  "test_runner": "<test-runner>",
+  "linter": "<linter>",
+  "skills_to_author": ["<language-skill>", "<framework-skill>", "<orm-or-data-skill>", "<test-runner-skill>", "unit-testing", "api-integration-testing", "frontend-testing", "security-testing"]
 }
 </output_format>

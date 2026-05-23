@@ -29,7 +29,7 @@ After all writes, surface a summary handoff so the caller (often the planning fl
 </job>
 
 <rules>
-- Never invent commands. If `package.json` has no `lint` script, omit `lint` from `build-graph.global.lint`.
+- Never invent commands. If the project's manifests do not declare a lint runner (no `lint` script in `package.json`, no `[tool.ruff]`/`[tool.flake8]` in `pyproject.toml`, no `.golangci.yml`, no Rust `clippy` lints, etc.), omit `lint` from `build-graph.global.lint`. Same rule applies to test / build / typecheck — every command in `build-graph.json` must be derivable from a manifest the project actually has.
 - Never speculate about modules that do not exist on disk.
 - Never rewrite an intel file that is not in `{{diff_report.intel_files_to_patch}}` (in `mode: "diff"`).
 - Always update `.planning/intel/.snapshot` after a successful patch — otherwise the next run repeats the same diff.

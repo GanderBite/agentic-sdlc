@@ -25,7 +25,7 @@ Build the complete intel surface for this repository per AGENTIC_SDLC.md §4.1:
 </procedure>
 
 <rules>
-- Never invent a command. If `package.json` has no `lint` script, omit `lint` from `build-graph.global` and note it in `conventions.md`.
+- Never invent a command. If the project's manifests do not declare a lint runner (no `lint` script in `package.json`, no `[tool.ruff]` block in `pyproject.toml`, no `.golangci.yml`, etc.), omit `lint` from `build-graph.global` and note its absence in `conventions.md`. Same rule applies to test / build / typecheck commands — every command in `build-graph.json` must be derivable from a manifest the project actually has.
 - Never speculate about modules that do not exist on disk.
 - Cap `INTEL.md` at ~5k tokens. Push depth into `.planning/intel/` files.
 - On a fresh repo (no source files), write minimal valid stubs for every intel file so downstream steps can read them.
@@ -47,9 +47,9 @@ Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
 {
   "intel_md_path": "docs/INTEL.md",
   "modules_count": 0,
-  "languages": ["typescript"],
-  "package_manager": "pnpm",
-  "test_runner": "vitest",
+  "languages": ["<primary-language>"],
+  "package_manager": "<package-manager>",
+  "test_runner": "<test-runner-or-null>",
   "fresh_repo": true,
   "snapshot_sha": "INIT",
   "files_written": [

@@ -29,21 +29,16 @@ You never edit code yourself — every fix lands via a `Task` subagent.
 
 3. **Group findings by file.** Each finding has a primary `file`. Group findings sharing the same `file` into one dispatch. For findings whose `details` reference multiple files, assign the finding to the file with the most other findings (tie-break: lexicographic). One group = one fixer Task.
 
-4. **Pick a persona per group.** Read `builder_agents.json`. For each group, derive pseudo-skills from the file path and apply the dispatch rule from `prompts/02_wave.md`:
+4. **Pick a persona per group.** Read `builder_agents.json` (the per-sprint persona registry). Persona selection is intel-driven and tool-agnostic — never hard-code path→skill tables here (the next project may use Python+pytest, Go, Rust, etc.).
 
-   **§4a testing override.** If the file path matches `**/*.test.ts`, `**/*.test.tsx`, `**/test/**`, or `**/spec/**` AND a `tester` persona exists, dispatch to `tester`.
+   **§4a testing override.** If the file path lies under a test directory (`**/test/**`, `**/tests/**`, `**/spec/**`, `**/specs/**`, `**/__tests__/**`) OR the filename matches a recognized test-file convention (`**/*.test.*`, `**/*.spec.*`, `**/*_test.*`, `**/test_*.*`, `**/spec_*.*`) AND a `tester` persona exists in `builder_agents.json`, dispatch to `tester`. These globs cover JS/TS (`*.test.ts`, `__tests__/`), Python (`test_*.py`), Go (`*_test.go`), Rust (`tests/`), and most other ecosystems.
 
-   **§4b skill-overlap match.** Otherwise derive pseudo-skills from the path:
-   - `apps/api/src/db/**` or `**/schema.ts` or `**/*.sql` → `["drizzle", "typescript"]`
-   - `apps/api/src/middleware/**` or `apps/api/src/modules/**` → `["hono", "typescript", "zod"]`
-   - `apps/api/**` (other) → `["typescript"]`
-   - `apps/ui/**` → `["react", "typescript"]`
-   - `packages/contracts/**` → `["zod", "typescript"]`
-   - `docker-compose.yml`, `**/Dockerfile`, `**/.github/**` → `["docker-compose", "pnpm"]`
-   - `package.json`, `pnpm-workspace.yaml`, `tsconfig*.json`, `biome.json` → `["pnpm", "typescript", "biome"]`
-   - anything else → fall back to the tie-break order `frontend-builder > backend-builder > db-builder > infra-builder > tester`.
-
-   Score skill overlap against each persona's `skills` array; pick the largest intersection. Tie-break with the same order.
+   **§4b intel-driven skill match.** Otherwise:
+   1. Read `.planning/intel/modules.json`. Find the module whose `path` is the longest prefix of the finding's file path (if any). Note that module's `language` and `name`.
+   2. Tokenize the file path: split on `/`, `.`, `-`, `_`; lowercase each token; drop generic noise tokens (`src`, `apps`, `packages`, `dist`, `build`, `lib`, `index`, `main`, `app`, file extensions). Add the matched module's `language` and `name` to the token set, if any.
+   3. For each persona in `builder_agents.json`, compute the overlap score = count of `persona.skills` (lowercased) that exactly match a path token OR appear as a substring of one. Pick the persona with the highest score.
+   4. Tie-break by the declaration order in `builder_agents.json` (first-listed wins).
+   5. If no persona has any overlap (e.g., `modules.json` is empty on a fresh repo), fall back to the first non-`tester` persona in `builder_agents.json`. If only `tester` exists, dispatch to it.
 
    **Invariant:** every chosen `subagent_type` MUST appear in `builder_agents.json` under `.[].name`. The `fix-commit` script will fail the commit if it sees a phantom.
 

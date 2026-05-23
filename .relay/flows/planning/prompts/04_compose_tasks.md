@@ -74,7 +74,7 @@ Return ONLY a JSON object with this shape. No prose, no backticks, no preamble.
         "files_exist": ["..."],
         "custom": []
       },
-      "skills": ["typescript"],
+      "skills": ["<language>", "<framework>"],
       "model": "sonnet",
       "estimate_tokens": 18000,
       "depends_on": [],
