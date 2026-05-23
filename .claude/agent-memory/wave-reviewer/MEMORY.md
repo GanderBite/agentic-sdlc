@@ -1,0 +1,2 @@
+- [Sprint-002 aggregate gate failures](sprint002_aggregate_gate_failures.md) — lint/typecheck/unit-test all fail on HEAD despite every wave reporting pass; auto_fixable findings recurred 5+ waves.
+- [Aggregate review scope discipline](feedback_aggregate_review_scope.md) — for post-sprint reviews, ALWAYS re-run root gates (lint+typecheck+test) repo-wide before trusting per-wave verdicts.
