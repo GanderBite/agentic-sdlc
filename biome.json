@@ -18,7 +18,8 @@
       "!pnpm-lock.yaml",
       "!.turbo",
       "!.planning",
-      "!.relay"
+      "!.relay",
+      "!**/routeTree.gen.ts"
     ]
   },
   "vcs": {

@@ -7,3 +7,7 @@
 [medium] nginx proxy_pass missing X-Forwarded-Proto and WebSocket upgrade headers — auto_fixable=true — first_seen=wave-2
 [low] nginx config missing security headers (X-Content-Type-Options, X-Frame-Options) — auto_fixable=true — first_seen=wave-2
 [medium] FormLabel error check uses strict !== undefined instead of falsy check — auto_fixable=true — first_seen=wave-2
+[blocking] Biome format error on vite.config.ts plugins line exceeding lineWidth — auto_fixable=true — first_seen=wave-3
+[medium] Router lacks queryClient in context needed by protected-shell beforeLoad guard — auto_fixable=false — first_seen=wave-3
+[low] queryKey duplication between meQueryOptions and useMe in me.ts — auto_fixable=true — first_seen=wave-3
+[low] Unnecessary arrow wrapper around api.login in useLogin mutationFn — auto_fixable=true — first_seen=wave-3
