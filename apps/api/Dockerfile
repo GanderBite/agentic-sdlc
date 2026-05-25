@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-ARG NODE_VERSION=25
+ARG NODE_VERSION=22
 
 # ---------- stage 1: deps (cacheable pnpm install) ----------
 FROM node:${NODE_VERSION}-slim AS deps
@@ -18,8 +18,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 # ---------- stage 2: build (typecheck + emit) ----------
 FROM deps AS build
 COPY . .
-RUN pnpm --filter @medbridge/contracts run build && \
-    pnpm --filter @medbridge/api run build
+RUN pnpm --filter @medbridge/api run build
 
 # ---------- stage 3: runtime ----------
 FROM node:${NODE_VERSION}-slim AS runtime
@@ -32,7 +31,7 @@ WORKDIR /app
 COPY --from=build /repo/pnpm-lock.yaml /repo/pnpm-workspace.yaml /repo/package.json ./
 COPY --from=build /repo/apps/api/package.json ./apps/api/
 COPY --from=build /repo/packages/contracts/package.json ./packages/contracts/
-COPY --from=build /repo/packages/contracts/dist ./packages/contracts/dist
+COPY --from=build /repo/packages/contracts/src ./packages/contracts/src
 COPY --from=build /repo/apps/api/dist ./apps/api/dist
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
