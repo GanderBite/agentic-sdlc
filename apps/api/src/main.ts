@@ -26,12 +26,12 @@ import { createPasswordVerifier } from './shared/password.js';
 // Boot-time env validation — fail fast before opening a port
 // ---------------------------------------------------------------------------
 
-const jwtSecret = process.env['JWT_SECRET'];
+const jwtSecret = process.env.JWT_SECRET;
 if (jwtSecret === undefined || jwtSecret.length < 32) {
   throw new Error('JWT_SECRET env var must be set and at least 32 characters');
 }
 
-const databaseUrl = process.env['DATABASE_URL'];
+const databaseUrl = process.env.DATABASE_URL;
 if (databaseUrl === undefined || databaseUrl === '') {
   throw new Error('DATABASE_URL env var must be set');
 }
@@ -85,7 +85,7 @@ const app = createApp({ service: authService, authn });
 // Start server
 // ---------------------------------------------------------------------------
 
-const portRaw = process.env['PORT'];
+const portRaw = process.env.PORT;
 const port = portRaw ? Number(portRaw) : 3000;
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('PORT env must be a port number 1-65535');

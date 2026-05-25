@@ -5,3 +5,4 @@
 - [Hono router c.get('key') untyped — TS2769 regression](sprint002_hono_typed_ctx_regression.md) — middleware/* uses `c.get(...) as ... | undefined` pattern that compiles only because MiddlewareHandler env is wide; router-scoped Hono<{}> infers `never` and fails. Needs one-time AppEnv type contract.
 - [Sprint-003 lint gate recurrence](sprint003_lint_gate_recurrence.md) — biome format + organizeImports errors persist across iterations; Builder protocol does not run biome --write before gates.
 - [Sprint-003 docker compose required-var gate failure](sprint003_docker_compose_required_var.md) — POSTGRES_PASSWORD :? syntax fails config validation without .env; persistent since wave-2.
+- [Sprint-003 iter-3 escalation patterns](sprint003_iter3_escalation_patterns.md) — 3 R7.3 escalations survived all iterations; root cause is fixer scope mismatch (cross-workspace files not targeted).

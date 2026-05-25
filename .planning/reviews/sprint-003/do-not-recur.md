@@ -4,8 +4,7 @@
 [low] Build-time Vite plugin (@tanstack/router-plugin) listed in dependencies instead of devDependencies — auto_fixable=true — first_seen=wave-1
 [blocking] docker compose config -q fails due to required env var POSTGRES_PASSWORD missing in validation context — auto_fixable=false — first_seen=wave-2
 [high] FormControl wraps children in div instead of Slot breaking label-input association — auto_fixable=true — first_seen=wave-2
-[medium] nginx proxy_pass missing X-Forwarded-Proto and WebSocket upgrade headers — auto_fixable=true — first_seen=wave-2
-[low] nginx config missing security headers (X-Content-Type-Options, X-Frame-Options) — auto_fixable=true — first_seen=wave-2
+[blocking] nginx proxy_pass missing X-Forwarded-Proto and security response headers — escalated per R7.3 in iter-3 — auto_fixable=true — first_seen=wave-2
 [medium] FormLabel error check uses strict !== undefined instead of falsy check — auto_fixable=true — first_seen=wave-2
 [blocking] Biome format error on vite.config.ts plugins line exceeding lineWidth — auto_fixable=true — first_seen=wave-3
 [medium] Router lacks queryClient in context needed by protected-shell beforeLoad guard — auto_fixable=false — first_seen=wave-3
@@ -17,10 +16,15 @@
 [high] Lint gate pnpm -w lint runs repo-wide and fails on pre-existing apps/api errors outside wave diff — auto_fixable=false — first_seen=wave-4
 [low] Redirect validation does not reject javascript: or data: URI schemes — auto_fixable=true — first_seen=wave-4
 [blocking] ErrorCode enum in contracts/common.ts omits INTERNAL — recurred from iter-1 auto_fixable; escalated per R7.3 — auto_fixable=true — first_seen=review-iter-1
-[blocking] Stale /v1/auth/* EXEMPT_PATHS comments in 3 test files — recurred from iter-1 auto_fixable; escalated per R7.3 — auto_fixable=true — first_seen=review-iter-1
+[blocking] Stale /v1/auth/* EXEMPT_PATHS comments in test files — recurred across iter-1/2/3; escalated per R7.3 — auto_fixable=true — first_seen=review-iter-1
 [blocking] Biome organizeImports error in LoginForm.tsx causes lint gate failure — auto_fixable=true — first_seen=review-iter-2
 [high] UI Dockerfile uses Node 25 (non-LTS) while API Dockerfile uses Node 22 LTS — auto_fixable=true — first_seen=review-iter-2
 [medium] Deprecated decodeJwtPayload in auth/dto.ts round-trips JWT to read claims just signed — auto_fixable=false — first_seen=review-iter-2
-[medium] Biome useLiteralKeys info diagnostics across 20+ process.env bracket-access sites — auto_fixable=true — first_seen=review-iter-2
+[blocking] Biome useLiteralKeys info diagnostics in main.ts recurred — escalated per R7.3 in iter-3 — auto_fixable=true — first_seen=review-iter-2
 [low] Unused biome-ignore suppression comments in auth.session.test.ts and log-redaction.test.ts — auto_fixable=true — first_seen=review-iter-2
 [low] Fixture JSON parsing logic duplicated between seed/main.ts and test/support/fixtures.ts — auto_fixable=false — first_seen=review-iter-2
+[high] DATABASE_URL in docker-compose uses ${POSTGRES_PASSWORD} without default while postgres service uses :-change-me — auto_fixable=true — first_seen=review-iter-1
+[low] refreshPromise module-level mutable state in api/client.ts prevents isolated test reset — auto_fixable=false — first_seen=review-iter-1
+[low] QueryClient module-level instantiation in main.tsx prevents lazy init — auto_fixable=false — first_seen=review-iter-1
+[low] SPA catch-all try_files returns index.html for all 404s without Cache-Control differentiation for static assets — auto_fixable=false — first_seen=review-iter-3
+[medium] log-redaction.test.ts stale /v1/auth comments referencing old path scheme — auto_fixable=true — first_seen=review-iter-3

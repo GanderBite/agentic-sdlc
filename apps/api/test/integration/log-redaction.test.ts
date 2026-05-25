@@ -27,8 +27,8 @@
  *   - The raw Bearer value from case (d) NEVER appears
  *
  * NOTE (production bug — do not fix here): The CSRF middleware in
- * apps/api/src/middleware/csrf.ts lists EXEMPT_PATHS "/v1/auth/login" and
- * "/v1/auth/refresh", but app.ts mounts routes at "/api/login" and
+ * apps/api/src/middleware/csrf.ts lists EXEMPT_PATHS "/api/login" and
+ * "/api/refresh", but app.ts mounts routes at "/api/login" and
  * "/api/refresh". POST /api/login therefore hits the CSRF guard and returns
  * 403 FORBIDDEN instead of 200. Tests in this file work around this by
  * either accepting the 403 log line or injecting session state directly.
@@ -297,7 +297,7 @@ describe('auth.refresh — log redaction on POST /api/refresh', () => {
 
     // POST /api/refresh with all required cookies.
     // The CSRF middleware exemption bug means /api/refresh is NOT exempt
-    // (exempt list has "/v1/auth/refresh", not "/api/refresh"). However, if
+    // (exempt list has "/api/refresh", not "/api/refresh"). However, if
     // the csrf_token cookie and X-CSRF-Token header match, CSRF passes.
     const req = new Request('http://test.local/api/refresh', {
       method: 'POST',

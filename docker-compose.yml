@@ -21,7 +21,7 @@ services:
       dockerfile: apps/api/Dockerfile
     image: "medbridge/api:dev"
     environment:
-      DATABASE_URL: "postgres://${POSTGRES_USER:-medbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-medbridge}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-medbridge}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-medbridge}"
       NODE_ENV: "${NODE_ENV:-production}"
     command: ["pnpm", "--filter", "@medbridge/api", "drizzle:migrate"]
     depends_on:
@@ -35,7 +35,7 @@ services:
       dockerfile: apps/api/Dockerfile
     image: "medbridge/api:dev"
     environment:
-      DATABASE_URL: "postgres://${POSTGRES_USER:-medbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-medbridge}"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-medbridge}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-medbridge}"
       JWT_SECRET: "${JWT_SECRET:-change-me-jwt}"
       REFRESH_SECRET: "${REFRESH_SECRET:-change-me-refresh}"
       NODE_ENV: "${NODE_ENV:-production}"

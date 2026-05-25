@@ -9,8 +9,8 @@
  *   Case 3 — header value matches csrf_token cookie → 200
  *
  * NOTE: The CSRF middleware (apps/api/src/middleware/csrf.ts) exempts the paths
- * "/v1/auth/login" and "/v1/auth/refresh".  However, app.ts mounts the auth
- * router at "/api" (not "/v1/auth"), so the runtime paths are "/api/login" and
+ * "/api/login" and "/api/refresh".  However, app.ts mounts the auth
+ * router at "/api", so the runtime paths are "/api/login" and
  * "/api/refresh".  This path mismatch means the login route is NOT exempt in the
  * current production code; a subsequent PR must align the exempt paths or the
  * mount prefix.  Until that fix lands, the loginAs helper call below exercises
