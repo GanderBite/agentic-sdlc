@@ -151,21 +151,21 @@ export default defineFlow({
         // Pre-smoke (R7 / verification-gates §R10). After the wave commits
         // its diff, run the sprint's terminal smoke gates against HEAD.
         // Catches cumulative drift (TS5097, lint-scope, etc.) in the wave
-        // that introduced it, instead of saving the entire backlog for the
-        // final `wave-smoke` wave. The gates come from the planner-emitted
+        // that introduced it. The gates come from the planner-emitted
         // tasks.json — fully tool-agnostic.
         //
-        // Failure exits 2 → the wave-loop body aborts. The next iteration
-        // re-enters mark-tasks-in-progress, which resets the wave's tasks
-        // to retry. `onFail: "abort"` here is correct — we want the loop
-        // to surface the problem immediately, not silently continue.
+        // Always exits 0 — red gates are soft-recorded to the state dir
+        // and mark-tasks-done persists a `smoke_failures` array in the
+        // sprint state. The review-fix-loop handles remediation.
+        // (Relay's loop executor does not honour body-step onFail — any
+        // throw aborts the entire loop unconditionally, so hard-failing
+        // here would skip remaining waves AND the review-fix-loop.)
         'wave-smoke': step.script({
           run: ['bash', '-c', '"$RELAY_FLOW_DIR/scripts/wave-smoke.sh"'],
           dependsOn: ['wave-commit'],
           env: {
             SPRINT_ID: { from: 'input.sprintId', required: true },
           },
-          onFail: 'abort',
         }),
 
         // Deterministic state update AFTER the commit lands. Reads the

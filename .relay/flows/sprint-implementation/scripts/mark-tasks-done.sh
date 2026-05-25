@@ -31,7 +31,8 @@ cd "$(project_root)"
 require_cmd jq
 require_env SPRINT_ID RELAY_HANDOFFS_DIR
 
-state_file=".planning/state/${SPRINT_ID}.json"
+state_dir=".planning/state/${SPRINT_ID}"
+state_file="${state_dir}.json"
 waves_file=".planning/sprints/${SPRINT_ID}.waves.json"
 outcome="$RELAY_HANDOFFS_DIR/wave-loop/wave_outcome.json"
 
@@ -52,6 +53,19 @@ if [ -z "$wave_tasks" ] || [ "$wave_tasks" = "null" ]; then
   die 1 "wave $wave_id not found in $waves_file"
 fi
 
+# Check for a wave-smoke result — if smoke gates were red, record the
+# failure in state so review-fix-loop can pick it up, but still mark
+# task transitions (the tasks themselves completed; the lint/build drift
+# is a cross-cutting concern for the fixer, not the wave-runner).
+smoke_file="${state_dir}/wave-smoke-${wave_id}.json"
+smoke_clean=1
+if [ -f "$smoke_file" ]; then
+  smoke_clean=$(jq -r 'if .clean then 1 else 0 end' "$smoke_file")
+  if [ "$smoke_clean" = "0" ]; then
+    log "wave $wave_id: smoke gates RED ($(jq -r '.failure_count' "$smoke_file") failure(s)) — recorded; review-fix-loop will remediate"
+  fi
+fi
+
 log "wave $wave_id: applying task transitions from wave_outcome"
 
 # Single jq pass: apply per-task transitions, then check wave completion.
@@ -59,6 +73,7 @@ tmp=$(mktemp)
 jq \
   --arg w "$wave_id" \
   --argjson wave_tasks "$wave_tasks" \
+  --argjson smoke_clean "$smoke_clean" \
   --slurpfile o "$outcome" \
   '
     ($o[0].tasks_done    // []) as $done
@@ -74,6 +89,11 @@ jq \
     | ([$wave_tasks[] | $next.task_status[.] // "todo"]) as $statuses
     | if ($statuses | all(. == "done" or . == "blocked" or . == "failed" or . == "skipped"))
       then .wave_status[$w] = "done"
+      else .
+      end
+    # Persist smoke-red flag so review-fix-loop can discover it.
+    | if ($smoke_clean == 0)
+      then .smoke_failures = ((.smoke_failures // []) + [$w] | unique)
       else .
       end
   ' "$state_file" >"$tmp"

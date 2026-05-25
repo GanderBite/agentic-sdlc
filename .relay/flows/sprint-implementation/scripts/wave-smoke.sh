@@ -22,8 +22,9 @@
 # Reads:   .planning/sprints/${SPRINT_ID}.tasks.json
 #          $RELAY_HANDOFFS_DIR/wave-loop/wave_outcome.json (for wave_id)
 # Writes:  .planning/state/${SPRINT_ID}/wave-smoke-<wave_id>.json
-# Exit:    0 = clean OR is-terminal-smoke-wave (no-op).
-#          2 = one or more smoke gates red → wave-loop body aborts.
+# Exit:    0 = always (clean OR red — failures are soft-recorded to the
+#              state file; mark-tasks-done reads the result and the
+#              review-fix-loop handles remediation).
 #          1 = missing input.
 
 SCRIPT_NAME="wave-smoke"
@@ -146,8 +147,8 @@ jq -n \
 
 if [ "$any_failure" = "1" ]; then
   log "smoke gates RED for wave ${wave_id} ($(jq -r '.failure_count' "$out_file") failure(s)); details: $out_file"
-  log "this aborts the wave-loop body; the responsible task(s) must be retried per task.on_fail policy"
-  exit 2
+  log "mark-tasks-done will record the red state; review-fix-loop handles remediation"
+  exit 0
 fi
 
 log "smoke gates GREEN for wave ${wave_id} (${#gates[@]} gate(s))"
