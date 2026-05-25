@@ -11,7 +11,7 @@
  * Docker daemon must be running — this file uses a Postgres testcontainer.
  *
  * NOTE (production bug): The CSRF middleware EXEMPT_PATHS in
- * apps/api/src/middleware/csrf.ts uses "/v1/auth/login" and "/v1/auth/refresh"
+ * apps/api/src/middleware/csrf.ts uses "/api/login" and "/api/refresh"
  * but the app mounts routes at "/api/login" and "/api/refresh". This means
  * loginAs() would return 403 FORBIDDEN. All tests in this file work around
  * this by seeding the DB state and cookies directly instead of going through
@@ -58,7 +58,6 @@ let container: StartedPostgreSqlContainer;
 let pool: Pool;
 let db: Db;
 
-// biome-ignore lint/suspicious/noExplicitAny: app type is inferred from factory
 let app: ReturnType<typeof createApp>;
 
 beforeAll(async () => {

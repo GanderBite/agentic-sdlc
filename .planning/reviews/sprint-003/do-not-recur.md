@@ -16,3 +16,11 @@
 [medium] location.search is parsed object in TanStack Router; concatenating with pathname produces [object Object] in redirect — auto_fixable=false — first_seen=wave-4
 [high] Lint gate pnpm -w lint runs repo-wide and fails on pre-existing apps/api errors outside wave diff — auto_fixable=false — first_seen=wave-4
 [low] Redirect validation does not reject javascript: or data: URI schemes — auto_fixable=true — first_seen=wave-4
+[blocking] ErrorCode enum in contracts/common.ts omits INTERNAL — recurred from iter-1 auto_fixable; escalated per R7.3 — auto_fixable=true — first_seen=review-iter-1
+[blocking] Stale /v1/auth/* EXEMPT_PATHS comments in 3 test files — recurred from iter-1 auto_fixable; escalated per R7.3 — auto_fixable=true — first_seen=review-iter-1
+[blocking] Biome organizeImports error in LoginForm.tsx causes lint gate failure — auto_fixable=true — first_seen=review-iter-2
+[high] UI Dockerfile uses Node 25 (non-LTS) while API Dockerfile uses Node 22 LTS — auto_fixable=true — first_seen=review-iter-2
+[medium] Deprecated decodeJwtPayload in auth/dto.ts round-trips JWT to read claims just signed — auto_fixable=false — first_seen=review-iter-2
+[medium] Biome useLiteralKeys info diagnostics across 20+ process.env bracket-access sites — auto_fixable=true — first_seen=review-iter-2
+[low] Unused biome-ignore suppression comments in auth.session.test.ts and log-redaction.test.ts — auto_fixable=true — first_seen=review-iter-2
+[low] Fixture JSON parsing logic duplicated between seed/main.ts and test/support/fixtures.ts — auto_fixable=false — first_seen=review-iter-2

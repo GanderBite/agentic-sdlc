@@ -3,7 +3,7 @@ services:
     image: "postgres:17-alpine"
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-medbridge}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-change-me}"
       POSTGRES_DB: "${POSTGRES_DB:-medbridge}"
     volumes:
       - "postgres_data:/var/lib/postgresql/data"
@@ -36,8 +36,8 @@ services:
     image: "medbridge/api:dev"
     environment:
       DATABASE_URL: "postgres://${POSTGRES_USER:-medbridge}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-medbridge}"
-      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET must be set}"
-      REFRESH_SECRET: "${REFRESH_SECRET:?REFRESH_SECRET must be set}"
+      JWT_SECRET: "${JWT_SECRET:-change-me-jwt}"
+      REFRESH_SECRET: "${REFRESH_SECRET:-change-me-refresh}"
       NODE_ENV: "${NODE_ENV:-production}"
       LOG_LEVEL: "${LOG_LEVEL:-info}"
     ports:

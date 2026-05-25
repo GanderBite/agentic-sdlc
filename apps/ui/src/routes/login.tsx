@@ -6,6 +6,7 @@ import { LoginForm } from '@/features/login/LoginForm';
 // Accepts only same-origin relative paths. Rejects:
 //   - absolute URLs (http://, https://)
 //   - protocol-relative URLs (//)
+//   - javascript: and data: URI schemes (open-redirect / XSS vectors)
 //   - any other non-relative form
 const redirectSearchSchema = z
   .string()
@@ -14,6 +15,9 @@ const redirectSearchSchema = z
     (val) => !val.startsWith('http://') && !val.startsWith('https://') && !val.startsWith('//'),
     { message: 'redirect must be a relative same-origin path' },
   )
+  .refine((val) => !val.startsWith('javascript:') && !val.startsWith('data:'), {
+    message: 'invalid scheme',
+  })
   .optional();
 
 const searchSchema = z.object({

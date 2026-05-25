@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { type LoginRequest, loginRequest } from '@medbridge/contracts';
 import { useRouter, useSearch } from '@tanstack/react-router';
-import { loginRequest, type LoginRequest } from '@medbridge/contracts';
 import { useForm } from 'react-hook-form';
 
 import { ApiError } from '@/api/errors';

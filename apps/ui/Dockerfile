@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-ARG NODE_VERSION=25
+ARG NODE_VERSION=22
 
 # ---------- stage 1: build (pnpm install + vite build) ----------
 FROM node:${NODE_VERSION}-slim AS build

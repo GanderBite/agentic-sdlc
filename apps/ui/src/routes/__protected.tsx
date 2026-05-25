@@ -11,7 +11,7 @@ export const Route = createFileRoute('/__protected')({
       if (err instanceof ApiError && err.status === 401) {
         throw redirect({
           to: '/login',
-          search: { redirect: location.pathname + location.search },
+          search: { redirect: location.pathname + (location.searchStr ?? '') },
         });
       }
       throw err;
