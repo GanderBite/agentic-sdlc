@@ -57,5 +57,23 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  ui:
+    build:
+      context: .
+      dockerfile: apps/ui/Dockerfile
+    image: "medbridge/ui:dev"
+    ports:
+      - "${UI_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
 volumes:
   postgres_data:

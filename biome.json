@@ -60,6 +60,11 @@
   "json": {
     "formatter": { "trailingCommas": "none" }
   },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "overrides": [
     {
       "includes": ["**/*.test.ts", "**/*.test.tsx"],
