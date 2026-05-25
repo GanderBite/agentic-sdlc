@@ -5,7 +5,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { ApiError } from './api/errors';
-import { router } from './router';
+import { createAppRouter } from './router';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +22,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+const router = createAppRouter(queryClient);
 
 const rootEl = document.getElementById('root');
 if (!rootEl) {

@@ -11,3 +11,8 @@
 [medium] Router lacks queryClient in context needed by protected-shell beforeLoad guard — auto_fixable=false — first_seen=wave-3
 [low] queryKey duplication between meQueryOptions and useMe in me.ts — auto_fixable=true — first_seen=wave-3
 [low] Unnecessary arrow wrapper around api.login in useLogin mutationFn — auto_fixable=true — first_seen=wave-3
+[high] __protected route uses path segment instead of pathless layout; dashboard URL is /__protected/dashboard not /dashboard — auto_fixable=false — first_seen=wave-4
+[high] Post-login navigates to /dashboard but route tree registers dashboard at /__protected/dashboard — auto_fixable=false — first_seen=wave-4
+[medium] location.search is parsed object in TanStack Router; concatenating with pathname produces [object Object] in redirect — auto_fixable=false — first_seen=wave-4
+[high] Lint gate pnpm -w lint runs repo-wide and fails on pre-existing apps/api errors outside wave diff — auto_fixable=false — first_seen=wave-4
+[low] Redirect validation does not reject javascript: or data: URI schemes — auto_fixable=true — first_seen=wave-4
