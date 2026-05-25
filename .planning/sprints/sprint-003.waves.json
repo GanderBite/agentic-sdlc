@@ -1,1 +1,58 @@
-{"waves":[{"id":"wave-1","kind":"build","tasks":["task-ui-scaffold"],"token_budget":200000,"max_parallelism":4,"status":"todo"},{"id":"wave-2","kind":"build","tasks":["task-ui-tailwind-shadcn","task-ui-api-client","task-ui-docker"],"token_budget":200000,"max_parallelism":4,"status":"todo"},{"id":"wave-3","kind":"build","tasks":["task-ui-router","task-ui-auth-hooks"],"token_budget":200000,"max_parallelism":4,"status":"todo"},{"id":"wave-4","kind":"build","tasks":["task-ui-login-route","task-ui-protected-shell"],"token_budget":200000,"max_parallelism":4,"status":"todo"},{"id":"wave-smoke","kind":"review","tasks":["task-smoke"],"token_budget":10000,"max_parallelism":1,"status":"todo"}]}
+{
+  "waves": [
+    {
+      "id": "wave-1",
+      "kind": "build",
+      "tasks": [
+        "task-ui-scaffold"
+      ],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "todo"
+    },
+    {
+      "id": "wave-2",
+      "kind": "build",
+      "tasks": [
+        "task-ui-tailwind-shadcn",
+        "task-ui-api-client",
+        "task-ui-docker"
+      ],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "todo"
+    },
+    {
+      "id": "wave-3",
+      "kind": "build",
+      "tasks": [
+        "task-ui-router",
+        "task-ui-auth-hooks"
+      ],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "todo"
+    },
+    {
+      "id": "wave-4",
+      "kind": "build",
+      "tasks": [
+        "task-ui-login-route",
+        "task-ui-protected-shell"
+      ],
+      "token_budget": 200000,
+      "max_parallelism": 4,
+      "status": "todo"
+    },
+    {
+      "id": "wave-smoke",
+      "kind": "review",
+      "tasks": [
+        "task-smoke"
+      ],
+      "token_budget": 10000,
+      "max_parallelism": 1,
+      "status": "todo"
+    }
+  ]
+}
