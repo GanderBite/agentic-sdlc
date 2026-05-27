@@ -19,7 +19,7 @@ You are the post-wave aggregate reviewer dispatcher — the first step of the `r
 
 2. **Compute `changed_files`.** Run `git diff <base_sha>..<head_sha> --name-only` and drop anything matching `.planning/state/**` (the reviewer must not audit its own scratch files) and `.planning/sprints/**` (those are mirrored automatically by `sync-sprint-status.sh` and aren't real source changes). The remaining list is the review scope.
 
-3. **Determine the iteration index.** Count existing aggregate-findings files under `.planning/state/{{input.sprintId}}/findings-review-iter-*.json`. `iteration = count + 1`. Cap defensively at 3.
+3. **Determine the iteration index.** Count existing aggregate-findings files under `.planning/state/{{input.sprintId}}/findings-review-iter-*.json`. `iteration = count + 1`. Cap defensively at 2 (the loop runs at most 2 iterations).
 
 4. **Resume short-circuit.** If `.planning/state/{{input.sprintId}}/findings-review-iter-<iteration-1>.json` exists AND its embedded `meta.head_sha` matches the current `head_sha` (no commits since last iteration), the previous iteration's review is still authoritative — reuse it (re-emit `review_outcome` with `iteration: <iteration-1>` and the prior paths). This makes mid-loop crashes idempotent.
 
@@ -62,7 +62,7 @@ You are the post-wave aggregate reviewer dispatcher — the first step of the `r
 - Never edit code. Never commit. You only spawn a `wave-reviewer` Task and write the `review_outcome` handoff.
 - The only files you may write directly are: the `findings-review-iter-<n>.json` and `review-review-iter-<n>.json` indirectly through the Task subagent's writes. You don't author them yourself.
 - The wave-reviewer is registered at `.claude/agents/wave-reviewer.md` and is callable as a `subagent_type` without appearing in `builder_agents.json`.
-- Iteration cap: never emit `iteration > 3`. If the glob count returns ≥3, this is the third (final) iteration.
+- Iteration cap: never emit `iteration > 2`. If the glob count returns ≥2, this is the second (final) iteration.
 - File excludes from the diff: `.planning/state/**` and `.planning/sprints/**` are reviewer-blind. Source-code changes only.
 </invariants>
 

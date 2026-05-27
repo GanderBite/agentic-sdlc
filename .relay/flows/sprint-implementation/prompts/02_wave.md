@@ -8,6 +8,8 @@ You are the wave-runner — the load-bearing orchestrator for one wave of the sp
 - Durable state: `.planning/state/{{input.sprintId}}.json` (task and wave status, in-flight markers).
 - **Builder personas:** `.planning/state/{{input.sprintId}}/builder_agents.json` — the sidecar the `derive-builders` step wrote. Lists the `AgentDefinition`s (name, description, skills, systemPrompt). Relay-core has registered every persona here with claude-cli as a Task `subagent_type`, so you can dispatch by `name` directly. Re-read this file at the start of every iteration.
 - Loop body steps cannot read handoffs produced outside the loop, so re-read all files from disk on every iteration. This is also what §14.1 requires for crash-resume idempotency.
+
+**Context budget optimization:** Only read the data you need for THIS wave. After identifying the next wave (step 1), read only that wave's task objects from tasks.json — do NOT read the full tasks file into context. Read only the relevant fields from the state file (wave_status and task_status for this wave's tasks). This keeps the prompt's context window lean across iterations.
 </inputs>
 
 <procedure>
@@ -45,9 +47,13 @@ You are the wave-runner — the load-bearing orchestrator for one wave of the sp
    - If still failing AND `attempts < max_attempts`: spawn a fresh Task with the SAME `subagent_type` you picked in step 4 (do NOT downgrade to a different persona on retry). Append a new entry to `dispatches[]` with `attempt: 2` (and so on). Prepend the failure diagnostic to the prompt.
    - If still failing AND `attempts == max_attempts`: apply `task.on_fail` (`escalate` writes a blocked diagnostic; `skip` marks skipped if the task is `optional: true`).
 
-8. **Reviewer.** Spawn one `Task(subagent_type="wave-reviewer")` on the wave with: wave JSON, the union of changed files, builder verification results. Reviewer emits `review-<wave_id>.json` (mechanical, §10.1) and `findings-<wave_id>.json` (audit, §10.2). The `wave-reviewer` agent file lives at `.claude/agents/wave-reviewer.md` — it is NOT in `builder_agents.json` (reviewers are not dispatched by skill-overlap, they are universal). Do NOT add the reviewer dispatch to `dispatches[]` — that array tracks builder dispatches only.
+8. **Reviewer (terminal waves only).** Only spawn the per-wave reviewer on the LAST build wave or the smoke wave. For all earlier waves, SKIP the reviewer entirely — the aggregate `review-fix-loop` after the wave-loop will catch cross-cutting issues across the full sprint diff. This saves ~3-5 min per skipped wave.
 
-9. **Validate reviewer output.** Run `node scripts/validate-review.mjs <findings-path>`. On invalid: re-spawn reviewer with the validator's error. One retry. Then escalate.
+   To determine if this is the terminal wave: read `.planning/sprints/{{input.sprintId}}.waves.json` and `.planning/state/{{input.sprintId}}.json`. Count remaining non-done waves (including this one). If `remaining <= 2` (this wave + wave-smoke, or this wave IS wave-smoke), spawn the reviewer. Otherwise skip steps 8-9 entirely and proceed to step 10.
+
+   When spawning: `Task(subagent_type="wave-reviewer")` with wave JSON, the union of changed files, builder verification results. Reviewer emits `review-<wave_id>.json` (mechanical, §10.1) and `findings-<wave_id>.json` (audit, §10.2). The `wave-reviewer` agent file lives at `.claude/agents/wave-reviewer.md` — it is NOT in `builder_agents.json`. Do NOT add the reviewer dispatch to `dispatches[]`.
+
+9. **Validate reviewer output (only when reviewer was spawned).** Run `node scripts/validate-review.mjs <findings-path>`. On invalid: re-spawn reviewer with the validator's error. One retry. Then escalate.
 
 10. **Auto-fix loop (per-wave: skip).** Do NOT spawn fixers from inside the wave-runner. The flow runs a dedicated post-wave-loop `review-fix-loop` (a separate `step.loop` after the wave-loop) that aggregates findings across the whole sprint diff and dispatches fixers up to 3 iterations or until clean. Per-wave findings still flow through `findings_summary` and the `wip(<scope>):` prefix rule below; the aggregate fixer picks them up after every wave commits. Per `verification-gates §R7`, the review-fix-loop now dispatches fixers for ALL `auto_fixable: true` findings regardless of severity (closes G3 of SPRINT_WORKFLOW_POSTMORTEM.md).
 

@@ -16,7 +16,7 @@ import { z } from '@ganderbite/relay-core';
  * (`prompts/02_wave.md` §4), with pseudo-skills derived from file paths.
  */
 export const FixOutcomeSchema = z.object({
-  iteration: z.number().int().min(1).max(3).describe('Echoes review_outcome.iteration.'),
+  iteration: z.number().int().min(1).max(3).describe('Echoes review_outcome.iteration (maxIterations=2, schema allows 3 for backwards compat).'),
   no_op: z
     .boolean()
     .describe(

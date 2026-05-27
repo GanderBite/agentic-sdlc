@@ -32,7 +32,7 @@ export const ReviewOutcomeSchema = z.object({
     .int()
     .min(1)
     .max(3)
-    .describe('1-based iteration index within the review-fix-loop.'),
+    .describe('1-based iteration index within the review-fix-loop (maxIterations=2, but schema allows 3 for backwards compat).'),
   clean: z
     .boolean()
     .describe(

@@ -82,24 +82,60 @@ done < <(
 results_json="[]"
 any_failure=0
 
-# `"${gates[@]+"${gates[@]}"}"` is the bash 3.2-safe form: it expands to
-# nothing when the array is empty, sidestepping `set -u` ("unbound variable")
-# which would otherwise abort the script on macOS bash 3.2.
+# Performance optimization (E): run non-files_exist gates in parallel.
+# files_exist gates are instant (stat check) so they run inline.
+# Shell gates (lint, typecheck, build, tests) run as background jobs.
+# Results are collected via per-gate temp files to avoid race conditions.
+
+gate_tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$gate_tmp_dir"' EXIT
+
+gate_idx=0
+bg_pids=()
+
 for gate_json in "${gates[@]+"${gates[@]}"}"; do
   kind="$(echo "$gate_json"   | jq -r '.kind')"
   cmd="$(echo "$gate_json"    | jq -r '.cmd')"
   expect="$(echo "$gate_json" | jq -r '.expect_exit')"
 
-  start_ms="$(epoch_ms)"
   if [ "$kind" = "files_exist" ]; then
-    # Pass iff path exists AND is non-empty (verification-gates §R2.3).
+    # Instant check — run inline.
+    start_ms="$(epoch_ms)"
     if [ -s "$cmd" ]; then exit_code=0; else exit_code=1; fi
+    end_ms="$(epoch_ms)"
+    duration_ms=$(( end_ms - start_ms ))
+    printf '%s\n' "$exit_code" > "$gate_tmp_dir/exit_${gate_idx}"
+    printf '%s\n' "$duration_ms" > "$gate_tmp_dir/dur_${gate_idx}"
   else
-    # One-shot exec; no flake-retry here (those are per-task at wave time).
-    bash -c "$cmd" >/dev/null 2>&1 && exit_code=0 || exit_code=$?
+    # Shell gate — run in background for parallelism.
+    (
+      s_ms="$(date +%s%3N 2>/dev/null || python3 -c 'import time;print(int(time.time()*1000))')"
+      bash -c "$cmd" >/dev/null 2>&1 && ec=0 || ec=$?
+      e_ms="$(date +%s%3N 2>/dev/null || python3 -c 'import time;print(int(time.time()*1000))')"
+      d_ms=$(( e_ms - s_ms ))
+      printf '%s\n' "$ec" > "$gate_tmp_dir/exit_${gate_idx}"
+      printf '%s\n' "$d_ms" > "$gate_tmp_dir/dur_${gate_idx}"
+    ) &
+    bg_pids+=("$!")
   fi
-  end_ms="$(epoch_ms)"
-  duration_ms=$(( end_ms - start_ms ))
+
+  gate_idx=$(( gate_idx + 1 ))
+done
+
+# Wait for all background gates to finish.
+for pid in "${bg_pids[@]+"${bg_pids[@]}"}"; do
+  wait "$pid" 2>/dev/null || true
+done
+
+# Collect results in order.
+gate_idx=0
+for gate_json in "${gates[@]+"${gates[@]}"}"; do
+  kind="$(echo "$gate_json"   | jq -r '.kind')"
+  cmd="$(echo "$gate_json"    | jq -r '.cmd')"
+  expect="$(echo "$gate_json" | jq -r '.expect_exit')"
+
+  exit_code="$(cat "$gate_tmp_dir/exit_${gate_idx}" 2>/dev/null || echo 1)"
+  duration_ms="$(cat "$gate_tmp_dir/dur_${gate_idx}" 2>/dev/null || echo 0)"
 
   if [ "$exit_code" != "$expect" ]; then
     any_failure=1
@@ -113,6 +149,8 @@ for gate_json in "${gates[@]+"${gates[@]}"}"; do
     --argjson exit "$exit_code" \
     --argjson duration "$duration_ms" \
     '. + [{kind: $kind, cmd: $cmd, expect_exit: $expect, exit: $exit, duration_ms: $duration}]')"
+
+  gate_idx=$(( gate_idx + 1 ))
 done
 
 head_sha="$(git rev-parse HEAD 2>/dev/null || echo "")"

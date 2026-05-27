@@ -58,6 +58,27 @@ if [ "$wave_id" = "wave-smoke" ]; then
   exit 0
 fi
 
+# Performance optimization (I): only run smoke on the last build wave.
+# Early waves produce incomplete code — intermediate failures are expected
+# and smoke just wastes ~30-60s per wave. The review-fix-loop catches
+# cumulative drift after all waves land.
+if [ -f "$waves_file" ]; then
+  # Count how many non-done waves remain (excluding the current one).
+  remaining=$(jq -r --arg w "$wave_id" --slurpfile state ".planning/state/${SPRINT_ID}.json" '
+    [.waves[]
+     | select(.id != $w)
+     | select(($state[0].wave_status // {})[.id] != "done")
+    ] | length
+  ' "$waves_file" 2>/dev/null || echo "0")
+
+  # If more than 1 wave remains after this one (i.e. there are still build
+  # waves ahead before wave-smoke), skip the smoke check.
+  if [ "$remaining" -gt 1 ]; then
+    log "skipping smoke for early wave ${wave_id} (${remaining} waves still ahead)"
+    exit 0
+  fi
+fi
+
 # Extract the smoke wave's task.verification commands from tasks.json.
 # Convention: the smoke task id is `task-smoke`. Fall back to scanning
 # any task whose id starts with `task-smoke` if the canonical id is absent.

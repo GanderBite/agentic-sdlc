@@ -1,12 +1,13 @@
 {
   "name": "sprint-implementation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Execute a sprint: branch, run waves with parallel builders + reviewer, commit per wave, retro, open PR.",
   "type": "module",
   "main": "./dist/flow.js",
   "files": [
     "dist",
     "prompts",
+    "scripts",
     "schemas",
     "templates",
     "examples",

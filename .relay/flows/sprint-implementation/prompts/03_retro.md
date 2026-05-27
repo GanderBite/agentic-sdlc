@@ -3,12 +3,12 @@ You are the retro author. You produce two artifacts after the wave-loop terminat
 </role>
 
 <inputs>
-- `execution_plan` from the planning step is in `<context name="execution_plan">`.
+- **Execution plan:** Read from `.planning/sprints/{{input.sprintId}}.json` (sprint metadata), `.planning/sprints/{{input.sprintId}}.waves.json` (wave plan), and `.planning/sprints/{{input.sprintId}}.tasks.json` (full task list with estimates). These files contain everything the old `execution_plan` context held.
 - The terminal `wave_result` is in `<context name="wave_result">`.
-- The terminal `review_outcome` from the post-wave `review-fix-loop` is in `<context name="review_outcome">` — this is the LAST iteration's outcome (so its `iteration` field tells you how many fix passes ran, and `clean` tells you whether the loop terminated cleanly or exhausted `maxIterations: 3`).
-- `${SPRINT_ID}` is in the relay-set environment.
-- Per-task actuals live in `.planning/state/${SPRINT_ID}/cost.jsonl` (one JSON line per builder attempt).
-- Per-iteration aggregate findings live at `.planning/state/${SPRINT_ID}/findings-review-iter-<n>.json` for `n` in 1..review_outcome.iteration. Diff successive iterations to spot fixer-induced regressions.
+- The terminal `review_outcome` from the post-wave `review-fix-loop` is in `<context name="review_outcome">` — this is the LAST iteration's outcome (so its `iteration` field tells you how many fix passes ran, and `clean` tells you whether the loop terminated cleanly or exhausted `maxIterations: 2`).
+- `{{input.sprintId}}` is the sprint ID (relay substitutes it at prompt render time).
+- Per-task actuals live in `.planning/state/{{input.sprintId}}/cost.jsonl` (one JSON line per builder attempt).
+- Per-iteration aggregate findings live at `.planning/state/{{input.sprintId}}/findings-review-iter-<n>.json` for `n` in 1..review_outcome.iteration. Diff successive iterations to spot fixer-induced regressions.
 </inputs>
 
 <job>
@@ -19,7 +19,7 @@ Write two files:
    - **Skills** — for each skill used, count of tasks and one-sentence assessment.
    - **Wave invariants** — every wave-invariant violation observed, with the file pattern that triggered it and the planner heuristic to add.
    - **Findings** — counts by severity, plus the top three findings worth fixing in a follow-up sprint.
-   - **Post-wave review trail** — one row per `review-fix-loop` iteration: `iter N: blocking=X high=Y medium=Z low=W info=V` plus a one-line note on what the fixer did (or "no-op — clean"). If `review_outcome.clean === false` AND `review_outcome.iteration === 3`, lead the section with a **REVIEW UNCLEAN AFTER 3 ITERATIONS** callout listing every remaining blocking/high finding (id, file, summary) so the human can pick them up — these are the findings `open-pr.sh` will surface via the `REVIEW_UNCLEAN` PR label.
+   - **Post-wave review trail** — one row per `review-fix-loop` iteration: `iter N: blocking=X high=Y medium=Z low=W info=V` plus a one-line note on what the fixer did (or "no-op — clean"). If `review_outcome.clean === false` AND `review_outcome.iteration >= 2`, lead the section with a **REVIEW UNCLEAN AFTER MAX ITERATIONS** callout listing every remaining blocking/high finding (id, file, summary) so the human can pick them up — these are the findings `open-pr.sh` will surface via the `REVIEW_UNCLEAN` PR label.
    - **Recommendations for next sprint** — bullet list of concrete planner heuristics or skill additions.
 
 2. **`.planning/retros/${SPRINT_ID}.priors-patch.json`** — machine-readable patch matching the §5.5 schema:
